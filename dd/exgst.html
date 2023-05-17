@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<title>Yeloooo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="om.css">
+<script src='localbase.min.js'></script>
+<script src='dexie.min.js'></script>
+<!-- <script src="vue.js"></script> -->
+
+<body>
+<br><button onclick="history.back()" class="w3-button w3-red">❮ Back</button>
+<div class="content w3-center"><br>
+
+<input id="frm5" type="date" class="w3-large">
+<label>To</label>
+<input id="to5" type="date" class="w3-large"><br><br>
+
+<div class="w3-bar">
+<button onclick="gentcsv()" class="w3-red w3-button w3-hover-purple">Generate CSV</button>
+</div>
+<br>
+<div id="myBar1" style="display:none;" class="w3-light-grey w3-round-xlarge">
+    <div id="myBar" class="w3-container w3-round-xlarge" style="width:0%;background:#ffeb3b">0%</div>
+</div>
+<br>
+<ul id="alink" class="w3-ul w3-border" style="display:none;color: blue;"></ul>
+
+</div>
+
+<style>
+.content {max-width: 500px;margin: auto;}
+
+</style>
+</body>
+<script src="exgst.js"></script>
+</html>
