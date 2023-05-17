@@ -25,10 +25,12 @@ self.addEventListener("fetch", (event) => {
   });
 //   let p="http://127.0.0.1:5500/";
 let p=location.pathname;
- if (p.match(/\/d\/index.html/)){
-    p='/d/';
+ if (p.match(/\/dd\/index.html/)){
+    p='/dd/';
+}else if (p.match(/\/aa\/index.html/)){
+    p='/aa/';
 }else if (p.match(/\/index.html/)){
-    p='/';
+  p='/';
 }
 
 let d=[p+"index.html",
