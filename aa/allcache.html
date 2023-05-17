@@ -1,0 +1,26 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="root"></div>
+    <script>
+        if (navigator && navigator.serviceWorker) {
+            caches.open('v1').then(function (cache) {
+                var root = document.querySelector('#root');
+                cache.keys().then(function (keys) {
+                    root.innerHTML =
+                        '<ul>' +
+                            keys.map(function(key) {
+                                return '<li><a href="' + key.url + '">' + key.url + '</a></li>';
+                            }).join('') +
+                        '</ul>';
+                });
+            });
+        }
+    </script>
+</body>
+</html>
