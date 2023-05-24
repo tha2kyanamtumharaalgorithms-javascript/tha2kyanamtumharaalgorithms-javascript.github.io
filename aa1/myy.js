@@ -155,7 +155,7 @@ async function updateod() {
 //  }else{
 viewtotal();
 zsr.id = pk8;
-zsr.cn = document.getElementById('u13').innerText;
+zsr.cn = document.getElementById('u13').innerText.replace(/\s+/g, ' ').trim();
 zsr.tot = Number(total);
 zsr.bulk = Number(document.getElementById('bulkc').checked);
 zsr.dt = oldod.dt;

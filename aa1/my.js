@@ -414,7 +414,7 @@ function gonext() {
    if (document.getElementById('instock').checked) {
     document.getElementById("incn").value=document.querySelector('#gall input[type="radio"]:checked').labels[0].innerText;
    }
-   let ur=document.getElementById("incn").value;
+   let ur=document.getElementById("incn").value.replace(/\s+/g, ' ').trim();
 		if(ur){
     document.getElementById('u13').innerHTML=ur;
     document.getElementById('frt').innerHTML='<strong>'+ur+'</strong>';
