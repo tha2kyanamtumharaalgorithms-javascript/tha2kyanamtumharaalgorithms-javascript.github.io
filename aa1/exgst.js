@@ -6,20 +6,20 @@ oddb.version(1).stores({od: "id,dt,bulk"});
 // let posList = ["01-Jammu & Kashmir", "02-Himachal Pradesh", "03-Punjab", "04-Chandigarh", "05-Uttarakhand", "06-Haryana", "07-Delhi", "08-Rajasthan", "09-Uttar Pradesh", "10-Bihar", "11-Sikkim", "12-Arunachal Pradesh", "13-Nagaland", "14-Manipur", "15-Mizoram", "16-Tripura", "17-Meghalaya", "18-Assam", "19-West Bengal", "20-Jharkhand", "21-Odisha", "22-Chhattisgarh", "23-Madhya Pradesh", "24-Gujarat", "25-Daman & Diu", "26-Dadra & Nagar Haveli", "27-Maharashtra", "29-Karnataka", "30-Goa", "31-Lakshdweep", "32-Kerala", "33-Tamil Nadu", "34-Pondicherry", "35-Andaman & Nicobar Islands", "36-Telangana", "37-Andhra Pradesh","38-Ladakh", "97-Other Territory"];
 let stat={"01":"Jammu and Kashmir","02":"Himachal Pradesh","03":"Punjab","04":"Chandigarh","05":"Uttarakhand","06":"Haryana","07":"Delhi","08":"Rajasthan","09":"Uttar Pradesh","10":"Bihar","11":"Sikkim","12":"Arunachal Pradesh","13":"Nagaland","14":"Manipur","15":"Mizoram","16":"Tripura","17":"Meghalaya","18":"Assam","19":"West Bengal","20":"Jharkhand","21":"Odisha","22":"Chhattisgarh","23":"Madhya Pradesh","24":"Gujarat","25":"Daman and Diu","26":"Dadra and Nagar Haveli and Daman and Diu","27":"Maharashtra","29":"Karnataka","30":"Goa","31":"Lakshadweep","32":"Kerala","33":"Tamil Nadu","34":"Pondicherry","35":"Andaman and Nicobar Islands","36":"Telangana","37":"Andhra Pradesh","38":"Ladakh","97":"Other Territory"};
 let db = new Dexie("party");db.version(2).stores({pt: "id,cn,mn1,mn2,*ods"});
-let mymth;
+
     window.indexedDB.databases().then((e)=>{
       let b=[];
       e.forEach((v,i)=>{
            if (String(v.name).match(/\w\d{3}/g)) {
             let x=(2+v.name.slice(1));let moth=Number(x[2]+x[3])-1;
-             mymth=new Date('20'+x[0]+x[1],moth).toLocaleDateString('en-GB', {
+             let mymth=new Date('20'+x[0]+x[1],moth).toLocaleDateString('en-GB', {
               month : 'short',
               year : 'numeric'
               });
               b[i]=`<a id="${v.name}" onclick="excsv('${v.name}')" class="w3-blue w3-hover-purple w3-button">${mymth}</a>`;
            }
       });
-      document.getElementById('allmth').innerHTML+=b.reverse().join('');
+      document.getElementById('allmth').innerHTML+=b.join('');
     });
 
 async function excsv(mth) {
@@ -31,9 +31,10 @@ let excsv="data:text/csv;charset=utf-8,GSTIN/UIN of Recipient,Receiver Name,Invo
   let pkl=await oddb.od.count();let lp;let cunt=0;
   await oddb.od.each(async(d)=>{
     console.log(d);
-        lp=((cunt+1)/pkl)*100;cunt++;
+    lp=((cunt+1)/pkl)*100;cunt++;
     pbar.style.width = lp + '%';
     pbar.innerHTML =  Math.round(lp) + '%';
+    let dt1=d.dt.split('/').join('-');
     if (d.bulk&&d.tot) {
         await db.pt.get(Number(d.pt)).then((pt) => {
             if(pt.gst){
@@ -44,12 +45,13 @@ let excsv="data:text/csv;charset=utf-8,GSTIN/UIN of Recipient,Receiver Name,Invo
         })
     }
 });
-
+console.log(mth);
 pbar1.style.display='none';
 let link1 = document.getElementById(mth);
+let txt=link1.innerText;
 link1.href = encodeURI(excsv);
-link1.download =mymth+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
-link1.textContent = mymth;
+link1.download =txt+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
+link1.textContent = txt;
 link1.removeAttribute("onclick");
 link1.classList.remove("w3-blue");
 link1.classList.remove("w3-hover-purple");

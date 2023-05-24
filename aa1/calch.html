@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="viewport" content="user-scalable=no, width=device-width">
     <title>Document</title>
     <link rel="stylesheet" href="om.css">
     <script src="vue.js"></script>
@@ -24,6 +24,16 @@
         data() {
             return {
             formin:{pickup_postcode: 110062,delivery_postcode: 641607,weight:1,cod:0,mode:"Surface"},
+            shipr1: JSON.parse(localStorage.shipr1).a,
+            dl:class Delhivery{
+                constructor(pickup_postcode, delivery_postcode, weight,mode) {
+                    this.o_pin=pickup_postcode;
+                    this.d_pin=delivery_postcode;
+                    this.md=(mode=='Air'?'E':'S');
+                    this.cgm=weight*1000; // gram
+                    this.ss='Delivered';
+                }
+                },
             }
         },
         template: `<div class="w3-center w3-row">
@@ -41,10 +51,8 @@
         <div id="allcor"></div>`,
         methods: {
            async calpc(){
-            console.log(this.formin);
-            let tok1=JSON.parse(localStorage.shipr1).a;
-            console.log(tok1)
-            let opt1={method: 'GET',headers: { 'Content-Type': 'application/json','Authorization': tok1}};
+            console.log(this.formin,'|||',this.shipr1);
+            let opt1={method: 'GET',headers: { 'Content-Type': 'application/json','Authorization': this.shipr1}};
             let url1="https://apiv2.shiprocket.in/v1/external/courier/serviceability/?";
             await fetch(url1+ new URLSearchParams(this.formin),opt1).then((v) => v.json())
             .then((v) => {
@@ -74,15 +82,7 @@
 //     .then(console.log)
 
 // {"md":"S","cgm":1000,"o_pin":110062,"d_pin":272152,"ss":'Delivered'}
-class Delhivery{
-  constructor(pickup_postcode, delivery_postcode, weight,mode) {
-    this.o_pin=pickup_postcode;
-    this.d_pin=delivery_postcode;
-    this.md=(mode=='Air'?'E':'S');
-    this.cgm=weight*1000; // gram
-    this.ss='Delivered';
-  }
-}
+
     
 
         //    async calpc(){
