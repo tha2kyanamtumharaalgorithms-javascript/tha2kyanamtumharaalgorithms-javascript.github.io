@@ -53,22 +53,50 @@ resolve();
     // pbar1.style.display='none';
     let link1 = document.getElementById(mth);
     let txt=link1.innerText;
-    link1.href = dfile(excsv1, 'text/csv;encoding:utf-8')
-    link1.download = txt+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
+    // link1.href = dfile(excsv1, 'text/csv;encoding:utf-8')
+    // link1.download = txt+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
     link1.removeAttribute("onclick");
     link1.classList.remove("w3-blue");
     link1.classList.remove("w3-hover-purple");
     link1.style.color='blue';
-    link1.click();
+    // link1.click();
     // window.open(link1.href);
+    let nm=txt+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
+    downloadBlob(excsv1, nm, 'text/csv;charset=utf-8;')
 
     }).catch((err)=>console.log(err))
 }
 
-// dfile(csv, 'text/csv;charset=utf-8;')
-function dfile(content, contentType) {
-    return URL.createObjectURL(new Blob([content], { type: contentType }))
+function downloadBlob(content, filename, contentType) {
+    let blobx = new Blob([content], { type: contentType });
+    let urlx = URL.createObjectURL(blobx);
+    // let pomx = document.createElement('a');
+    // pomx.href = urlx;
+    // pomx.setAttribute('download', filename);
+    // pomx.click();
+    new Promise(async(resolve, reject)=>{
+        let iframe = document.createElement("iframe");  document.body.appendChild(iframe);
+        let doc=iframe.contentWindow.document; 
+        doc.write(`<a id="link55" href="${urlx}" download="${filename}"></a>`);
+        doc.getElementById("link55").click();
+        resolve(iframe);
+        }).then((i) =>i.remove())
+    // dfile1(urlx,filename)
   }
+  
+  function dfile1(link,name){
+    new Promise(async(resolve, reject)=>{
+    let iframe = document.createElement("iframe");  document.body.appendChild(iframe);
+    let doc=iframe.contentWindow.document; 
+    doc.write(`<a id="link55" href="${link}" download="${name}"></a>`);
+    doc.getElementById("link55").click();
+    resolve(iframe);
+    }).then((i) =>i.remove())
+    }
+// dfile(csv, 'text/csv;charset=utf-8;')
+// function dfile(content, contentType) {
+//     return URL.createObjectURL(new Blob([content], { type: contentType }))
+//   }
 
   
 

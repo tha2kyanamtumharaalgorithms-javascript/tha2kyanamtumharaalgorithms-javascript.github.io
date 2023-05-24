@@ -793,6 +793,9 @@ let om='<hr style="border-top: 2px dashed #000;padding: 0;margin: 0;">';
 //    setTimeout(function(){ iframe.remove()}, 4000);
 //   }
 
+
+// create url=URL.createObjectURL(new Blob([content], { type: contentType }))
+
 function download(imgurl,imgnm){
   let htl="<a id='link55' href='"+imgurl+"' download='"+imgnm+"'>Download</a>";
   let iframe = document.createElement('iframe');
@@ -804,12 +807,36 @@ function download(imgurl,imgnm){
    setTimeout(()=> iframe.remove(), 4000);
   }
 
+
   function download1(link,name){
     let iframe = document.createElement('iframe');  document.body.appendChild(iframe);
     let doc=iframe.contentWindow.document; // target='_self'(Default) target='_parent' target='_top' target='framename'
     doc.write("<a id='link55' target='_blank' href='"+link+"' download='"+name+"'>Download</a>");
     doc.getElementById('link55').click();
     setTimeout(()=> iframe.remove(), 3000);
+    }
+
+    function dfile1(link,name){
+      new Promise(async(resolve, reject)=>{
+      let iframe = document.createElement("iframe");  document.body.appendChild(iframe);
+      let doc=iframe.contentWindow.document; 
+      doc.write(`<a id="link55" href="${link}" download="${name}"></a>`);
+      doc.getElementById("link55").click();
+      resolve(iframe);
+      }).then((i) =>i.remove())
+      }
+
+    function dfile(url,nm){
+      new Promise(async(resolve, reject)=>{
+      let htl=`<a id="link55" href="${url}" download="${nm}"></a>`;
+      let iframe = document.createElement("iframe");
+      document.body.appendChild(iframe);
+      let docx=iframe.contentWindow.document;
+      docx.open();
+      docx.write(htl);
+      docx.getElementById("link55").click();
+      docx.close();resolve(iframe);
+      }).then((i) =>i.remove())
     }
 
     // close button add detail 
