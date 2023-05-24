@@ -42,7 +42,8 @@
         methods: {
            async calpc(){
             console.log(this.formin);
-            let tok1=localStorage.shipr1;
+            let tok1=JSON.parse(localStorage.shipr1).a;
+            console.log(tok1)
             let opt1={method: 'GET',headers: { 'Content-Type': 'application/json','Authorization': tok1}};
             let url1="https://apiv2.shiprocket.in/v1/external/courier/serviceability/?";
             await fetch(url1+ new URLSearchParams(this.formin),opt1).then((v) => v.json())
