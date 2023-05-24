@@ -21,27 +21,28 @@ let db = new Dexie("party");db.version(2).stores({pt: "id,cn,mn1,mn2,*ods"});
       });
       document.getElementById('allmth').innerHTML+=b.join('');
     });
-
+let excsv1;
 async function excsv(mth) {
-let pbar1=document.getElementById('myBar1');
-let pbar=document.getElementById('myBar');
-pbar1.style.display='';
-let excsv="GSTIN/UIN of Recipient,Receiver Name,Invoice Number,Invoice date,Invoice Value,Place Of Supply,Reverse Charge,Applicable % of Tax Rate,Invoice Type,E-Commerce GSTIN,Rate,Taxable Value,Cess Amount\r\n";
+// let pbar1=document.getElementById('myBar1');
+// let pbar=document.getElementById('myBar');
+// pbar1.style.display='';
+excsv1="GSTIN/UIN of Recipient,Receiver Name,Invoice Number,Invoice date,Invoice Value,Place Of Supply,Reverse Charge,Applicable % of Tax Rate,Invoice Type,E-Commerce GSTIN,Rate,Taxable Value,Cess Amount\r\n";
 new Promise(async(resolve, reject)=>{
 await mthdb(mth);
-  let pkl=await oddb.od.count();let lp;let cunt=0;
+//   let pkl=await oddb.od.count();let lp;let cunt=0;
   await oddb.od.each(async(d)=>{
     console.log(d);
-    lp=((cunt+1)/pkl)*100;cunt++;
-    pbar.style.width = lp + '%';
-    pbar.innerHTML =  Math.round(lp) + '%';
-    let dt1=d.dt.split('/').join('-');
+    // lp=((cunt+1)/pkl)*100;cunt++;
+    // pbar.style.width = lp + '%';
+    // pbar.innerHTML =  Math.round(lp) + '%';
+    
     if (d.bulk&&d.tot) {
         await db.pt.get(Number(d.pt)).then((pt) => {
             if(pt.gst){
+            let dt1=d.dt.split('/').join('-');
             let gsts=pt.gst.slice(0,2);
             let poi=[pt.gst,d.cn,d.id,dt1,d.inv[1].toFixed(1),(gsts+'-'+stat[gsts]),"N","","Regular B2B","","5.0",d.inv[0].toFixed(1),"0.0\r\n"].toString();
-            excsv+=poi;
+            excsv1+=poi;
             }
         })
     }
@@ -49,17 +50,27 @@ await mthdb(mth);
 resolve();
 }).then(() => {
     console.log(mth);
-    pbar1.style.display='none';
+    // pbar1.style.display='none';
     let link1 = document.getElementById(mth);
-    link1.href ='data:text/csv;charset=utf-8,'+encodeURIComponent(excsv);
-    link1.download =link1.innerText+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
+    let txt=link1.innerText;
+    link1.href = dfile(excsv1, 'text/csv;encoding:utf-8')
+    link1.download = txt+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
     link1.removeAttribute("onclick");
     link1.classList.remove("w3-blue");
     link1.classList.remove("w3-hover-purple");
     link1.style.color='blue';
     link1.click();
+    // window.open(link1.href);
+
     }).catch((err)=>console.log(err))
 }
+
+// dfile(csv, 'text/csv;charset=utf-8;')
+function dfile(content, contentType) {
+    return URL.createObjectURL(new Blob([content], { type: contentType }))
+  }
+
+  
 
 // let fr9=document.getElementById('frm5');
 // let to9=document.getElementById('to5');

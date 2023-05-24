@@ -12,7 +12,7 @@ let from=Number(localStorage.fromod);let crrodno=Number(zxc);
       const shod2={"p":"2","g":selg,"od":{'Stock Not Updated from Order No':lastr}};
         couttot(from,selg).then(()=>{
           sendd(urli, shod2,'reset');
-        })
+        }).then(()=>{
         setTimeout(function(){
         tabletcsv('testTable',odcount+'('+from+'-'+zxc+')');
         localStorage.setItem('fromod',1+crrodno);
@@ -20,7 +20,7 @@ let from=Number(localStorage.fromod);let crrodno=Number(zxc);
         //document.getElementById('tre6').innerHTML='';
         //document.getElementById('p781').click();
         //stockm();
-        },4000)
+        },1000)})
     }
 }else{alert("No data to download ")}
 }

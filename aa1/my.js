@@ -901,6 +901,19 @@ iframe.contentWindow.document.close();
  setTimeout(function(){ iframe.remove()}, 5000);
 }
 
+function dfile(url,nm){
+  new Promise(async(resolve, reject)=>{
+  let htl=`<a id="link55" href="${url}" download="${nm}"></a>`;
+  let iframe = document.createElement("iframe");
+  document.body.appendChild(iframe);
+  let docx=iframe.contentWindow.document;
+  docx.open();
+  docx.write(htl);
+  docx.getElementById("link55").click();
+  docx.close();resolve(iframe);
+  }).then((i) =>i.remove())
+}
+
 // var moveItem = (from, to) => {
 //   const aul=document.getElementById('oderli');
 //   const items = [...aul.querySelectorAll('li')];
