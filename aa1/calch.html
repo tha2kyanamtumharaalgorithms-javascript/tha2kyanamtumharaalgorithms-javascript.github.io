@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="om.css">
+    <script src="vue.js"></script>
+</head>
+<body>
+
+<div id="app1" class="center">
+<div style="margin: 5px;overflow: auto;">
+    <b class="w3-large" style="padding: 8px; display: block;">Price Calculator</b>
+    <pc></pc>
+</div>
+</div>
+
+<script>// @click="formin.cod=Number(!formin.cod)"
+    const app1 = Vue.createApp({});
+
+        app1.component('pc', {
+        data() {
+            return {
+            formin:{pickup_postcode: 110062,delivery_postcode: 641607,weight:1,cod:0,mode:"Surface"},
+            }
+        },
+        template: `<div class="w3-center w3-row">
+            <input id="fin" v-model="formin.pickup_postcode" class="w3-input w3-col" type="number" placeholder="From" >
+            <input id="tin" v-model="formin.delivery_postcode" class="w3-input w3-col" type="number" placeholder="To" >
+        </div>
+        <div class="w3-row" style="margin: 5px 0;">
+            <input id="win" v-model="formin.weight" class="w3-input w3-col" type="number" placeholder="Weight in kg" >
+            <div class="w3-col w3-input" style="border: none;">
+            <label for="codin"><b> COD </b><input id="codin" :value="formin.cod" @input="formin.cod = Number(!formin.cod)" class="w3-check" type="checkbox"></label>
+            <label for="modin"><b> Air </b><input id="modin" v-model="formin.mode" true-value="Air" false-value="Surface" class="w3-check" type="checkbox"></label>
+        </div>
+    </div>
+        <button @click='calpc' class="w3-button w3-purple">Calculate</button><hr>
+        <div id="allcor"></div>`,
+        methods: {
+           async calpc(){
+            console.log(this.formin);
+            let opt1={method: 'GET',headers: { 'Content-Type': 'application/json','Authorization': localStorage.dl1}};
+            let url1="https://apiv2.shiprocket.in/v1/external/courier/serviceability/?";
+            await fetch(url+ new URLSearchParams(this.formin),option).then((v) => v.json())
+            .then((v) => {
+                let list="";
+                let d=v.data.available_courier_companies;
+                console.log(d);
+                d.forEach((v,i) => {
+                    console.log(v);
+                    list+=`<div class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><i>ETD:${v.etd}</i><i class="w3-right">${v.is_surface?'Surface':'Air'}</i></div><hr>`;
+                });
+                document.getElementById('allcor').innerHTML=list;
+            })
+            .catch((err)=>{console.log(err)})
+            },
+       
+        },
+        computed:{
+        }
+    });
+    app1.mount('#app1');
+
+// Promise.all([fetch(url1+new URLSearchParams(this.formin),opt1).then(res => {
+//     let d=res.json();
+//     return d}),
+//             fetch(url,{ method: 'POST', body: fmd2 }).then(res => res.json()),
+//             ])
+//     .then(console.log)
+
+// {"md":"S","cgm":1000,"o_pin":110062,"d_pin":272152,"ss":'Delivered'}
+class Delhivery{
+  constructor(pickup_postcode, delivery_postcode, weight,mode) {
+    this.o_pin=pickup_postcode;
+    this.d_pin=delivery_postcode;
+    this.md=(mode=='Air'?'E':'S');
+    this.cgm=weight*1000; // gram
+    this.ss='Delivered';
+  }
+}
+    
+
+        //    async calpc(){
+        //     console.log(this.formin);
+        //     let opt1={method: 'GET',headers: { 'Content-Type': 'application/json','Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ2ZW5kb3JfY29kZSI6Indvb2NvbW1lcmNlIiwic3ViIjozNTY5MzQyLCJpc3MiOiJodHRwczovL2FwaXYyLnNoaXByb2NrZXQuaW4vdjEvZXh0ZXJuYWwvYXV0aC9sb2dpbiIsImlhdCI6MTY4NDQwMDY5OCwiZXhwIjoxNjg1MjY0Njk4LCJuYmYiOjE2ODQ0MDA2OTgsImp0aSI6Im9saDhCdjBDQTBBQ0VQbHQifQ.c1RLUb1_xDg4HIRNMtTNzb9EDCGh7kjntx5JjU-7zzo'}};
+        //     let url1="https://apiv2.shiprocket.in/v1/external/courier/serviceability/?";
+        //     await fetch(url+ new URLSearchParams(this.formin),option).then((v) => v.json())
+        //     .then((v) => {
+        //         let list="";
+        //         let d=v.data.available_courier_companies;
+        //         console.log(d);
+        //         d.forEach((v,i) => {
+        //             console.log(v);
+        //             list+=`<div class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><i>ETD:${v.etd}</i><i class="w3-right">${v.is_surface?'Surface':'Air'}</i></div><hr>`;
+        //         });
+        //         document.getElementById('allcor').innerHTML=list;
+        //     })
+        //     .catch((err)=>{console.log(err)})
+        //     }
+       
+    
+
+    </script>
+</body>
+<style>
+    #allcor hr {margin: 5px;}
+    #allcor i{font-style: inherit;}
+    #allcor .w3-padding > div {margin-bottom: 5px;}
+    .center {max-width: 500px;margin: auto;}
+    .center .w3-input{border: 1px solid black;width:50%}
+    .center .w3-input::-webkit-outer-spin-button,
+    .center .w3-input::-webkit-inner-spin-button {-webkit-appearance: none;margin: 0;}
+</style>
+</html>
+
