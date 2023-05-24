@@ -44,19 +44,18 @@ let excsv="data:text/csv;charset=utf-8,GSTIN/UIN of Recipient,Receiver Name,Invo
             }
         })
     }
-});
+}).then(() => {
 console.log(mth);
 pbar1.style.display='none';
 let link1 = document.getElementById(mth);
-let txt=link1.innerText;
 link1.href = encodeURI(excsv);
-link1.download =txt+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
-link1.textContent = txt;
+link1.download =link1.innerText+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
 link1.removeAttribute("onclick");
 link1.classList.remove("w3-blue");
 link1.classList.remove("w3-hover-purple");
 link1.style.color='blue';
 link1.click();
+}).catch((err)=>console.log(err))
 }
 
 // let fr9=document.getElementById('frm5');
