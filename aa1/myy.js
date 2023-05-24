@@ -31,7 +31,7 @@ async function delod() {
  if(latsel.length){
   let r=latsel.pop();
   let odno=r.slice(3);
-  let text = "Want to delete? order No."+odno;
+  let text = document.querySelector('#oderli '+'#'+r).nextElementSibling.innerText+"\nWant to delete?";
   console.log('hdhjd',selg);
   if (confirm(text) == true) {
     await mthdb(selg.slice(-1)+odno.slice(0,3));
@@ -59,7 +59,7 @@ async function delod() {
     alert('error in del update fn-', error);
     console.log('error in del update fn-', error);
   });})
-  }
+  }else{for (let u in selod5) {document.getElementById(u).checked=false;}selod5={};}
 } else {alert('Bhaii, Pahle order select ker le !!')}}
 
 var pk8;var oldod;
@@ -989,7 +989,7 @@ function dismth() {
          }
     });
     // console.log(b);
-    document.getElementById('oderli').innerHTML+=b.reverse().join('');
+    document.getElementById('oderli').innerHTML+=b.join('');
   });
 }
 

@@ -979,7 +979,7 @@ async function pint(v) {
 }
 
 function unpin(){
-  // let sel=Object.keys(selod5);
+  let sel=Object.keys(selod5);
   // let cd='';
   // sel.forEach((fv,i)=>{
   //   cd+=(i+1)+'- '+document.querySelector('#oderli '+'#'+fv).nextElementSibling.innerText+'\n';

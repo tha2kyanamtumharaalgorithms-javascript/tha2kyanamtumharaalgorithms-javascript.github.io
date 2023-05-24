@@ -42,15 +42,15 @@
         methods: {
            async calpc(){
             console.log(this.formin);
-            let opt1={method: 'GET',headers: { 'Content-Type': 'application/json','Authorization': localStorage.dl1}};
+            let opt1={method: 'GET',headers: { 'Content-Type': 'application/json','Authorization': localStorage.shipr1}};
             let url1="https://apiv2.shiprocket.in/v1/external/courier/serviceability/?";
-            await fetch(url+ new URLSearchParams(this.formin),option).then((v) => v.json())
+            await fetch(url1+ new URLSearchParams(this.formin),opt1).then((v) => v.json())
             .then((v) => {
                 let list="";
                 let d=v.data.available_courier_companies;
                 console.log(d);
                 d.forEach((v,i) => {
-                    console.log(v);
+                    // console.log(v);
                     list+=`<div class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><i>ETD:${v.etd}</i><i class="w3-right">${v.is_surface?'Surface':'Air'}</i></div><hr>`;
                 });
                 document.getElementById('allcor').innerHTML=list;
