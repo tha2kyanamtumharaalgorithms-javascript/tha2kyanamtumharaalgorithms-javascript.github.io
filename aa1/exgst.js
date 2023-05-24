@@ -36,9 +36,11 @@ let excsv="data:text/csv;charset=utf-8,GSTIN/UIN of Recipient,Receiver Name,Invo
     pbar.innerHTML =  Math.round(lp) + '%';
     if (d.bulk&&d.tot) {
         await db.pt.get(Number(d.pt)).then((pt) => {
+            if(pt.gst){
             let gsts=pt.gst.slice(0,2);
             let poi=[pt.gst,d.cn,d.id,dt1,d.inv[1].toFixed(1),(gsts+'-'+stat[gsts]),"N","","Regular B2B","","5.0",d.inv[0].toFixed(1),"0.0\r\n"].toString();
             excsv+=poi;
+            }
         })
     }
 });
