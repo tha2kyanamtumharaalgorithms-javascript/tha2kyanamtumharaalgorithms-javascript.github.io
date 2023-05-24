@@ -38,10 +38,12 @@ await mthdb(mth);
             }
         })
     }
-})
+}).then(() => {
 // setTimeout(()=>{
     resolve()
-// },3000) 
+// },3000);
+})
+
 });
     await new Promise(async(resolve, reject)=>{
         let link1 = document.getElementById(mth);
@@ -57,9 +59,11 @@ await mthdb(mth);
         docx.getElementById("link55").click();
         docx.close();resolve(iframe);
         }).then((i) =>{
-            i.remove();
-           let u=URL.createObjectURL(new Blob([excsv1], { type: 'text/plain' }));
-           window.open(u);
+            setTimeout(()=> {
+                i.remove();
+                let u=URL.createObjectURL(new Blob([excsv1], { type: 'text/plain' }));
+                window.open(u);
+            }, 4000);
         });
 }
 
