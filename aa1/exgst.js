@@ -23,19 +23,11 @@ let db = new Dexie("party");db.version(2).stores({pt: "id,cn,mn1,mn2,*ods"});
     });
 let excsv1;
 async function excsv(mth) {
-// let pbar1=document.getElementById('myBar1');
-// let pbar=document.getElementById('myBar');
-// pbar1.style.display='';
 excsv1="GSTIN/UIN of Recipient,Receiver Name,Invoice Number,Invoice date,Invoice Value,Place Of Supply,Reverse Charge,Applicable % of Tax Rate,Invoice Type,E-Commerce GSTIN,Rate,Taxable Value,Cess Amount\r\n";
-new Promise(async(resolve, reject)=>{
+await new Promise(async(resolve, reject)=>{
 await mthdb(mth);
-//   let pkl=await oddb.od.count();let lp;let cunt=0;
   await oddb.od.each(async(d)=>{
     console.log(d);
-    // lp=((cunt+1)/pkl)*100;cunt++;
-    // pbar.style.width = lp + '%';
-    // pbar.innerHTML =  Math.round(lp) + '%';
-    
     if (d.bulk&&d.tot) {
         await db.pt.get(Number(d.pt)).then((pt) => {
             if(pt.gst){
@@ -47,48 +39,52 @@ await mthdb(mth);
         })
     }
 })
-resolve();
-}).then(() => {
-    setTimeout(()=>{
+// setTimeout(()=>{
+    resolve()
+// },3000) 
+});
+    await new Promise(async(resolve, reject)=>{
         let link1 = document.getElementById(mth);
         let txt=link1.innerText;
         let nm=txt+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
-        let blob = new Blob([excsv1],{type: 'text/csv;charset=utf-8;'});
-        let url = URL.createObjectURL(blob);
-        alert(excsv1);
-        dfile(url,nm);
-    },1000)
-    console.log(mth);
-    // // pbar1.style.display='none';
-    // let link1 = document.getElementById(mth);
-    // let txt=link1.innerText;
-   
-    // // link1.href = dfile(excsv1, 'text/csv;encoding:utf-8')
-    // // link1.download = txt+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
-    // link1.removeAttribute("onclick");
-    // link1.classList.remove("w3-blue");
-    // link1.classList.remove("w3-hover-purple");
-    // link1.style.color='blue';
-    // link1.click();
-    // window.open(link1.href);
-    // let nm=txt+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
-    // downloadBlob(excsv1, nm, 'text/csv;charset=utf-8;')
-
-    }).catch((err)=>console.log(err))
+        let url='data:text/csv;charset=UTF-8,'+encodeURI(excsv1);
+        let htl=`<a id="link55" href="${url}" download="${nm}"></a>`;
+        let iframe = document.createElement("iframe");
+        document.body.appendChild(iframe);
+        let docx=iframe.contentWindow.document;
+        docx.open();
+        docx.write(htl);
+        docx.getElementById("link55").click();
+        docx.close();resolve(iframe);
+        }).then((i) =>{
+            i.remove();
+           let u=URL.createObjectURL(new Blob([excsv1], { type: 'text/plain' }));
+           window.open(u);
+        });
 }
 
-function dfile(url,nm){
-    new Promise(async(resolve, reject)=>{
-    let htl=`<a id="link55" href="${url}" download="${nm}"></a>`;
-    let iframe = document.createElement("iframe");
-    document.body.appendChild(iframe);
-    let docx=iframe.contentWindow.document;
-    docx.open();
-    docx.write(htl);
-    docx.getElementById("link55").click();
-    docx.close();resolve(iframe);
-    }).then((i) =>i.remove())
-  }
+// async function gencsv(data,mth){
+//     let link1 = document.getElementById(mth);
+//     let txt=link1.innerText;
+//     let nm=txt+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
+//     let blob = new Blob([data],{type: 'text/csv;charset=utf-8;'});
+//     let url = URL.createObjectURL(blob);
+//     alert(excsv1);
+//    await dfile(url,nm);
+// }
+
+// async function dfile(url,nm){
+//    await new Promise(async(resolve, reject)=>{
+//     let htl=`<a id="link55" href="${url}" download="${nm}"></a>`;
+//     let iframe = document.createElement("iframe");
+//     document.body.appendChild(iframe);
+//     let docx=iframe.contentWindow.document;
+//     docx.open();
+//     docx.write(htl);
+//     docx.getElementById("link55").click();
+//     docx.close();resolve(iframe);
+//     }).then((i) =>i.remove())
+//   }
 
 // function downloadBlob(content, filename, contentType) {
 //     let blobx = new Blob([content], { type: contentType });
