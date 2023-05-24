@@ -26,7 +26,7 @@ async function excsv(mth) {
 let pbar1=document.getElementById('myBar1');
 let pbar=document.getElementById('myBar');
 pbar1.style.display='';
-let excsv="data:text/csv;charset=utf-8,GSTIN/UIN of Recipient,Receiver Name,Invoice Number,Invoice date,Invoice Value,Place Of Supply,Reverse Charge,Applicable % of Tax Rate,Invoice Type,E-Commerce GSTIN,Rate,Taxable Value,Cess Amount\r\n";
+let excsv="GSTIN/UIN of Recipient,Receiver Name,Invoice Number,Invoice date,Invoice Value,Place Of Supply,Reverse Charge,Applicable % of Tax Rate,Invoice Type,E-Commerce GSTIN,Rate,Taxable Value,Cess Amount\r\n";
 new Promise(async(resolve, reject)=>{
 await mthdb(mth);
   let pkl=await oddb.od.count();let lp;let cunt=0;
@@ -51,7 +51,7 @@ resolve();
     console.log(mth);
     pbar1.style.display='none';
     let link1 = document.getElementById(mth);
-    link1.href = encodeURIComponent(excsv);
+    link1.href ='data:text/csv;charset=utf-8,'+encodeURIComponent(excsv);
     link1.download =link1.innerText+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
     link1.removeAttribute("onclick");
     link1.classList.remove("w3-blue");
