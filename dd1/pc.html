@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<title>Yeloooo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="om.css">
+<script src="vue.js"></script>
+
+<body>
+
+<style>table, th, td {border: 1px solid #000;border-collapse: collapse;}
+#pc tbody th,#pc table td {font-weight:500}
+#pc tr th .w3-button {margin-right: 6vw;font-weight:500}
+</style>
+
+    <div id="price">
+       
+        <table id='pc' class='w3-table-all w3-centered'>
+            <thead>
+            <tr>
+                <th colspan="4">
+                <button onclick="history.back()" class='w3-button w3-red'>❮ Back</button>
+                <button @click='edit(this)' class='w3-button w3-blue'>Edit</button>
+                <button @click='save' class='w3-button w3-blue'>Save</button>
+                </th>
+            </tr>
+
+            <tr >
+                <th>Product</th>
+                <th>Sample</th>
+                <th>Bulk</th>
+                <th>Wt.</th>
+            </tr>
+            </thead>
+            <tr>
+                <th>Bio (36-42)</th>
+                <td @blur='pcs.pc.Bio[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.Bio[0]+'₹' }}</td>
+                <td @blur='pc.pc.Bio[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.Bio[0]+'₹' }}</td>
+                <th>{{ pc.wt.Bio+'kg' }}</th>
+            </tr>
+            <tr>
+                <th>Bio (44,46)</th>
+                <td @blur='pcs.pc.Bio[1] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.Bio[1]+'₹' }}</td>
+                <td @blur='pc.pc.Bio[1] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.Bio[1]+'₹' }}</td>
+                <th>{{ pc.wt.Bio+'kg' }}</th>
+            </tr>
+            <tr>
+                <th>NBio (36-42)</th>
+                <td @blur='pcs.pc.NBio[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.NBio[0]+'₹' }}</td>
+                <td @blur='pc.pc.NBio[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.NBio[0]+'₹' }}</td>
+                <th>{{ pc.wt.NBio+'kg' }}</th>
+            </tr>
+            <tr>
+                <th>NBio (44,46)</th>
+                <td @blur='pcs.pc.NBio[1] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.NBio[1]+'₹' }}</td>
+                <td @blur='pc.pc.NBio[1] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.NBio[1]+'₹' }}</td>
+                <th>{{ pc.wt.NBio+'kg' }}</th>
+            </tr>
+            <tr>
+                <th>NBio White (36-46)</th>
+                <td @blur='pcs.pc.NBio[2] = Number($event.target.innerText.match(/\d+/)[0])'>{{ '+'+pcs.pc.NBio[2]+'₹' }}</td>
+                <td @blur='pc.pc.NBio[2] = Number($event.target.innerText.match(/\d+/)[0])'>{{ '+'+pc.pc.NBio[2]+'₹' }}</td>
+                <th>{{ pc.wt.NBio+'kg' }}</th>
+            </tr>
+            <tr>
+                <th>OverS (S-XL)</th>
+                <td @blur='pcs.pc.OverS[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.OverS[0]+'₹' }}</td>
+                <td @blur='pc.pc.OverS[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.OverS[0]+'₹' }}</td>
+                <th>{{ pc.wt.OverS+'kg' }}</th>
+            </tr>
+            <tr>
+                <th>Polo (XS-XL)</th>
+                <td @blur='pcs.pc.Polo[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.Polo[0]+'₹' }}</td>
+                <td @blur='pc.pc.Polo[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.Polo[0]+'₹' }}</td>
+                <th>{{ pc.wt.Polo+'kg' }}</th>
+            </tr>
+            <tr>
+                <th>Polo (XXL)</th>
+                <td @blur='pcs.pc.Polo[1] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.Polo[1]+'₹' }}</td>
+                <td @blur='pc.pc.Polo[1] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.Polo[1]+'₹' }}</td>
+                <th>{{ pc.wt.Polo+'kg' }}</th>
+            </tr>
+            <tr>
+                <th>Hood (S-XL)</th>
+                <td @blur='pcs.pc.Hood[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.Hood[0]+'₹' }}</td>
+                <td @blur='pc.pc.Hood[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.Hood[0]+'₹' }}</td>
+                <th>{{ pc.wt.Hood+'kg' }}</th>
+            </tr>
+            <tr>
+                <th>Hood (XXL)</th>
+                <td @blur='pcs.pc.Hood[1] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.Hood[1]+'₹' }}</td>
+                <td @blur='pc.pc.Hood[1] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.Hood[1]+'₹' }}</td>
+                <th>{{ pc.wt.Hood+'kg' }}</th>
+            </tr>
+            <tr>
+                <th>Sweat (S-XL)</th>
+                <td @blur='pcs.pc.Sweat[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.Sweat[0]+'₹' }}</td>
+                <td @blur='pc.pc.Sweat[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.Sweat[0]+'₹' }}</td>
+                <th>{{ pc.wt.Sweat+'kg' }}</th>
+            </tr>
+            <tr>
+                <th>Sweat (XXL)</th>
+                <td @blur='pcs.pc.Sweat[1] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.Sweat[1]+'₹' }}</td>
+                <td @blur='pc.pc.Sweat[1] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.Sweat[1]+'₹' }}</td>
+                <th>{{ pc.wt.Sweat+'kg' }}</th>
+            </tr>
+            <tr>
+                <th>Kids-RN (20-34)</th>
+                <td @blur='pcs.pc.Kids[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.Kids[0]+'₹' }}</td>
+                <td @blur='pc.pc.Kids[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.Kids[0]+'₹' }}</td>
+                <th>{{ pc.wt.Kids+'kg' }}</th>
+            </tr>
+            <tr >
+                <th colspan="4" style="font-weight: 700;">MOQ For Bulk</th>
+                <!-- <th colspan="3">Sample Price</th> -->
+            </tr>
+            <tr>
+                <td colspan="4" @blur='pc.sqt = Number($event.target.innerText.match(/\d+/)[0])'>{{'>'+pc.sqt+' pcs'}}</td>
+                <!-- <td colspan="3" @blur='pc.sp = Number($event.target.innerText.match(/\d+/)[0])'>{{'+'+pc.sp+'₹/pc'}}</td> -->
+            </tr>
+        </table>
+
+       
+ </div>
+
+
+<div id='pk'>
+    <home></home>
+</div>
+
+
+
+<script type="module">
+if(!localStorage.pcs){localStorage.setItem('pcs','{ "pc": { "Bio": [180, 185], "NBio": [130, 135, 15], "OverS": [215], "Polo": [205, 215], "Hood": [305, 315], "Sweat": [205, 215], "Kids": [140] }, "wt": { "Bio": 0.20, "NBio": 0.20, "OverS": 0.25, "Polo": 0.25, "Hood": 0.55, "Sweat": 0.45, "Kids": 0.150 }}')}
+
+let pc=JSON.parse(localStorage.pc);
+let pcs=JSON.parse(localStorage.pcs);   
+const price = Vue.createApp({
+    data() {
+        return {
+            pc,pcs
+        }
+    },
+    methods: {
+    edit(e){
+        console.log(e);
+        document.querySelectorAll("#pc td").forEach((v)=>{
+            v.contentEditable=true;v.style.background="yellow";v.style.color='blue';
+        })
+    },
+    save(){
+        localStorage.setItem('pc',JSON.stringify(pc));
+        localStorage.setItem('pcs',JSON.stringify(pcs));
+        document.querySelectorAll("#pc td").forEach((v)=>{
+            v.contentEditable=false;v.style='';
+        })
+    }
+}
+
+}).mount('#price')
+    
+ /////////////////////////////////////////////////////
+    
+    // const Foo = { template: '<div>foo</div>' }  
+    
+const app1 = Vue.createApp({})
+    
+    app1.component('home', {
+    data() {
+        return {
+            list: 'Hi'
+        }
+    },
+    template: `<h1 @click='fgfh'>{{list}}</h1>`,
+    methods: {
+        fgfh(){
+        alert('hgh')
+        },
+   
+    }})
+    
+    app1.mount('#pk');
+
+    
+    
+    
+    
+    
+    
+    
+    
+    // export default {
+//   data() {
+//     return {
+//       obj: {
+//         nested: { count: 0 },
+//         arr: ['foo', 'bar']
+//       }
+//     }
+//   },
+//   methods: {
+//     mutateDeeply() {
+//       // these will work as expected.
+//       this.obj.nested.count++
+//       this.obj.arr.push('baz')
+//     }
+//   }
+// }
+
+    ///id='pc.Bio[0]'
+// localstoreg   save,read,append
+</script>
+
+</body>
+
+</html>
