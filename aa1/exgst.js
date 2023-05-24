@@ -51,7 +51,7 @@ resolve();
     console.log(mth);
     pbar1.style.display='none';
     let link1 = document.getElementById(mth);
-    link1.href = encodeURI(excsv);
+    link1.href = encodeURIComponent(excsv);
     link1.download =link1.innerText+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
     link1.removeAttribute("onclick");
     link1.classList.remove("w3-blue");
