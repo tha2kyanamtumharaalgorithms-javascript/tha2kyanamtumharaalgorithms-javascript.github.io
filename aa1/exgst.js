@@ -1,3 +1,4 @@
+
 let oddb;
 async function mthdb(m) {
 oddb = new Dexie(m);
@@ -29,7 +30,8 @@ await mthdb(mth);
   await oddb.od.each(async(d)=>{
     console.log(d);
     if (d.bulk&&d.tot) {
-        await db.pt.get(Number(d.pt)).then((pt) => {
+        console.log('1');
+        await db.pt.get(Number(d.pt)).then(async(pt) => {
             if(pt.gst){
             let dt1=d.dt.split('/').join('-');
             let gsts=pt.gst.slice(0,2);
@@ -38,21 +40,21 @@ await mthdb(mth);
             }
         })
     }
-}).then(() => {
-// setTimeout(()=>{
-    resolve()
-// },3000);
-})
-
 });
-    await new Promise(async(resolve, reject)=>{
+    await oddb.od.count().then((v) => {
+         setTimeout(()=>{console.log('2');resolve();},v*2);
+    });
+});
+await new Promise(async(resolve, reject)=>{
+        console.log('3');
         let link1 = document.getElementById(mth);
         let txt=link1.innerText;
         let nm=txt+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
         let url='data:text/csv;charset=UTF-8,'+encodeURI(excsv1);
         let htl=`<a id="link55" href="${url}" download="${nm}"></a>`;
         let iframe = document.createElement("iframe");
-        document.body.appendChild(iframe);
+        iframe.style.opacity='0';
+        document.head.appendChild(iframe);
         let docx=iframe.contentWindow.document;
         docx.open();
         docx.write(htl);
@@ -60,10 +62,10 @@ await mthdb(mth);
         docx.close();resolve(iframe);
         }).then((i) =>{
             setTimeout(()=> {
-                i.remove();
+                // i.remove();
                 let u=URL.createObjectURL(new Blob([excsv1], { type: 'text/plain' }));
-                window.open(u);
-            }, 4000);
+                // window.open(u);
+            }, 1000);
         });
 }
 
