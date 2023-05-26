@@ -24,16 +24,7 @@
         data() {
             return {
             formin:{pickup_postcode: 110062,delivery_postcode: 641607,weight:1,cod:0,mode:"Surface"},
-            shipr1: JSON.parse(localStorage.shipr1).a,
-            dl:class Delhivery{
-                constructor(pickup_postcode, delivery_postcode, weight,mode) {
-                    this.o_pin=pickup_postcode;
-                    this.d_pin=delivery_postcode;
-                    this.md=(mode=='Air'?'E':'S');
-                    this.cgm=weight*1000; // gram
-                    this.ss='Delivered';
-                }
-                },
+            shipr1: JSON.parse(localStorage.shipr1).a, 
             }
         },
         template: `<div class="w3-center w3-row">
@@ -47,32 +38,69 @@
             <label for="modin"><b> Air </b><input id="modin" v-model="formin.mode" true-value="Air" false-value="Surface" class="w3-check" type="checkbox"></label>
         </div>
     </div>
-        <button @click='calpc' class="w3-button w3-purple">Calculate</button><hr>
+        <button id="btnmy" @click='calpc' class="w3-button w3-purple">Calculate</button><hr>
         <div id="allcor"></div>`,
         methods: {
            async calpc(){
             console.log(this.formin,'|||',this.shipr1);
-            let opt1={method: 'GET',headers: { 'Content-Type': 'application/json','Authorization': this.shipr1}};
-            let url1="https://apiv2.shiprocket.in/v1/external/courier/serviceability/?";
-            await fetch(url1+ new URLSearchParams(this.formin),opt1).then((v) => v.json())
-            .then((v) => {
-                let list="";
-                let d=v.data.available_courier_companies;
-                console.log(d);
-                d.forEach((v,i) => {
-                    // console.log(v);
-                    list+=`<div class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><i>ETD:${v.etd}</i><i class="w3-right">${v.is_surface?'Surface':'Air'}</i></div><hr>`;
-                });
-                document.getElementById('allcor').innerHTML=list;
-            })
-            .catch((err)=>{console.log(err)})
+            document.getElementById('btnmy').disabled = true;
+            let dl1=new Delhivery(this.formin);
+            await Promise.allSettled([gosh(dl1),shiprocket(this)]);
             },
-       
         },
         computed:{
         }
     });
     app1.mount('#app1');
+
+async function shiprocket(mythis) {
+                let opt1={method: 'GET',headers: { 'Content-Type': 'application/json','Authorization': mythis.shipr1}};
+                let url1="https://apiv2.shiprocket.in/v1/external/courier/serviceability/?";
+                await fetch(url1+ new URLSearchParams(mythis.formin),opt1).then((v) => v.json())
+                .then((v) => {
+                let list="";
+                let d=v.data.available_courier_companies;
+                console.log(d);
+                d.forEach((v,i) => {
+                    // console.log(v);
+                    if (String(v.courier_name).includes("Blue Dart")) {
+                    list+=`<div class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><i>ETD:${v.etd}</i><i class="w3-right">${v.is_surface?'Surface':'Air'}</i></div><hr>`;
+                    }
+                });
+                document.getElementById('allcor').innerHTML=list;
+            })
+            .catch((err)=>{console.log(err)})
+            } 
+
+async function gosh(obj1) {
+let url='https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec?';
+// let obj1={"md":"S","cgm":1000,"o_pin":110062,"d_pin":272152,"ss":"Delivered"};
+fetch(url+new URLSearchParams(obj1),{ method: 'GET'})
+   .then(res => res.json())
+   .then((v)=>{
+    let list="";
+    console.log(v[0][0],v[1][0],v[2][0],v[3]);
+    list+=`<div class="w3-padding w3-blue"><div><b>${'DUSHIRTS01 SURFACE'}</b><b class="w3-right">${v[0][0].total_amount}₹</b></div><i>ETD:${''}</i><i class="w3-right">${''}</i></div><hr>`;
+    list+=`<div class="w3-padding w3-blue"><div><b>${'DUSHIRTSEXPRESS'}</b><b class="w3-right">${v[1][0].total_amount}₹</b></div><i>ETD:${''}</i><i class="w3-right">${''}</i></div><hr>`;
+    list+=`<div class="w3-padding w3-blue"><div><b>${'10KG DUSURFACE'}</b><b class="w3-right">${v[2][0].total_amount}₹</b></div><i>ETD:${''}</i><i class="w3-right">${''}</i></div><hr>`;
+for (let i in v[3]) {
+    // console.log(i,v[3][i])
+    if (String(i).includes("Delhivery")||String(i).includes("Gati")) {
+    list+=`<div class="w3-padding w3-green"><div><b>${i}</b><b class="w3-right">${v[3][i]["rates"]}₹</b></div><i>ETD: ${v[3][i]["tat"]+' / '+v[3][i]["avg_delivery_days"]}</i><i class="w3-right">${v[3][i]["mode_name"]}</i></div><hr>`;
+    }
+}
+document.getElementById('allcor').innerHTML+=list;document.getElementById('btnmy').disabled = false;
+   })
+}
+
+class Delhivery{
+    constructor(d) {
+        this.o_pin=d.pickup_postcode;
+        this.d_pin=d.delivery_postcode;
+        this.md=(d.mode=='Air'?'E':'S');
+        this.cgm=d.weight*1000; // gram
+        this.ss='Delivered';
+    }}
 
 // Promise.all([fetch(url1+new URLSearchParams(this.formin),opt1).then(res => {
 //     let d=res.json();
