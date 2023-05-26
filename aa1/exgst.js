@@ -1,4 +1,3 @@
-
 let oddb;
 async function mthdb(m) {
 oddb = new Dexie(m);
@@ -51,69 +50,18 @@ await new Promise(async(resolve, reject)=>{
         let txt=link1.innerText;
         let nm=txt+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
         let url='data:text/csv;charset=UTF-8,'+encodeURI(excsv1);
-        let htl=`<a id="link55" href="${url}" download="${nm}"></a>`;
         let iframe = document.createElement("iframe");
-        iframe.style.opacity='0';
+        // iframe.style.opacity='0';
         document.head.appendChild(iframe);
         let docx=iframe.contentWindow.document;
         docx.open();
-        docx.write(htl);
+        docx.write(`<a id="link55" href="${url}" download="${nm}"></a>`);
         docx.getElementById("link55").click();
-        docx.close();resolve(iframe);
-        }).then((i) =>{
-            setTimeout(()=> {
-                // i.remove();
-                let u=URL.createObjectURL(new Blob([excsv1], { type: 'text/plain' }));
-                // window.open(u);
-            }, 1000);
+        docx.close();resolve('');
+        setTimeout(()=> iframe.remove(), 1000);
         });
 }
 
-// async function gencsv(data,mth){
-//     let link1 = document.getElementById(mth);
-//     let txt=link1.innerText;
-//     let nm=txt+' '+(new Date().toLocaleTimeString("en-GB"))+'.csv';
-//     let blob = new Blob([data],{type: 'text/csv;charset=utf-8;'});
-//     let url = URL.createObjectURL(blob);
-//     alert(excsv1);
-//    await dfile(url,nm);
-// }
-
-// async function dfile(url,nm){
-//    await new Promise(async(resolve, reject)=>{
-//     let htl=`<a id="link55" href="${url}" download="${nm}"></a>`;
-//     let iframe = document.createElement("iframe");
-//     document.body.appendChild(iframe);
-//     let docx=iframe.contentWindow.document;
-//     docx.open();
-//     docx.write(htl);
-//     docx.getElementById("link55").click();
-//     docx.close();resolve(iframe);
-//     }).then((i) =>i.remove())
-//   }
-
-// function downloadBlob(content, filename, contentType) {
-//     let blobx = new Blob([content], { type: contentType });
-//     let urlx = URL.createObjectURL(blobx);
-//     // let pomx = document.createElement('a');
-//     // pomx.href = urlx;
-//     // pomx.setAttribute('download', filename);
-//     // pomx.click();
-//     new Promise(async(resolve, reject)=>{
-//         let iframe = document.createElement("iframe");document.body.appendChild(iframe);
-//         let docx=iframe.contentWindow.document; 
-//         docx.write(`<a id="link55" href="${urlx}" download="${filename}"></a>`);
-//         docx.getElementById("link55").click();
-//         resolve(iframe);
-//         }).then((i) =>i.remove())
-//     // dfile1(urlx,filename)
-//   }
-// dfile(csv, 'text/csv;charset=utf-8;')
-// function dfile(content, contentType) {
-//     return URL.createObjectURL(new Blob([content], { type: contentType }))
-//   }
-
-  
 
 // let fr9=document.getElementById('frm5');
 // let to9=document.getElementById('to5');
