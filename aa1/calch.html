@@ -39,7 +39,7 @@
         </div>
     </div>
         <button id="btnmy" @click='calpc' class="w3-button w3-purple">Calculate</button><hr>
-        <div id="allcor"></div>`,
+        <div id="allcor" style="display: grid;"></div>`,
         methods: {
            async calpc(){
             console.log(this.formin,'|||',this.shipr1);
@@ -47,6 +47,11 @@
             let dl1=new Delhivery(this.formin);
             await Promise.allSettled([gosh(dl1),shiprocket(this)]);
             },
+            async genod(id){
+                console.log(id);
+
+            },
+        
         },
         computed:{
         }
@@ -54,6 +59,7 @@
     app1.mount('#app1');
 
 async function shiprocket(mythis) {
+                let mydoc=document.getElementById("allcor");mydoc.innerHTML="";
                 let opt1={method: 'GET',headers: { 'Content-Type': 'application/json','Authorization': mythis.shipr1}};
                 let url1="https://apiv2.shiprocket.in/v1/external/courier/serviceability/?";
                 await fetch(url1+ new URLSearchParams(mythis.formin),opt1).then((v) => v.json())
@@ -67,7 +73,7 @@ async function shiprocket(mythis) {
                     list+=`<div class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><i>ETD:${v.etd}</i><i class="w3-right">${v.is_surface?'Surface':'Air'}</i></div><hr>`;
                     }
                 });
-                document.getElementById('allcor').innerHTML=list;
+                mydoc.innerHTML=list;
             })
             .catch((err)=>{console.log(err)})
             } 
@@ -80,16 +86,16 @@ fetch(url+new URLSearchParams(obj1),{ method: 'GET'})
    .then((v)=>{
     let list="";
     console.log(v[0][0],v[1][0],v[2][0],v[3]);
-    list+=`<div class="w3-padding w3-blue"><div><b>${'DUSHIRTS01 SURFACE'}</b><b class="w3-right">${v[0][0].total_amount}₹</b></div><i>ETD:${''}</i><i class="w3-right">${''}</i></div><hr>`;
-    list+=`<div class="w3-padding w3-blue"><div><b>${'DUSHIRTSEXPRESS'}</b><b class="w3-right">${v[1][0].total_amount}₹</b></div><i>ETD:${''}</i><i class="w3-right">${''}</i></div><hr>`;
-    list+=`<div class="w3-padding w3-blue"><div><b>${'10KG DUSURFACE'}</b><b class="w3-right">${v[2][0].total_amount}₹</b></div><i>ETD:${''}</i><i class="w3-right">${''}</i></div><hr>`;
-for (let i in v[3]) {
+    list+=`<a class="w3-padding w3-blue"><div><b>${'DUSHIRTS01 SURFACE'}</b><b class="w3-right">${v[0][0].total_amount}₹</b></div><i>ETD:${''}</i><i class="w3-right">${''}</i></a><hr>`;
+    list+=`<a onclick="genod('dl1')" class="w3-padding w3-blue"><div><b>${'DUSHIRTSEXPRESS'}</b><b class="w3-right">${v[1][0].total_amount}₹</b></div><i>ETD:${''}</i><i class="w3-right">${''}</i></a><hr>`;
+    list+=`<a class="w3-padding w3-blue"><div><b>${'10KG DUSURFACE'}</b><b class="w3-right">${v[2][0].total_amount}₹</b></div><i>ETD:${''}</i><i class="w3-right">${''}</i></a><hr>`;
+    for (let i in v[3]) {
     // console.log(i,v[3][i])
     if (String(i).includes("Delhivery")||String(i).includes("Gati")) {
     list+=`<div class="w3-padding w3-green"><div><b>${i}</b><b class="w3-right">${v[3][i]["rates"]}₹</b></div><i>ETD: ${v[3][i]["tat"]+' / '+v[3][i]["avg_delivery_days"]}</i><i class="w3-right">${v[3][i]["mode_name"]}</i></div><hr>`;
     }
 }
-document.getElementById('allcor').innerHTML+=list;document.getElementById('btnmy').disabled = false;
+    document.getElementById('allcor').innerHTML+=list;document.getElementById('btnmy').disabled = false;
    })
 }
 
