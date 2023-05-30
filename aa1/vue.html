@@ -19,12 +19,12 @@ then $vm.data.key
 <!-- shorthand -->
 <a :href="url"> ... </a>
 <a @click="doSomething">v-on:click="doSomething"</a>
+
 <a v-bind:[attributeName]="url"> ... </a>
-<!-- shorthand -->
-<a :[attributeName]="url"> ... </a>
+<a :[attributeName]="url"> ... </a><!-- shorthand -->
+
 <a v-on:[eventName]="doSomething"> ... </a>
-<!-- shorthand -->
-<a @[eventName]="doSomething">
+<a @[eventName]="doSomething"><!-- shorthand -->
 
 <form @submit.prevent="onSubmit">...</form>
 
@@ -202,6 +202,7 @@ methods: {
     if (event) {
         event.preventDefault();
       alert(event.target.tagName)
+      alert(event.target.value)
     }
   }
 }

@@ -17,8 +17,18 @@
 </div>
 </div>
 
-<script>// @click="formin.cod=Number(!formin.cod)"
-    const app1 = Vue.createApp({});
+<script>// @click="formin.cod=Number(!formin.cod)"             <label for="codin"><b> COD </b><input id="codin" :value="formin.cod" @input="formin.cod = Number(!formin.cod)" class="w3-check" type="checkbox"></label>
+// 
+const app1 = Vue.createApp({
+    data() {
+      return {
+      };
+    },
+    methods: {
+    },
+    computed:{
+    },
+  });
 
         app1.component('pc', {
         data() {
@@ -28,13 +38,17 @@
             }
         },
         template: `<div class="w3-center w3-row">
-            <input id="fin" v-model="formin.pickup_postcode" class="w3-input w3-col" type="number" placeholder="From" >
-            <input id="tin" v-model="formin.delivery_postcode" class="w3-input w3-col" type="number" placeholder="To" >
+            <input id="fin" v-model.number="formin.pickup_postcode" @input="getcity" class="w3-input w3-col" list="suggestions" type="search" maxlength="6" placeholder="From" >
+           <datalist id="suggestions">
+               <option value="110062"/>
+               <option value="641607"/>
+            </datalist>
+            <input id="tin" v-model.number="formin.delivery_postcode" @input="getcity($event)" class="w3-input w3-col" type="search" maxlength="6" placeholder="To" >
         </div>
         <div class="w3-row" style="margin: 5px 0;">
-            <input id="win" v-model="formin.weight" class="w3-input w3-col" type="number" placeholder="Weight in kg" >
-            <div class="w3-col w3-input" style="border: none;">
-            <label for="codin"><b> COD </b><input id="codin" :value="formin.cod" @input="formin.cod = Number(!formin.cod)" class="w3-check" type="checkbox"></label>
+            <input id="win" v-model.number="formin.weight" class="w3-input w3-col" style="width:100px" type="search" placeholder="Weight in kg">
+            <i class="w3-col" style="width:25px;margin:15px 10px 0 2px"> Kg </i>
+            <div class="w3-rest w3-input" style="border: none;">
             <label for="modin"><b> Air </b><input id="modin" v-model="formin.mode" true-value="Air" false-value="Surface" class="w3-check" type="checkbox"></label>
         </div>
     </div>
@@ -47,9 +61,14 @@
             let dl1=new Delhivery(this.formin);
             await Promise.allSettled([gosh(dl1),shiprocket(this)]);
             },
-            async genod(id){
-                console.log(id);
-
+            async getcity(v){
+                let d=v.target.value;
+                // console.log(d);
+                if (d.length==6) {
+                    console.log('get',d);
+                let url="https://api.rocketbox.in/api/common/get_location_from_pincode?format=json&pincode="+d+"&callback=getpin";
+                    loadScript(url);
+                } 
             },
         
         },
@@ -107,6 +126,20 @@ class Delhivery{
         this.cgm=d.weight*1000; // gram
         this.ss='Delivered';
     }}
+
+function loadScript(src) {
+  return new Promise(function(resolve, reject) {
+    let script = document.createElement('script');
+    script.src = src;
+    script.onload = () => resolve(script);
+    script.onerror = () => reject(new Error(`Script load error for ${src}`));
+    document.head.append(script);
+  });
+}
+
+function getpin(v) {
+    console.log(v)
+}
 
 // Promise.all([fetch(url1+new URLSearchParams(this.formin),opt1).then(res => {
 //     let d=res.json();
