@@ -10,8 +10,8 @@ let from=Number(localStorage.fromod);let crrodno=Number(zxc);
       // {p:0,g:'odt',od:{}};
       let lastr=date1+','+(1+crrodno);
       const shod2={"p":"2","g":selg,"od":{'Stock Not Updated from Order No':lastr}};
-        couttot(from,selg).then(()=>{
-          sendd(urli, shod2,'reset');
+        couttot(from,selg).then(async()=>{
+          await sendd(urli, shod2,'reset');
         }).then(()=>{
         setTimeout(function(){
         tabletcsv('testTable',odcount+'('+from+'-'+zxc+')');
@@ -72,7 +72,8 @@ Hood:['Non Zipper Hoodie, S-XL','Non Zipper Hoodie, XXL'],
 OverS:['O/S Drop-shoulder R-neck, S-XXL'],
 Polo:['Polo neck, XS-XL','Polo neck, XXL'],
 Sweat:['Sweatshirt, S-XL','Sweatshirt, XXL'],
-Kids:['Kids R-neck, 20"-34"']}
+Kids:['Kids R-neck, 20"-34"']};
+document.getElementById('cor1').setAttribute("onclick","getcor('u')");
   pk8=Number(tp.id.slice(1));// order id b34
   let cnv=document.getElementById('s'+pk8).tabIndex;
   
@@ -148,12 +149,115 @@ let event = new Event('input', {'bubbles': true,'cancelable': true});
 v.dispatchEvent(event);
 }}
 
-async function updateod() {
-//  if (selg=='inst') {
-//   viewtotal();saveinst(0);
-//  setTimeout(()=>{document.getElementById("instb").click()},100); 
-//  }else{
-viewtotal();
+async function creatod() {
+  return new Promise(async(rez) => {
+  let gd =document.getElementById("gsel").value;
+ await viewtotal();
+  let ctcn=(Number(zxc)+1);
+  let odid=Number(date1+ctcn);
+  let instgh=document.getElementById('instock');
+  if (instgh.checked) {
+   await saveinst(1);instgh.click();instgh.checked=0;
+  }else {
+    // let ptd={id:'a',cn:'',mn1:'',mn2:'',gst:'',add:'',ods:['as102','as33','ak508']};
+    // zc(ptd,'hiii76868iiii');
+    zsr.id = odid;
+    zsr.cn = document.getElementById('u13').innerText;
+    zsr.tot = Number(total);
+    zsr.bulk = Number(document.getElementById('bulkc').checked);
+    zsr.dt= date.split(' ').join('/');
+    zsr.it = od;
+    zsr.inv=billinv;
+    zsr.tch=othch[0];
+    zsr.och=othch[1];
+    zsr.dis=othch[2];
+
+   let jkl=document.querySelectorAll('#ctm9 tr');
+    if (jkl.length) {
+      let cods=[];
+      jkl.forEach((v)=>{
+        let pi=(v.innerText).split('\t');let pz1=Number(pi[1].trim());let pz2=Number(pi[2].trim());
+        if (pz2) {
+        cods.push([v.dataset.p,pz1,pz2]);
+        zsr.inv[0]+=(pz1*pz2);
+        zsr.inv[1]+=(pz1*pz2)+((pz1*pz2)*0.05);zsr.tot+=pz2;
+        zsr.bulk=1;document.getElementById('bulkc').checked=1;
+        }
+        v.remove();
+      });
+      zsr.c=cods;
+      console.log(cods);
+    }
+
+    let shod0={};
+      let oldid=ptd.id;
+      let odno=gd.slice(-1)+odid; // s30424
+      ptd.id=ptd.id||genid(ptcounter(),1);
+      //genlink(genid(ptd.id,3),ptd.cn);
+      if(document.getElementById('bulkc').checked){
+      ptd.ods.push(odno);
+     
+        await bulkdb.bk.add({...zsr,"pt":ptd});
+      
+    }
+       console.log(ptd);
+       if(!oldid) {
+        // save party details
+          await db.pt.add(ptd);
+        
+       }else{
+      //  in case key is not found, put() would create a new object while update() wont change anything.
+      //  The returned Promise will NOT fail if key was not found but resolve with value 0 instead of 1.
+        // update party details
+          await db.pt.update(oldid, ptd);
+        
+       }
+       zsr.pt=ptd.id;
+       shod0={ "p": "0", "g": gd, "od": { ...zsr, "pc":{...odprice}},ptd };
+      //  zc(window,'hiiiiiii');
+     // }else{shod0={ "p": "0", "g": gd, "od": { ...zsr, "pc":{...odprice}}};}
+      // let st = new Localbase('st');
+      //await st.collection(gd).add(shod0.od, 'od' + (Number(zxc)+1)).then((res) => {
+        await mthdb(gd.slice(-1)+date1);
+        await oddb.od.add(shod0.od,ctcn).then((res) => {
+        console.log(res, 'added');
+        selgo(gd);//  pinloc
+        let paz = JSON.parse(pinloc);
+        paz['ods' + shod0.od.id] = 'Pending';
+        selpin(gd);//pinz
+        localStorage.setItem(pinz, JSON.stringify(paz));
+      }).catch((error) => {
+        console.log('error add order fn-', error);
+        alert('error in add order fn-', error);
+      });
+      await sendd(urli,shod0,'new order');
+  
+  let html33=document.getElementById("html33");
+  html33.style.width = '455px';
+  await html2canvas(html33,
+    {
+      allowTaint: true,
+      useCORS: true
+    }).then(function (canvas) {
+
+      shod0.total=total;shod0.pctt=pctt;shod0.pcwt=pcwt;
+     let txtcn=shod0.od.id+' '+shod0.od.cn;let imgcn=canvas.toDataURL();
+     let imglastod = {};imglastod['cn'] =txtcn; imglastod['im5'] = imgcn;
+      document.getElementById('lastodimg').src = imgcn;
+      document.getElementById('lastodcn').innerHTML = txtcn;
+      tt5=imglastod;
+      localStorage.setItem('imglastod', JSON.stringify(imglastod));
+      newc();html33.style.width ='';
+      localStorage.clickcount=ctcn; zxc=ctcn;
+      rez(shod0);
+  });
+  }
+})
+}
+
+async function updateod(myz) {
+ return new Promise(async(rez) => {
+await viewtotal();
 zsr.id = pk8;
 zsr.cn = document.getElementById('u13').innerText.replace(/\s+/g, ' ').trim();
 zsr.tot = Number(total);
@@ -187,43 +291,43 @@ if(document.getElementById('bulkc').checked){
   ptd.ods.push(selg.slice(-1)+pk8);
   let uniq=[...new Set(ptd.ods)];
   ptd.ods=uniq;
-  (async()=> {
+  
     await bulkdb.bk.put({...zsr,"pt":ptd},zsr.id);
-   })();
+  
 }else{
   // let yu=ptd.ods.indexOf(selg.slice(-1)+id55);
   if(yu>(-1)){
     ptd.ods.splice(yu, 1);
-    (async()=> {
+    
       await bulkdb.bk.put({...zsr,"pt":ptd},zsr.id);
-     })();
+    
   }
 }
-(async()=> {
+
   await db.pt.update(ptd.id, ptd);
- })();
+
 
 const gsel=document.getElementById("gsel").value;
 let shod1={};
 if(!(selg==gsel)){
-  (async () => {
   for (let u in selod5) {document.getElementById(u).checked=false;};
    selod5={};selod5[pk8]=pk8;unpin(1);selod5={}; // order id pk8=od34
    //document.querySelector("#oderli #"+pk8).parentElement.remove();
    shod1={"p":"4","g":selg,"gl":gsel,"od":{...zsr, "pc":{...odprice}}};
   await moveod(selg,gsel,'ods'+pk8);
-})();
+
 }
 
  // alert('g normal')
 shod1={"p":"1","g":gsel,"od":{...zsr, "pc":{...odprice}},ptd};
-sendd(urli,shod1,'update order');
+await sendd(urli,shod1,'update order');
 
 // let st = new Localbase('st');
 // st.collection(selg).doc('od'+pk8).set(shod1.od)
 await mthdb(selg.slice(-1)+String(pk8).slice(0,3));
 await oddb.od.put(shod1.od,pk8)
- .then(response => {
+ .then(() => {
+  shod1.total=total;shod1.pctt=pctt;shod1.pcwt=pcwt;
   let html33=document.getElementById("html33");
   html33.style.width='455px';
         html2canvas(html33,
@@ -246,13 +350,17 @@ await oddb.od.put(shod1.od,pk8)
 document.getElementById('btn_convert').style.display='';
 document.getElementById('upd5').style.display='none';
   }).then((v) => {
-    document.getElementById("p781").click();
+    if (myz!='u') {
+       document.getElementById("p781").click();
+    }
+    rez(shod1);
   })
   .catch(error => {
-    console.log('error in update od1 fn- ', error);
+    console.log('error in update od1 fn- ', error);rez(shod1);
     alert('error in update od1 fn- ', error);
    
   })
+});
 }
 
 //{p:4,g:'odt',gl:'odk',od:{id:34,first:"Jake",phone:"312-000-1212", last:"Newperson"}}; // move order from odt to odk
@@ -284,7 +392,7 @@ document.getElementById("instock").onclick=()=>{
   document.getElementById('cnm').classList.toggle("w3-show");
 }
 // in stock order 
-function saveinst(v) {
+async function saveinst(v) {
   let pkx={};
   // pkx.id = (Number(zxc)+1);
    //pkx.cn = document.getElementById('gsel').options[document.getElementById('gsel').selectedIndex].innerText;
@@ -292,7 +400,7 @@ function saveinst(v) {
    pkx.tot = Number(total);
    pkx.dt = date.split(' ').join('/');
    pkx.it = od;
-   (async () => {
+
     //  let st = new Localbase('st');
     
      if (v===0) {
@@ -306,7 +414,6 @@ function saveinst(v) {
     //  console.log('incv',v);
      await instdb.inst.put(pkx);
      await sendd(urli, { "p": "5", "g": "inst", "od": { ...pkx }},'in stock');
-   })();
   newc();
   if (v===0) {
     document.getElementById('btn_convert').style.display = '';
@@ -378,12 +485,6 @@ function pc(v,vx,a,b,c,d,e) { // v(type) a(36-42), b(44), c(46), d(32), e(34)
   }else{   }
 }
 
-// sms 
-// let sms='Hi bn, An update Transport charge aur Other charge ab se save hoga';
-// if (!localStorage.sms) {localStorage.setItem('sms',sms);alert(sms);}
-// else if((localStorage.sms!=sms)){
-// alert(sms);localStorage.setItem('sms',sms);
-// }
 
 // favicon set emoji
 if (localStorage.gr5) {
@@ -625,36 +726,36 @@ function sptd(v){
   ptd.gst=ptg.replace(/\s+/g, ' ').trim().toUpperCase();
   ptd.pin=pinc;
   ptd.add=pta;
- // if(selg&&cid[1]&&(v!=1)){
-  if(ptd.add&&cid&&(v!=1)){document.getElementById('ods'+cid).parentNode.style.color='';}
-  else if(cid&&(v!=1)){document.getElementById('ods'+cid).parentNode.style.color='#00f';}
- // ptd.ods.push(Number(localStorage.clickcount)+Number(ptcounter()));
- let vn = (ptg) ? (true && document.getElementById('q000')): true;
-
- if((cn && vn)||(ptg.length==2)){
-    console.log(ptd);
-    if (v==1) {gonext();} // save and next 
+  if (v!=2) {
+    if(ptd.add&&cid&&(v!=1)){document.getElementById('ods'+cid).parentNode.style.color='';}
+    else if(cid&&(v!=1)){document.getElementById('ods'+cid).parentNode.style.color='#00f';}
+   let vn = (ptg) ? (true && document.getElementById('q000')): true;
+  
+   if((cn && vn)||(ptg.length==2)){
+      console.log(ptd);
+      if (v==1) {gonext();} // save and next 
+      return true
+    }else{console.log(cn,ptg); alert('⚠️Something wroug! Check all details.');return false}
+  }else{
     return true
-  }else{console.log(cn,ptg); alert('⚠️Something wroug! Check all details.');return false}
+  }
+
 }
 
 // save party details and gen. id
-function svptd() {
+async function svptd() {
   let oldid=ptd.id;
   ptd.id=ptid||genid(ptcounter(),1);console.log('save party details',ptd);
   if(!oldid){
-    (async()=> { // save party details
+    // save party details
       await db.pt.add(ptd);
-     })();
   } else {
-    (async()=> { // update party details
+   // update party details
       await db.pt.update(oldid, ptd);
-     })();
   }
-  zc(ptd,'hiiiiiii');
-  sendd(urli,{ "p": "10", "g": 'ptds', "od": {},ptd},'Party Details ');
+  console.log(ptd,'hiiiiiii');
+  await sendd(urli,{ "p": "10", "g": 'ptds', "od": {},ptd},'Party Details ');
   selg||newocb();selg&&gr();
-  ptods=[];ptid=0;
   for (let u in selod5) {document.getElementById(u).checked=false;}
   newc2();
 }
@@ -685,28 +786,6 @@ function genid(v,i,b='a'){
   (i==3) ? [...btoa(btoa(b+id3+s))].reverse().join('') : '';
   return p5
 }
-//genlink(genid(ptd.id,3),ptd.cn);
-// async function genlink(id,cn) {
-//   // console.log(id);
-//   let url1=cn+', save this link and download all your bills here👇\n\n'+'https://www.ownknitted.com/bill#'+id;
-//     document.querySelector('.jkjxxx').addEventListener('click', async () => {
-//      let cin=document.querySelector('#aa5 textarea');
-//      cin.value=url1;
-//      cin.select();
-//      cin.setSelectionRange(0, 99999);
-//      navigator.clipboard.writeText(cin.value);
-
-//       //   const shareData = {
-//       //     title: 'Link',
-//       //     text: cn+', save this link and download all your bills here👇\n',
-//       //     url: 'https://.com/'+id
-//       //   }
-//       //   await navigator.share(shareData);
-
-//     });
-//   // return url1
-// }
-
 
 function copylink(){
  let cn=document.getElementById('incn').value;
@@ -773,70 +852,14 @@ let om='<hr style="border-top: 2px dashed #000;padding: 0;margin: 0;">';
     // document.getElementById('id01').scrollTo({top: 0, behavior: 'smooth'});
   }
 }
-// function download(link,name) {
-// let iframe = document.createElement("iframe");
-// iframe.style.display = 'none';
-// document.body.appendChild(iframe);
-// iframe.contentWindow.document.body.innerHTML="<a href='"+link+"' id='dlink' download='"+name+"'>Download</a>";
-// iframe.contentWindow.document.getElementById('dlink').click();
-// setTimeout(() => iframe.remove(), 800);
-// }
 
-// function download(imgurl,imgnm){
-//   let htl="<a id='link55' href='"+imgurl+"' download='"+imgnm+"'>hjhj</a>";
-//   let iframe = document.createElement('iframe');
-//   document.body.appendChild(iframe);
-//   iframe.contentWindow.document.open();
-//   iframe.contentWindow.document.write(htl);
-//   iframe.contentWindow.document.getElementById('link55').click();
-//   iframe.contentWindow.document.close();
-//    setTimeout(function(){ iframe.remove()}, 4000);
-//   }
-
-
-// create url=URL.createObjectURL(new Blob([content], { type: contentType }))
-
-function download(imgurl,imgnm){
-  let htl="<a id='link55' href='"+imgurl+"' download='"+imgnm+"'>Download</a>";
-  let iframe = document.createElement('iframe');
-  document.body.appendChild(iframe);let doc=iframe.contentWindow.document;
-  doc.open();
-  doc.write(htl);
-  doc.getElementById('link55').click();
-  doc.close();
-   setTimeout(()=> iframe.remove(), 4000);
-  }
-
-
-  function download1(link,name){
-    let iframe = document.createElement('iframe');  document.body.appendChild(iframe);
-    let doc=iframe.contentWindow.document; // target='_self'(Default) target='_parent' target='_top' target='framename'
-    doc.write("<a id='link55' target='_blank' href='"+link+"' download='"+name+"'>Download</a>");
-    doc.getElementById('link55').click();
-    setTimeout(()=> iframe.remove(), 3000);
-    }
-
-    function dfile1(link,name){
-      new Promise(async(resolve, reject)=>{
-      let iframe = document.createElement("iframe");  document.body.appendChild(iframe);
-      let doc=iframe.contentWindow.document; 
-      doc.write(`<a id="link55" href="${link}" download="${name}"></a>`);
-      doc.getElementById("link55").click();
-      resolve(iframe);
-      }).then((i) =>i.remove())
-      }
-
-    function dfile(url,nm){
-      new Promise(async(resolve, reject)=>{
-      let htl=`<a id="link55" href="${url}" download="${nm}"></a>`;
-      let iframe = document.createElement("iframe");
-      document.body.appendChild(iframe);
-      let docx=iframe.contentWindow.document;
-      docx.open();
-      docx.write(htl);
-      docx.getElementById("link55").click();
-      docx.close();resolve(iframe);
-      }).then((i) =>i.remove())
+  function download(link,name){
+    let iframe = document.createElement('iframe');
+    document.head.appendChild(iframe);
+    let docx=iframe.contentWindow.document;
+    docx.write("<a id='link55' target='_blank' href='"+link+"' download='"+name+"'>Download</a>");
+    docx.getElementById('link55').click();
+    setTimeout(()=> iframe.remove(), 1000);
     }
 
     // close button add detail 
@@ -987,19 +1010,7 @@ switch(v.p) {
     document.getElementById('z'+v.id).remove();
   });
 })
-
 }
-
-
-// async function putes(vb) {
-//   console.log('2',cuuid);
-//   cuuid[0].forEach(async(v)=>{ // for failed
-//     await erdb.err.put(v);
-//     console.log('again failed');
-//     document.getElementById('z'+v.id).remove();
-//   })
-// }
-
 
 // scroll
 function dismth() {
@@ -1081,6 +1092,155 @@ document.getElementById('alltab').onclick=function() {
   document.getElementById('cor1').style.display='';
 };
 
-async function getcor() {
-  console.log('HI')
+async function getcor(k) {
+console.log('HI');
+let pinl=ptd.pin.length;
+let pk=(pinl!=6)&&pinl>0;
+if ((pinl==0)||pk) {
+ let pin=prompt(pk?'Enter pincode ('+ptd.pin+')incorrect':'Enter pincode');
+ ptd.pin=pin.trim();
 }
+
+document.getElementById('alltab').style.display='';
+document.getElementById('cor1').style.display='none';
+document.getElementById('id01').style.display='block';
+console.log('my',ptd,od);
+getcor1();
+// if (k=='u') {
+//   // updateod('u').then((v) => {
+//     // console.log('updateod',v);
+//     getcor1();
+//   // })
+// }
+//  if (k=='c') {
+//   // creatod().then((v)=>{
+//     // console.log('creatod',v);
+//     getcor1();
+//   // })
+// }
+}
+
+// { "p": "0", "g": gd, "od": { ...zsr, "pc":{...odprice}},ptd };
+function getcor1(v) {
+  let pkj=document.getElementById('gstall');
+  pkj.style.display='';
+  document.getElementById('bnm7').style.display='none';
+  document.getElementById('p78').style.display='none';
+   let dlpc=new Delhivery(ptd);//let dlgen=new Dl0(v);
+  pkj.innerHTML=`<div id="tre6" class="w3-container">
+                <p id="pinclick" class="w3-code"><input checked class="w3-radio" type="radio" name="from" value="110062"><b> 110062</b>
+                <input class="w3-radio" type="radio" name="from" value="641607"><b> 641607</b>
+                <b class="w3-code w3-large"> To: ${ptd.pin}</b>
+                </p>
+                <p class="w3-code"><b>weight: ${pcwt.toFixed(2)}kg</b></p>
+                <div id="allcor" style="display: grid;"><p class="loading">.</p></div>
+                </div><div class="w3-blue-gray"></div><br><br><br><br>`;
+
+  document.getElementById('pinclick').onclick=()=>{
+    console.log('hi');
+    let cv=document.querySelector('#pinclick input[type="radio"]:checked').value;
+    dlpc.o_pin=Number(cv);
+    console.log(cv,dlpc);
+    document.getElementById('allcor').innerHTML='<p class="loading"></p>';
+    gosh(dlpc);
+  };
+  gosh(dlpc);
+}
+
+  async function gosh(obj1) {
+    let url='https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec?';
+    fetch(url+new URLSearchParams(obj1),{ method: 'GET'})
+       .then(res => res.json())
+       .then((v)=>{
+        let list="";
+        console.log(v[0][0],v[1][0],v[2][0],v[3]);
+        list+=`<div id="dl0" class="w3-padding w3-light-blue"><div><b>${'DUSHIRTS01 SURFACE'}</b><b class="w3-right">${v[0][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this)" class="w3-hover-red">Save</a><i> ETD: ${' '}</i><a href="#" onclick="dlfn(this)" class="w3-hover-red">Book</a><i class="w3-right">${'surface'}</i></div>`;
+        list+=`<div id="dl1" class="w3-padding w3-light-blue"><div><b>${'DUSHIRTSEXPRESS'}</b><b class="w3-right">${v[1][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this)" class="w3-hover-red">Save</a><i> ETD: ${' '}</i><a href="#" onclick="dlfn(this)" class="w3-hover-red">Book</a><i class="w3-right">${'Air'}</i></div>`;
+        list+=`<div id="dl2" class="w3-padding w3-light-blue"><div><b>${'10KG DUSURFACE'}</b><b class="w3-right">${v[2][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this)" class="w3-hover-red">Save</a><i> ETD: ${' '}</i><a href="#" onclick="dlfn(this)" class="w3-hover-red">Book</a><i class="w3-right">${'surface'}</i></div>`;
+        for (let i in v[3]) {
+        // console.log(i,v[3][i])
+        if (String(i).includes("Delhivery")||String(i).includes("Gati")) {
+        list+=`<div class="w3-padding w3-lime"><div><b>${i}</b><b class="w3-right">${v[3][i]["rates"]}₹</b></div><i>ETD: ${v[3][i]["tat"]+' / '+v[3][i]["avg_delivery_days"]}</i><i class="w3-right">${v[3][i]["mode_name"]}</i></div>`;
+        }
+    }
+        document.getElementById('allcor').innerHTML=list;//document.getElementById('btnmy').disabled = false;
+       })
+    }
+
+class Delhivery{
+    constructor(d) {
+        this.o_pin=110062;
+        this.d_pin=Number(d.pin);
+        this.md='S';
+        this.cgm=Number((pcwt*1000).toFixed()); // gram
+        this.ss='Delivered';
+    }}
+
+class Dl0{
+  constructor(d) {
+  this.shipments=[{
+      add: d.ptd.add,
+      phone: d.ptd.mn1,
+      name: d.ptd.cn,
+      pin: Number(d.ptd.pin),
+      order: String(d.od.id),
+      weight: (d.pcwt*0.8*1000).toFixed(),   //  pcwt in gm
+      total_amount: d.pctt,
+      quantity: String(d.total),
+      payment_mode: 'Prepaid',
+      seller_name: 'OwnKnitted.com',
+      category_of_goods: 'Clothes',
+      shipment_length: 1,
+      shipment_width: 2,
+      shipment_height: 3,
+  }];
+  let cv=document.querySelector('#pinclick input[type="radio"]:checked').value;
+  this.pickup_location={name: (cv=='110062')?'ownknitted.com':'T ownknitted.com'};
+  }}
+
+  async function sptcor(id) {
+    let a=document.getElementById('pta').value;
+    let m=document.getElementById('ptm').value;
+    if(a&&m){
+      sptd(2)&&gr();
+      let myb=document.getElementById('cnm0');
+      myb.style.display='none';
+      document.getElementById('cnm2').style.display='';
+      document.getElementById('cnm3').style.display='';
+      await db.pt.update(ptid, ptd);
+    console.log(ptd,'hiiiiiii');
+    // await sendd(urli,{ "p": "10", "g": 'ptds', "od": {},ptd},'Party Details ');
+      // newc2();
+
+      document.getElementById(myb.name).click(); 
+    }else{
+      alert("Check!! Mobile no. & Address")
+    }
+  }
+
+  let dlid;
+  async function dlfn(v){
+    let pe=v.parentElement;
+    let my0=pe.querySelector('div b.w3-right').innerText.slice(0,-1);console.log(my0);
+   let intt=v.innerText;v.id=intt;dlid[pe.id]=Number(my0);
+   if((ptd.add=='')||(ptd.mn1=='')){
+    await db.pt.get(ptd.id).then((c)=>{
+      console.log('hi');
+    if((c.add=='')||(c.mn1=='')){
+      let v9 = (pk8) ? pk8 : (date1+(Number(localStorage.clickcount)+1));
+      goadd(c.id,Number(v9)); // goadd(3123131,3065);
+      document.getElementById('cnm0').style.display='';
+      document.getElementById('cnm0').name=intt;
+      document.getElementById('cnm2').style.display='none';
+      document.getElementById('cnm3').style.display='none';
+    }else{ptd=c;}});
+   }else{
+    let mytt;
+    if (intt=='Save') {
+      mytt='Order Saved';
+    } else {
+      mytt='Order Booked';
+    }
+    document.getElementById('allcor').innerHTML+='<h1>'+mytt+'</h1>';
+   }
+  }

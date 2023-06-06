@@ -87,9 +87,10 @@ async function shiprocket(mythis) {
                 let d=v.data.available_courier_companies;
                 console.log(d);
                 d.forEach((v,i) => {
-                    // console.log(v);
-                    if (String(v.courier_name).includes("Blue Dart")) {
-                    list+=`<div class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><i>ETD:${v.etd}</i><i class="w3-right">${v.is_surface?'Surface':'Air'}</i></div><hr>`;
+                    let cor=String(v.courier_name);
+                    console.log(cor)
+                    if (cor.includes("Blue Dart")||cor.includes("Delhivery")||cor.includes("Amazon")||cor.includes("DTDC")) {
+                    list+=`<div class="w3-padding w3-khaki w3-hover-purple"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><i>ETD:${v.etd}</i><i class="w3-right">${v.is_surface?'Surface':'Air'}</i></div><hr>`;
                     }
                 });
                 mydoc.innerHTML=list;

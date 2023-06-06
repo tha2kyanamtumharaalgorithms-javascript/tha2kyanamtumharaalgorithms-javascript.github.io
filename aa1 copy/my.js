@@ -213,7 +213,8 @@ function bulks() {
 // display all tab 
 // let bulk;
   let prc={};let bulkpc=JSON.parse(localStorage.pc);let sampc=JSON.parse(localStorage.pcs);
-  function viewtotal(){
+ async function viewtotal(){
+  await new Promise(async(rez) => {
    let sum = totqt.reduce((p, a) => p + a, 0);
     console.log(sum);
       if((sum>bulkpc.sqt)){
@@ -260,11 +261,13 @@ for (let d = 0; d < gf1; d++) {
   if(fhall==="1"){
     gf[d].style.display="none";
   } //console.log("gghgh",fhall);
- } tot();
+ } await tot();rez();
+})
 }
 //// Display Total table
 var pctt;var pcwt;let total;var odprice;let billinv=[];let othch;
 function tot(){
+  return  new Promise(async(rez) => {
 odprice={};billinv=[];
 let dtt=date.slice(0,6);
 othch=[];
@@ -335,7 +338,8 @@ let pctt4="<tr><td colspan='2'><b style='font-size: 12px; font-weight: 500;'>"+d
 document.querySelector('#tot table tbody').innerHTML=sd0+pctt0+pctt1+pctt2+pctt3+pctt4;
  //document.querySelector('#tot thead tr #u13').contentEditable=true;
  //document.querySelector('#tot thead tr #u23').innerText='Total-'+tote;
-}
+rez();
+})}
 
 // store in od var 
  function stork(t,c,s,v) { // type color size value
@@ -606,7 +610,7 @@ async function stockm() {
  document.getElementById('p78').style.display='block'
  document.getElementById('bnm7').style.display='none';
  newc2();
- await indb({"name":'ods'});
+ await indb({"name":"ods"});
  setTimeout(()=>{
   document.getElementById('i88').innerHTML="<style>#ghy99,#p781{color: #fff!important; background-color: #000!important;}</style>";
  },10);
