@@ -17,11 +17,11 @@
 </div>
 </div>
 
-<script>// @click="formin.cod=Number(!formin.cod)"             <label for="codin"><b> COD </b><input id="codin" :value="formin.cod" @input="formin.cod = Number(!formin.cod)" class="w3-check" type="checkbox"></label>
+<script>// @click="formin.cod=Number(!formin.cod)"<label for="codin"><b> COD </b><input id="codin" :value="formin.cod" @input="formin.cod = Number(!formin.cod)" class="w3-check" type="checkbox"></label>
 // 
 const app1 = Vue.createApp({
     data() {
-      return {
+    return {
       };
     },
     methods: {
@@ -87,9 +87,10 @@ async function shiprocket(mythis) {
                 let d=v.data.available_courier_companies;
                 console.log(d);
                 d.forEach((v,i) => {
-                    // console.log(v);
-                    if (String(v.courier_name).includes("Blue Dart")) {
-                    list+=`<div class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><i>ETD:${v.etd}</i><i class="w3-right">${v.is_surface?'Surface':'Air'}</i></div><hr>`;
+                    let cor=String(v.courier_name);
+                    console.log(cor)
+                    if (cor.includes("Blue Dart")||cor.includes("Delhivery")||cor.includes("Amazon")||cor.includes("DTDC")) {
+                    list+=`<div class="w3-padding w3-khaki w3-hover-purple"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><i>ETD:${v.etd}</i><i class="w3-right">${v.is_surface?'Surface':'Air'}</i></div><hr>`;
                     }
                 });
                 mydoc.innerHTML=list;
@@ -105,13 +106,13 @@ fetch(url+new URLSearchParams(obj1),{ method: 'GET'})
    .then((v)=>{
     let list="";
     console.log(v[0][0],v[1][0],v[2][0],v[3]);
-    list+=`<a class="w3-padding w3-blue"><div><b>${'DUSHIRTS01 SURFACE'}</b><b class="w3-right">${v[0][0].total_amount}₹</b></div><i>ETD:${''}</i><i class="w3-right">${''}</i></a><hr>`;
-    list+=`<a onclick="genod('dl1')" class="w3-padding w3-blue"><div><b>${'DUSHIRTSEXPRESS'}</b><b class="w3-right">${v[1][0].total_amount}₹</b></div><i>ETD:${''}</i><i class="w3-right">${''}</i></a><hr>`;
-    list+=`<a class="w3-padding w3-blue"><div><b>${'10KG DUSURFACE'}</b><b class="w3-right">${v[2][0].total_amount}₹</b></div><i>ETD:${''}</i><i class="w3-right">${''}</i></a><hr>`;
+    list+=`<a class="w3-padding w3-light-blue w3-hover-purple"><div><b>${'DUSHIRTS01 SURFACE'}</b><b class="w3-right">${v[0][0].total_amount}₹</b></div><i>ETD:${''}</i><i class="w3-right">${''}</i></a><hr>`;
+    list+=`<a onclick="genod('dl1')" class="w3-padding w3-light-blue w3-hover-purple"><div><b>${'DUSHIRTSEXPRESS'}</b><b class="w3-right">${v[1][0].total_amount}₹</b></div><i>ETD:${''}</i><i class="w3-right">${''}</i></a><hr>`;
+    list+=`<a class="w3-padding w3-light-blue w3-hover-purple"><div><b>${'10KG DUSURFACE'}</b><b class="w3-right">${v[2][0].total_amount}₹</b></div><i>ETD:${''}</i><i class="w3-right">${''}</i></a><hr>`;
     for (let i in v[3]) {
     // console.log(i,v[3][i])
     if (String(i).includes("Delhivery")||String(i).includes("Gati")) {
-    list+=`<div class="w3-padding w3-green"><div><b>${i}</b><b class="w3-right">${v[3][i]["rates"]}₹</b></div><i>ETD: ${v[3][i]["tat"]+' / '+v[3][i]["avg_delivery_days"]}</i><i class="w3-right">${v[3][i]["mode_name"]}</i></div><hr>`;
+    list+=`<div class="w3-padding w3-lime w3-hover-purple"><div><b>${i}</b><b class="w3-right">${v[3][i]["rates"]}₹</b></div><i>ETD: ${v[3][i]["tat"]+' / '+v[3][i]["avg_delivery_days"]}</i><i class="w3-right">${v[3][i]["mode_name"]}</i></div><hr>`;
     }
 }
     document.getElementById('allcor').innerHTML+=list;document.getElementById('btnmy').disabled = false;
@@ -140,37 +141,6 @@ function loadScript(src) {
 function getpin(v) {
     console.log(v)
 }
-
-// Promise.all([fetch(url1+new URLSearchParams(this.formin),opt1).then(res => {
-//     let d=res.json();
-//     return d}),
-//             fetch(url,{ method: 'POST', body: fmd2 }).then(res => res.json()),
-//             ])
-//     .then(console.log)
-
-// {"md":"S","cgm":1000,"o_pin":110062,"d_pin":272152,"ss":'Delivered'}
-
-    
-
-        //    async calpc(){
-        //     console.log(this.formin);
-        //     let opt1={method: 'GET',headers: { 'Content-Type': 'application/json','Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ2ZW5kb3JfY29kZSI6Indvb2NvbW1lcmNlIiwic3ViIjozNTY5MzQyLCJpc3MiOiJodHRwczovL2FwaXYyLnNoaXByb2NrZXQuaW4vdjEvZXh0ZXJuYWwvYXV0aC9sb2dpbiIsImlhdCI6MTY4NDQwMDY5OCwiZXhwIjoxNjg1MjY0Njk4LCJuYmYiOjE2ODQ0MDA2OTgsImp0aSI6Im9saDhCdjBDQTBBQ0VQbHQifQ.c1RLUb1_xDg4HIRNMtTNzb9EDCGh7kjntx5JjU-7zzo'}};
-        //     let url1="https://apiv2.shiprocket.in/v1/external/courier/serviceability/?";
-        //     await fetch(url+ new URLSearchParams(this.formin),option).then((v) => v.json())
-        //     .then((v) => {
-        //         let list="";
-        //         let d=v.data.available_courier_companies;
-        //         console.log(d);
-        //         d.forEach((v,i) => {
-        //             console.log(v);
-        //             list+=`<div class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><i>ETD:${v.etd}</i><i class="w3-right">${v.is_surface?'Surface':'Air'}</i></div><hr>`;
-        //         });
-        //         document.getElementById('allcor').innerHTML=list;
-        //     })
-        //     .catch((err)=>{console.log(err)})
-        //     }
-       
-    
 
     </script>
 </body>
