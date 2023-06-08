@@ -76,6 +76,7 @@ let db = new Dexie("party");db.version(2).stores({pt: "id,cn,mn1,mn2,*ods"});
 let erdb = new Dexie("erro");erdb.version(1).stores({err: "id"});
 let instdb = new Dexie("inst");instdb.version(1).stores({inst: "++id"});
 let bulkdb = new Dexie("bulk");bulkdb.version(1).stores({bk: "id"});
+let dldb = new Dexie("dldb");dldb.version(1).stores({dl: "id,st"});
 var selod5={};var zsr={};let selg;let odimgbob;
 //var om=document.getElementById("tb").innerHTML;
 var od={};var zxc=0; 

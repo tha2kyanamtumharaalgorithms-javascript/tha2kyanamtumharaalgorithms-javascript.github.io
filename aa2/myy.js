@@ -875,31 +875,37 @@ let om='<hr style="border-top: 2px dashed #000;padding: 0;margin: 0;">';
       document.querySelector("#gstall > div.w3-blue-gray").style.display='flex';
     }
     //
-    async function goadd(b,z) {
+    async function goadd(b,z,m) { //b(ptid),z(odid),m(ptd)object
       b=Number(b);
       ptid=0,ptods={};
       console.log(b,z);
-      // db.pt.where('cn').equals(b).each((v)=>{ 
+      let myfn=(v)=>{
+        gr();document.getElementById('id01').scrollTop=0;
+        document.querySelector("#gstall > div.w3-blue-gray").style.display='none';
+        document.getElementById('incn').value=v.cn;
+        document.getElementById('ptm').value=v.mn1;
+        document.getElementById('ptm1').value=v.mn2??'';
+          let k1=document.getElementById('ptg');
+          k1.value=v.gst??'';
+          (k1.value)?k1.dispatchEvent(new Event('input')):document.getElementById('ptst').innerText='State 07BBNPG0866M2Z7';
+          let k2=document.getElementById('ptp');
+          k2.value=v.pin??'';
+          (k2.value)?k2.dispatchEvent(new Event('input')):document.getElementById('ptplace').innerText='State, District';
+        document.getElementById('pta').value=v.add??'';
+        ptods=v.ods;ptid=v.id;cid=z;
+      }
+      if (!m) {
         await db.pt.get(b).then((v)=>{
           if (v) {
-            gr();document.getElementById('id01').scrollTop=0;
-            document.querySelector("#gstall > div.w3-blue-gray").style.display='none';
-            document.getElementById('incn').value=v.cn;
-            document.getElementById('ptm').value=v.mn1;
-            document.getElementById('ptm1').value=v.mn2??'';
-              let k1=document.getElementById('ptg');
-              k1.value=v.gst??'';
-              (k1.value)?k1.dispatchEvent(new Event('input')):document.getElementById('ptst').innerText='State 07BBNPG0866M2Z7';
-              let k2=document.getElementById('ptp');
-              k2.value=v.pin??'';
-              (k2.value)?k2.dispatchEvent(new Event('input')):document.getElementById('ptplace').innerText='State, District';
-            document.getElementById('pta').value=v.add??'';
-            ptods=v.ods;ptid=v.id;cid=z;
+            myfn(v);
             console.log(v,'b');
           }else{
             alert('Party details not found');
           }
-      })
+        });
+      }else{
+        myfn(m);
+      }
     }
 
 function addtbl(v,pc,qt,d) {
@@ -1092,41 +1098,34 @@ document.getElementById('alltab').onclick=function() {
   document.getElementById('cor1').style.display='';
 };
 
+let shipr1=JSON.parse(localStorage.shipr1).a;
+let dlid; // {"id":3065,"coid":55,"ch":286.7,"st":0};
 async function getcor(k) {
 console.log('HI');
-let pinl=ptd.pin.length;
+let pinl=ptd.pin.length;dlid={};
 let pk=(pinl!=6)&&pinl>0;
 if ((pinl==0)||pk) {
  let pin=prompt(pk?'Enter pincode ('+ptd.pin+')incorrect':'Enter pincode');
  ptd.pin=pin.trim();
 }
-
+let urlx='https://apiv2.shiprocket.in/v1/external/open/postcode/details?postcode='+ptd.pin;
+let optx={ method: 'GET',redirect: 'follow',headers: { 'Content-Type': 'application/json','Authorization': shipr1}};
+await fetch(urlx,optx)
+.then((v) =>v.json()).then((v) => {dlid.c=v.postcode_details.city;dlid.s=v.postcode_details.state;});
 document.getElementById('alltab').style.display='';
 document.getElementById('cor1').style.display='none';
 document.getElementById('id01').style.display='block';
-console.log('my',ptd,od);
-getcor1();
-// if (k=='u') {
-//   // updateod('u').then((v) => {
-//     // console.log('updateod',v);
-//     getcor1();
-//   // })
-// }
-//  if (k=='c') {
-//   // creatod().then((v)=>{
-//     // console.log('creatod',v);
-//     getcor1();
-//   // })
-// }
+getcor1();console.log(dlid);
 }
 
-// { "p": "0", "g": gd, "od": { ...zsr, "pc":{...odprice}},ptd };
 function getcor1(v) {
   let pkj=document.getElementById('gstall');
   pkj.style.display='';
   document.getElementById('bnm7').style.display='none';
   document.getElementById('p78').style.display='none';
-   let dlpc=new Delhivery(ptd);//let dlgen=new Dl0(v);
+   let dlpc=new Delhivery("S");//let dlgen=new Dl0(v);
+   let dlsh1=new shrkt("Surface");
+   let dlsh2=new shrkt("Air");
   pkj.innerHTML=`<div id="tre6" class="w3-container">
                 <p id="pinclick" class="w3-code"><input checked class="w3-radio" type="radio" name="from" value="110062"><b> 110062</b>
                 <input class="w3-radio" type="radio" name="from" value="641607"><b> 641607</b>
@@ -1138,65 +1137,115 @@ function getcor1(v) {
 
   document.getElementById('pinclick').onclick=()=>{
     console.log('hi');
-    let cv=document.querySelector('#pinclick input[type="radio"]:checked').value;
-    dlpc.o_pin=Number(cv);
+    let cv=Number(document.querySelector('#pinclick input[type="radio"]:checked').value);
+    dlpc.o_pin=cv;dlsh1.pickup_postcode=cv;dlsh2.pickup_postcode=cv;
     console.log(cv,dlpc);
     document.getElementById('allcor').innerHTML='<p class="loading"></p>';
-    gosh(dlpc);
+    gosh(dlpc,dlsh1,dlsh2);
   };
-  gosh(dlpc);
+  gosh(dlpc,dlsh1,dlsh2);
 }
-
-  async function gosh(obj1) {
-    let url='https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec?';
-    fetch(url+new URLSearchParams(obj1),{ method: 'GET'})
+let dlurl;
+  async function gosh(obj1,obj2,obj3) {
+    await Promise.allSettled([
+    await new Promise(rez=>{
+      let list="";let url="https://apiv2.shiprocket.in/v1/external/courier/serviceability/?";
+      fetch(url+new URLSearchParams(obj2),{ method: 'GET',headers: { 'Content-Type': 'application/json','Authorization': shipr1}})
+      .then(res => res.json())
+      .then((v) => {
+        let d=v.data.available_courier_companies;
+        console.log(d);
+        d.forEach((v,i) => {
+            let cor=String(v.courier_name);
+            // console.log(cor)
+        if (cor.includes("Blue Dart")||cor.includes("Delhivery")||cor.includes("Amazon")||cor.includes("DTDC")) {
+        list+=`<div tabindex="${v.courier_company_id}" class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><a href="#" onclick="dlfn(this)" class="w3-hover-red">Save</a><i> ETD: ${v.etd} </i><a href="#" onclick="dlfn(this)" class="w3-hover-red">Book</a><i class="w3-right">${v.is_surface?'Surface':'Air'}</i></div>`;
+            }
+        })
+        document.getElementById('allcor').innerHTML=list+document.getElementById('allcor').innerHTML;rez();
+      }).catch((v) => {console.log(v);alert(v)});
+    }),
+    await new Promise(rez=>{
+      let list="";dlurl=['h', 't', 't', 'p', 's', ':', '/', '/', 's', 'c', 'r', 'i', 'p', 't', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'c', 'o', 'm', '/', 'm', 'a', 'c', 'r', 'o', 's', '/', 's', '/', 'A', 'K', 'f', 'y', 'c', 'b', 'x', 'V', '9', 'v', 'G', '5', 'z', 'P', 'S', 'A', 'u', '2', 'x', 'F', 'A', 'Z', 'j', 'X', 'p', 'E', 'V', 'f', 'v', 'y', 'M', 'l', 'J', 'O', 'O', 'Z', 'g', 'b', 'x', 'v', 'G', 'a', 'f', 's', 'z', '6', '0', '9', 'Q', 'm', 'U', 'n', 'H', 'a', 'l', '2', 'H', 'W', 'N', 'C', 'c', '9', 'T', 'T', 'o', 'X', 'O', '1', '7', 'x', 'p', 'z', 'w', 'g', '/', 'e', 'x', 'e', 'c'].join('');
+     fetch(dlurl+"?"+new URLSearchParams(obj1),{ method: 'GET'})
        .then(res => res.json())
        .then((v)=>{
-        let list="";
         console.log(v[0][0],v[1][0],v[2][0],v[3]);
-        list+=`<div id="dl0" class="w3-padding w3-light-blue"><div><b>${'DUSHIRTS01 SURFACE'}</b><b class="w3-right">${v[0][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this)" class="w3-hover-red">Save</a><i> ETD: ${' '}</i><a href="#" onclick="dlfn(this)" class="w3-hover-red">Book</a><i class="w3-right">${'surface'}</i></div>`;
-        list+=`<div id="dl1" class="w3-padding w3-light-blue"><div><b>${'DUSHIRTSEXPRESS'}</b><b class="w3-right">${v[1][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this)" class="w3-hover-red">Save</a><i> ETD: ${' '}</i><a href="#" onclick="dlfn(this)" class="w3-hover-red">Book</a><i class="w3-right">${'Air'}</i></div>`;
-        list+=`<div id="dl2" class="w3-padding w3-light-blue"><div><b>${'10KG DUSURFACE'}</b><b class="w3-right">${v[2][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this)" class="w3-hover-red">Save</a><i> ETD: ${' '}</i><a href="#" onclick="dlfn(this)" class="w3-hover-red">Book</a><i class="w3-right">${'surface'}</i></div>`;
+        list+=`<div id="dl0" class="w3-padding w3-light-blue"><div><b>${'DUSHIRTS01 SURFACE'}</b><b class="w3-right">${v[0][0].total_amount}₹</b></div><a href="#" class="w3-hover-red">Save</a><i> ETD: ${' '} </i><a href="#" class="w3-hover-red">Book</a><i class="w3-right">${'Surface'}</i></div>`;
+        list+=`<div id="dl1" class="w3-padding w3-light-blue"><div><b>${'DUSHIRTSEXPRESS'}</b><b class="w3-right">${v[1][0].total_amount}₹</b></div><a href="#" class="w3-hover-red">Save</a><i> ETD: ${' '} </i><a href="#" class="w3-hover-red">Book</a><i class="w3-right">${'Air'}</i></div>`;
+        list+=`<div id="dl2" class="w3-padding w3-light-blue"><div><b>${'10KG DUSURFACE'}</b><b class="w3-right">${v[2][0].total_amount}₹</b></div><a href="#" class="w3-hover-red">Save</a><i> ETD: ${' '} </i><a href="#" class="w3-hover-red">Book</a><i class="w3-right">${'Surface'}</i></div>`;
         for (let i in v[3]) {
         // console.log(i,v[3][i])
         if (String(i).includes("Delhivery")||String(i).includes("Gati")) {
         list+=`<div class="w3-padding w3-lime"><div><b>${i}</b><b class="w3-right">${v[3][i]["rates"]}₹</b></div><i>ETD: ${v[3][i]["tat"]+' / '+v[3][i]["avg_delivery_days"]}</i><i class="w3-right">${v[3][i]["mode_name"]}</i></div>`;
         }
-    }
-        document.getElementById('allcor').innerHTML=list;//document.getElementById('btnmy').disabled = false;
-       })
+      }
+      document.getElementById('allcor').innerHTML+=list;rez();
+    }).catch((v) => {console.log(v);alert(v)});})
+  ]);
+       document.querySelector("#allcor .loading").remove();
     }
 
-class Delhivery{
-    constructor(d) {
-        this.o_pin=110062;
-        this.d_pin=Number(d.pin);
-        this.md='S';
-        this.cgm=Number((pcwt*1000).toFixed()); // gram
-        this.ss='Delivered';
-    }}
 
-class Dl0{
+function formatDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+class shbook{
+  constructor(id,c,s,u,pc,wt,cn,add,pin,mn1,mn2) {
+    this.order_id=id;
+    this.order_date=formatDate(new Date());
+    let cv=document.querySelector('#pinclick input[type="radio"]:checked').value;
+    this.pickup_location=(cv=='110062')?"ownknitted.com":"T ownknitted.com";
+    this.billing_customer_name=cn;
+    this.billing_last_name="";
+    this.billing_address=add;
+    this.billing_pincode=pin;
+    this.billing_city=c;
+    this.billing_state=s;
+    this.billing_country="India";
+    this.billing_email="sales.dushirts@gmail.com";
+    this.billing_phone=mn1;
+    mn2&&(this.billing_alternate_phone=mn2);
+    this.shipping_is_billing=true;
+    this.order_items=[{
+        "name": "Tshirts",
+        "sku": "OwnKnitted.com",
+        "units": u,
+        "selling_price": (pc/u).toFixed(2)
+      }];
+    this.payment_method="Prepaid";
+    this.sub_total=pc;
+    this.length=1;
+    this.breadth=2;
+    this.height=3;
+    this.weight=Number((wt*0.8).toFixed(2))
+  }
+}
+
+class shrkt{
   constructor(d) {
-  this.shipments=[{
-      add: d.ptd.add,
-      phone: d.ptd.mn1,
-      name: d.ptd.cn,
-      pin: Number(d.ptd.pin),
-      order: String(d.od.id),
-      weight: (d.pcwt*0.8*1000).toFixed(),   //  pcwt in gm
-      total_amount: d.pctt,
-      quantity: String(d.total),
-      payment_mode: 'Prepaid',
-      seller_name: 'OwnKnitted.com',
-      category_of_goods: 'Clothes',
-      shipment_length: 1,
-      shipment_width: 2,
-      shipment_height: 3,
-  }];
-  let cv=document.querySelector('#pinclick input[type="radio"]:checked').value;
-  this.pickup_location={name: (cv=='110062')?'ownknitted.com':'T ownknitted.com'};
-  }}
+    this.pickup_postcode=110062;
+    this.delivery_postcode=Number(ptd.pin);
+    this.cod=0;
+    this.weight=Number(pcwt.toFixed(2)); // kg
+    this.mode=d; // Surface or Air
+  }
+}
+class Delhivery{
+  constructor(d) {
+    this.o_pin=110062;
+    this.d_pin=Number(ptd.pin);
+    this.md=d; // "S"/"E"
+    this.cgm=Number((pcwt*1000).toFixed()); // gram
+    this.ss='Delivered';
+  }
+}
 
   async function sptcor(id) {
     let a=document.getElementById('pta').value;
@@ -1207,40 +1256,92 @@ class Dl0{
       myb.style.display='none';
       document.getElementById('cnm2').style.display='';
       document.getElementById('cnm3').style.display='';
-      await db.pt.update(ptid, ptd);
-    console.log(ptd,'hiiiiiii');
-    // await sendd(urli,{ "p": "10", "g": 'ptds', "od": {},ptd},'Party Details ');
-      // newc2();
-
+      // await db.pt.update(ptid, ptd);
+      console.log(ptd,'hiiiiiii');
       document.getElementById(myb.name).click(); 
     }else{
       alert("Check!! Mobile no. & Address")
     }
   }
 
-  let dlid;
   async function dlfn(v){
+    let v9 = (pk8) ? pk8 : Number((date1+(Number(localStorage.clickcount)+1)));
     let pe=v.parentElement;
     let my0=pe.querySelector('div b.w3-right').innerText.slice(0,-1);console.log(my0);
-   let intt=v.innerText;v.id=intt;dlid[pe.id]=Number(my0);
+   let intt=v.innerText;v.id=intt;
+   dlid={"id":v9,"coid":pe.tabIndex,"tch":Math.ceil(my0),...dlid};
+  
    if((ptd.add=='')||(ptd.mn1=='')){
-    await db.pt.get(ptd.id).then((c)=>{
       console.log('hi');
-    if((c.add=='')||(c.mn1=='')){
-      let v9 = (pk8) ? pk8 : (date1+(Number(localStorage.clickcount)+1));
-      goadd(c.id,Number(v9)); // goadd(3123131,3065);
+      goadd(0,v9,ptd); // goadd(3123131,3065);
       document.getElementById('cnm0').style.display='';
       document.getElementById('cnm0').name=intt;
       document.getElementById('cnm2').style.display='none';
       document.getElementById('cnm3').style.display='none';
-    }else{ptd=c;}});
    }else{
-    let mytt;
+    let mytt;document.getElementById('allcor').innerHTML='<p class="loading"></p>';
+    console.log('Now do..');
     if (intt=='Save') {
-      mytt='Order Saved';
-    } else {
-      mytt='Order Booked';
+      mytt='Order Saved';dlid.st=1;
+    } else {// { "p": "0", "g": gd, "od": { ...zsr, "pc":{...odprice}},ptd,total,pcwt,pctt };
+      mytt='Order Booked';dlid.st=0;
     }
-    document.getElementById('allcor').innerHTML+='<h1>'+mytt+'</h1>';
+    document.getElementById('tch').value=dlid.tch;
+    let x;
+    if (pk8) {
+      x=await updateod('u');
+    } else {
+      x=await creatod();
+    }
+    console.log(x);
+    let book=new shbook(x.od.id,dlid.c,dlid.s,x.od.tot,x.pctt,x.pcwt,x.ptd.cn,x.ptd.add,x.ptd.pin,x.ptd.mn1,x.ptd.mn2);
+    dlid.book=book;
+    console.log(dlid,book);
+    if(!dlid.st){
+      let fmd=new FormData();
+      fmd.append("myd", JSON.stringify(book));
+      fmd.append("t", "shp");
+      fmd.append("id", dlid.coid);
+      console.log(fmd);
+      await fetch(dlurl,{ method: 'POST', body: fmd }).then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! Status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        console.log(data);
+        dlid.order=data.a;
+        document.querySelector("#allcor .loading").remove();
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    }
+    await dldb.dl.put(dlid,dlid.id);
+
+    document.getElementById('tre6').innerHTML='<br><br><br><h1 style="text-align:center">'+mytt+'\n '+'AWB: '+dlid.order[1]+'</h1>';
    }
   }
+
+  // class Dl0{
+  //   constructor(d) {
+  //   this.shipments=[{
+  //       add: d.ptd.add,
+  //       phone: d.ptd.mn1,
+  //       name: d.ptd.cn,
+  //       pin: Number(d.ptd.pin),
+  //       order: String(d.od.id),
+  //       weight: (d.pcwt*0.8*1000).toFixed(),   //  pcwt in gm
+  //       total_amount: d.pctt,
+  //       quantity: String(d.total),
+  //       payment_mode: 'Prepaid',
+  //       seller_name: 'OwnKnitted.com',
+  //       category_of_goods: 'Clothes',
+  //       shipment_length: 1,
+  //       shipment_width: 2,
+  //       shipment_height: 3,
+  //   }];
+  //   let cv=document.querySelector('#pinclick input[type="radio"]:checked').value;
+  //   this.pickup_location={name: (cv=='110062')?'ownknitted.com':'T ownknitted.com'};
+  //   }}
