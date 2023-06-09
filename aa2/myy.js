@@ -240,7 +240,7 @@ async function creatod() {
       useCORS: true
     }).then(function (canvas) {
 
-      shod0.total=total;shod0.pctt=pctt;shod0.pcwt=pcwt;
+      shod0.pcwt=pcwt;
      let txtcn=shod0.od.id+' '+shod0.od.cn;let imgcn=canvas.toDataURL();
      let imglastod = {};imglastod['cn'] =txtcn; imglastod['im5'] = imgcn;
       document.getElementById('lastodimg').src = imgcn;
@@ -327,7 +327,8 @@ await sendd(urli,shod1,'update order');
 await mthdb(selg.slice(-1)+String(pk8).slice(0,3));
 await oddb.od.put(shod1.od,pk8)
  .then(() => {
-  shod1.total=total;shod1.pctt=pctt;shod1.pcwt=pcwt;
+  shod1.pcwt=pcwt;
+  console.log(pctt);
   let html33=document.getElementById("html33");
   html33.style.width='455px';
         html2canvas(html33,
@@ -1133,7 +1134,7 @@ function getcor1(v) {
                 </p>
                 <p class="w3-code"><b>weight: ${pcwt.toFixed(2)}kg</b></p>
                 <div id="allcor" style="display: grid;"><p class="loading">.</p></div>
-                </div><div class="w3-blue-gray"></div><br><br><br><br>`;
+                </div><div class="w3-blue-gray"></p></div><br><br><br><br>`;
 
   document.getElementById('pinclick').onclick=()=>{
     console.log('hi');
@@ -1146,8 +1147,27 @@ function getcor1(v) {
   gosh(dlpc,dlsh1,dlsh2);
 }
 let dlurl;
+const controller = new AbortController();
+const signal = controller.signal;
   async function gosh(obj1,obj2,obj3) {
     await Promise.allSettled([
+      await new Promise(rez=>{
+        let list="";let url="https://apiv2.shiprocket.in/v1/external/courier/serviceability/?";
+        fetch(url+new URLSearchParams(obj3),{ method: 'GET',headers: { 'Content-Type': 'application/json','Authorization': shipr1}})
+        .then(res => res.json())
+        .then((v) => {
+          let d=v.data.available_courier_companies;
+          console.log(d);
+          d.forEach((v) => {
+            let cor=String(v.courier_name);
+              // console.log(cor)
+          if (cor.includes("Blue Dart")||cor.includes("Delhivery")||cor.includes("Amazon")||cor.includes("DTDC")) {
+          list+=`<div tabindex="${v.courier_company_id}" class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><a href="#" onclick="dlfn(this)" class="w3-hover-red">Save</a><i> ETD: ${v.etd} </i><a href="#" onclick="dlfn(this)" class="w3-hover-red">Book</a><i class="w3-right">${v.is_surface?'Surface':'Air'}</i></div>`;
+            }
+          })
+          document.getElementById('allcor').innerHTML=list+document.getElementById('allcor').innerHTML;rez();
+        }).catch((v) => {console.log(v);alert(v)});
+      }),
     await new Promise(rez=>{
       let list="";let url="https://apiv2.shiprocket.in/v1/external/courier/serviceability/?";
       fetch(url+new URLSearchParams(obj2),{ method: 'GET',headers: { 'Content-Type': 'application/json','Authorization': shipr1}})
@@ -1155,19 +1175,18 @@ let dlurl;
       .then((v) => {
         let d=v.data.available_courier_companies;
         console.log(d);
-        d.forEach((v,i) => {
+        d.forEach((v) => {
             let cor=String(v.courier_name);
             // console.log(cor)
         if (cor.includes("Blue Dart")||cor.includes("Delhivery")||cor.includes("Amazon")||cor.includes("DTDC")) {
         list+=`<div tabindex="${v.courier_company_id}" class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><a href="#" onclick="dlfn(this)" class="w3-hover-red">Save</a><i> ETD: ${v.etd} </i><a href="#" onclick="dlfn(this)" class="w3-hover-red">Book</a><i class="w3-right">${v.is_surface?'Surface':'Air'}</i></div>`;
-            }
-        })
+        }})
         document.getElementById('allcor').innerHTML=list+document.getElementById('allcor').innerHTML;rez();
       }).catch((v) => {console.log(v);alert(v)});
     }),
     await new Promise(rez=>{
       let list="";dlurl=['h', 't', 't', 'p', 's', ':', '/', '/', 's', 'c', 'r', 'i', 'p', 't', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'c', 'o', 'm', '/', 'm', 'a', 'c', 'r', 'o', 's', '/', 's', '/', 'A', 'K', 'f', 'y', 'c', 'b', 'x', 'V', '9', 'v', 'G', '5', 'z', 'P', 'S', 'A', 'u', '2', 'x', 'F', 'A', 'Z', 'j', 'X', 'p', 'E', 'V', 'f', 'v', 'y', 'M', 'l', 'J', 'O', 'O', 'Z', 'g', 'b', 'x', 'v', 'G', 'a', 'f', 's', 'z', '6', '0', '9', 'Q', 'm', 'U', 'n', 'H', 'a', 'l', '2', 'H', 'W', 'N', 'C', 'c', '9', 'T', 'T', 'o', 'X', 'O', '1', '7', 'x', 'p', 'z', 'w', 'g', '/', 'e', 'x', 'e', 'c'].join('');
-     fetch(dlurl+"?"+new URLSearchParams(obj1),{ method: 'GET'})
+     fetch(dlurl+"?"+new URLSearchParams(obj1),{ method: 'GET',signal})
        .then(res => res.json())
        .then((v)=>{
         console.log(v[0][0],v[1][0],v[2][0],v[3]);
@@ -1181,7 +1200,7 @@ let dlurl;
         }
       }
       document.getElementById('allcor').innerHTML+=list;rez();
-    }).catch((v) => {console.log(v);alert(v)});})
+    }).catch((v) => {console.log(v);});})
   ]);
        document.querySelector("#allcor .loading").remove();
     }
@@ -1282,11 +1301,22 @@ class Delhivery{
     let mytt;document.getElementById('allcor').innerHTML='<p class="loading"></p>';
     console.log('Now do..');
     if (intt=='Save') {
+      
       mytt='Order Saved';dlid.st=1;
     } else {// { "p": "0", "g": gd, "od": { ...zsr, "pc":{...odprice}},ptd,total,pcwt,pctt };
       mytt='Order Booked';dlid.st=0;
     }
-    document.getElementById('tch').value=dlid.tch;
+    if(!document.getElementById('dl0')){
+      controller.abort();
+    }
+    let och;
+    if(pcwt<2){
+      och=20;
+    }else if(pcwt>2){
+      och=50*Math.ceil(pcwt/25);
+    }
+    dlid.och=och;
+    document.getElementById('tch').value=dlid.tch+och;
     let x;
     if (pk8) {
       x=await updateod('u');
@@ -1294,8 +1324,8 @@ class Delhivery{
       x=await creatod();
     }
     console.log(x);
-    let book=new shbook(x.od.id,dlid.c,dlid.s,x.od.tot,x.pctt,x.pcwt,x.ptd.cn,x.ptd.add,x.ptd.pin,x.ptd.mn1,x.ptd.mn2);
-    dlid.book=book;
+    let book=new shbook(x.od.id,dlid.c,dlid.s,x.od.tot,x.od.inv[1],x.pcwt,x.ptd.cn,x.ptd.add,x.ptd.pin,x.ptd.mn1,x.ptd.mn2);
+    dlid.book=book;await stockm();
     console.log(dlid,book);
     if(!dlid.st){
       let fmd=new FormData();
@@ -1319,8 +1349,9 @@ class Delhivery{
       });
     }
     await dldb.dl.put(dlid,dlid.id);
-
-    document.getElementById('tre6').innerHTML='<br><br><br><h1 style="text-align:center">'+mytt+'\n '+'AWB: '+dlid.order[1]+'</h1>';
+    await snackbar(mytt,800);
+    // dlid.st&&(await stockm());
+    // dlid.st||(await stockm());//(document.getElementById('tre6').innerHTML='<br><br><br><h1 style="text-align:center">'+mytt+'</h1>');
    }
   }
 

@@ -171,6 +171,8 @@ window.onload = function(){
 let curtab="type0";
 function openCity(evt, cityName) {
   let odert=document.getElementById('odert');
+  document.getElementById('alltab').style.display='';
+  document.getElementById('cor1').style.display='none';
   odert.style.display='';
   odert.innerText="Total";
   let i, x, tablinks;
@@ -1070,10 +1072,12 @@ async function makeblob(dataURL) {
 }
 
 async function snackbar(txt,time) {
+  // return Promise((rez)=>{
   let x = document.getElementById("snackbar");
   x.style.display='';
   x.innerHTML=txt;
-  setTimeout(function(){ x.style.display='none'; }, time);
+  setTimeout(function(){ x.style.display='none';}, time);
+// })
 }
 
 window.addEventListener('online', () => {
