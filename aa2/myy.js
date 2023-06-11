@@ -1176,7 +1176,7 @@ async function gosh(obj1, obj2, obj3) {
                 let cor = String(v.courier_name);
                 // console.log(cor)
                 if (cor.includes("Blue Dart") || cor.includes("Delhivery") || cor.includes("Amazon") || cor.includes("DTDC")) {
-                  list += `<div tabindex="${v.courier_company_id}" class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><a href="#" onclick="dlfn(this)" class="w3-hover-red">Save</a><i> ETD: ${v.etd} </i><a href="#" onclick="dlfn(this)" class="w3-hover-red">Book</a><i class="w3-right">${v.is_surface ? 'Surface' : 'Air'}</i></div>`;
+                  list += `<div id="shp" tabindex="${v.courier_company_id}" class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Save</a><i> ETD: ${v.etd} </i><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Book</a><i class="w3-right">${v.is_surface ? 'Surface' : 'Air'}</i></div>`;
                 }
               })
               document.getElementById('allcor').innerHTML = list + document.getElementById('allcor').innerHTML;
