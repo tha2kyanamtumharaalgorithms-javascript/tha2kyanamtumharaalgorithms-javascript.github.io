@@ -1196,7 +1196,7 @@ async function gosh(obj1, obj2, obj3) {
               let cor = String(v.courier_name);
               // console.log(cor)
               if (cor.includes("Blue Dart") || cor.includes("Delhivery") || cor.includes("Amazon") || cor.includes("DTDC")) {
-                list += `<div id="shp" tabindex="${v.courier_company_id}" class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><a href="#" onclick="dlfn(this)" class="w3-hover-red">Save</a><i> ETD: ${v.etd} </i><a href="#" onclick="dlfn(this)" class="w3-hover-red">Book</a><i class="w3-right">${v.is_surface ? 'Surface' : 'Air'}</i></div>`;
+                list += `<div id="shp" tabindex="${v.courier_company_id}" class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Save</a><i> ETD: ${v.etd} </i><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Book</a><i class="w3-right">${v.is_surface ? 'Surface' : 'Air'}</i></div>`;
               }
             })
             document.getElementById('allcor').innerHTML = list + document.getElementById('allcor').innerHTML;
@@ -1209,9 +1209,9 @@ async function gosh(obj1, obj2, obj3) {
         .then(res => res.json())
         .then((v) => {
           console.log(v[0][0], v[1][0], v[2][0], v[3]);
-          list += `<div id="dl0" tabindex="0" class="w3-padding w3-light-blue"><div><b>${'DUSHIRTS01 SURFACE'}</b><b class="w3-right">${v[0][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this)" class="w3-hover-red">Save</a><i> ETD: ${' '} </i><a href="#" onclick="dlfn(this)" class="w3-hover-red">Book</a><i class="w3-right">${'Surface'}</i></div>`;
+          list += `<div id="dl0" tabindex="0" class="w3-padding w3-light-blue"><div><b>${'DUSHIRTS01 SURFACE'}</b><b class="w3-right">${v[0][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this,'dl0')" class="w3-hover-red">Save</a><i> ETD: ${' '} </i><a href="#" onclick="dlfn(this,'dl0')" class="w3-hover-red">Book</a><i class="w3-right">${'Surface'}</i></div>`;
           // list += `<div id="dl1" style="display: none;" class="w3-padding w3-light-blue"><div><b>${'DUSHIRTSEXPRESS'}</b><b class="w3-right">${v[1][0].total_amount}₹</b></div><a href="#" class="w3-hover-red">Save</a><i> ETD: ${' '} </i><a href="#" class="w3-hover-red">Book</a><i class="w3-right">${'Air'}</i></div>`;
-          list += `<div id="dl2" tabindex="2" class="w3-padding w3-light-blue"><div><b>${'10KG DUSURFACE'}</b><b class="w3-right">${v[2][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this)" class="w3-hover-red">Save</a><i> ETD: ${' '} </i><a href="#" onclick="dlfn(this)" class="w3-hover-red">Book</a><i class="w3-right">${'Surface'}</i></div>`;
+          list += `<div id="dl2" tabindex="2" class="w3-padding w3-light-blue"><div><b>${'10KG DUSURFACE'}</b><b class="w3-right">${v[2][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this,'dl0')" class="w3-hover-red">Save</a><i> ETD: ${' '} </i><a href="#" onclick="dlfn(this,'dl2')" class="w3-hover-red">Book</a><i class="w3-right">${'Surface'}</i></div>`;
           for (let i in v[3]) {
             // console.log(i,v[3][i])
             if (String(i).includes("Delhivery") || String(i).includes("Gati")) {
@@ -1303,12 +1303,12 @@ async function sptcor(id) {
   }
 }
 
-async function dlfn(v) {
+async function dlfn(v, id) {
   let v9 = (pk8) ? pk8 : Number((date1 + (Number(localStorage.clickcount) + 1)));
   let pe = v.parentElement;
   let my0 = pe.querySelector('div b.w3-right').innerText.slice(0, -1); console.log(my0);
   let intt = v.innerText; v.id = intt;
-  dlid = { "id": v9, "coid": pe.tabIndex, "dl": pe.id, "tch": Math.ceil(my0), ...dlid };
+  dlid = { "id": v9, "coid": pe.tabIndex, "dl": id, "tch": Math.ceil(my0), ...dlid };
 
   if ((ptd.add == '') || (ptd.mn1 == '')) {
     console.log('hi');
@@ -1321,7 +1321,6 @@ async function dlfn(v) {
     let mytt; document.getElementById('allcor').innerHTML = '<p class="loading"></p>';
     console.log('Now do..');
     if (intt == 'Save') {
-
       mytt = 'Order Saved'; dlid.st = 1;
     } else {// { "p": "0", "g": gd, "od": { ...zsr, "pc":{...odprice}},ptd,total,pcwt,pctt };
       mytt = 'Order Booked'; dlid.st = 0;
