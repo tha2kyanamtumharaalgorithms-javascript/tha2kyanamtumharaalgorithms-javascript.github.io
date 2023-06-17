@@ -1138,6 +1138,8 @@ function getcor1(v) {
   let dlsh1 = new shrkt("Surface");
   let dlsh2 = new shrkt("Air");
   pkj.innerHTML = `<div id="tre6" class="w3-container">
+  <p onclick="document.getElementById('id01').style.display=''" class="w3-button w3-pale-red">❮ Back</p>
+  <b id="dlcn" class="w3-button w3-border"></b>
                 <p id="pinclick" class="w3-code"><input checked class="w3-radio" type="radio" name="from" value="110062"><b> 110062</b>
                 <input class="w3-radio" type="radio" name="from" value="641607"><b> 641607</b>
                 <b class="w3-code w3-large"> To: ${ptd.pin}</b>
@@ -1145,9 +1147,10 @@ function getcor1(v) {
                 <p class="w3-code"><b>weight: ${pcwt.toFixed(2)}kg</b></p>
                 <div id="allcor" style="display: grid;"><p class="loading">.</p></div>
                 </div><div class="w3-blue-gray"></p></div><br><br><br><br>`;
-
+  document.getElementById('dlcn').innerText = ((pk8) ? pk8 : (date1 + (Number(localStorage.clickcount) + 1))) + ". " + document.getElementById('u13').innerText;
+  document.querySelector('.w3-bar.w3-panel').style.display = "none";
   document.getElementById('pinclick').onclick = () => {
-    console.log('hi');
+    console.log('hi'); controller.abort();
     let cv = Number(document.querySelector('#pinclick input[type="radio"]:checked').value);
     dlpc.o_pin = cv; dlsh1.pickup_postcode = cv; dlsh2.pickup_postcode = cv;
     console.log(cv, dlpc);
@@ -1162,11 +1165,11 @@ let controller;
 async function gosh(obj1, obj2, obj3) {
   controller = new AbortController();
   const signal = controller.signal;
-  await Promise.allSettled([
-    await new Promise(async (rez) => {
+  await Promise.all([
+    new Promise((rez) => {
       if (pcwt < 5) {
         let list = ""; let url = "https://apiv2.shiprocket.in/v1/external/courier/serviceability/?";
-        await fetch(url + new URLSearchParams(obj3), { method: 'GET', headers: { 'Content-Type': 'application/json', 'Authorization': shipr1 } })
+        fetch(url + new URLSearchParams(obj3), { method: 'GET', headers: { 'Content-Type': 'application/json', 'Authorization': shipr1 } })
           .then(res => res.json())
           .then((v) => {
             if (v.status == 200) {
@@ -1184,7 +1187,7 @@ async function gosh(obj1, obj2, obj3) {
           }).catch((v) => { console.log(v); alert(v) });
       }; rez();
     }),
-    await new Promise(rez => {
+    new Promise(rez => {
       let list = ""; let url = "https://apiv2.shiprocket.in/v1/external/courier/serviceability/?";
       fetch(url + new URLSearchParams(obj2), { method: 'GET', headers: { 'Content-Type': 'application/json', 'Authorization': shipr1 } })
         .then(res => res.json())
@@ -1203,15 +1206,17 @@ async function gosh(obj1, obj2, obj3) {
           }; rez();
         }).catch((v) => { console.log(v); alert(v) });
     }),
-    await new Promise(rez => {
-      let list = ""; dlurl = ['h', 't', 't', 'p', 's', ':', '/', '/', 's', 'c', 'r', 'i', 'p', 't', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'c', 'o', 'm', '/', 'm', 'a', 'c', 'r', 'o', 's', '/', 's', '/', 'A', 'K', 'f', 'y', 'c', 'b', 'x', 'V', '9', 'v', 'G', '5', 'z', 'P', 'S', 'A', 'u', '2', 'x', 'F', 'A', 'Z', 'j', 'X', 'p', 'E', 'V', 'f', 'v', 'y', 'M', 'l', 'J', 'O', 'O', 'Z', 'g', 'b', 'x', 'v', 'G', 'a', 'f', 's', 'z', '6', '0', '9', 'Q', 'm', 'U', 'n', 'H', 'a', 'l', '2', 'H', 'W', 'N', 'C', 'c', '9', 'T', 'T', 'o', 'X', 'O', '1', '7', 'x', 'p', 'z', 'w', 'g', '/', 'e', 'x', 'e', 'c'].join('');
+    new Promise(rez => {
+      let list = "";
+      dlurl = ['h', 't', 't', 'p', 's', ':', '/', '/', 'j', 'w', '6', 'g', 'q', 'x', 'c', 'e', 'f', 'f', 'u', 'i', 'u', 'z', '4', 'c', 'a', 'p', 'y', 'v', 'u', 'y', 'm', 'k', 'p', 'e', '0', 'b', 'i', 'd', 'q', 't', '.', 'l', 'a', 'm', 'b', 'd', 'a', '-', 'u', 'r', 'l', '.', 'a', 'p', '-', 's', 'o', 'u', 't', 'h', '-', '1', '.', 'o', 'n', '.', 'a', 'w', 's'].join('');
+      obj1.ss = Object.values(JSON.parse(localStorage.rkb))[0];
       fetch(dlurl + "?" + new URLSearchParams(obj1), { method: 'GET', signal })
         .then(res => res.json())
         .then((v) => {
           console.log(v[0][0], v[1][0], v[2][0], v[3]);
-          list += `<div id="dl0" tabindex="0" class="w3-padding w3-light-blue"><div><b>${'DUSHIRTS01 SURFACE'}</b><b class="w3-right">${v[0][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this,'dl0')" class="w3-hover-red">Save</a><i> ETD: ${' '} </i><a href="#" onclick="dlfn(this,'dl0')" class="w3-hover-red">Book</a><i class="w3-right">${'Surface'}</i></div>`;
-          // list += `<div id="dl1" style="display: none;" class="w3-padding w3-light-blue"><div><b>${'DUSHIRTSEXPRESS'}</b><b class="w3-right">${v[1][0].total_amount}₹</b></div><a href="#" class="w3-hover-red">Save</a><i> ETD: ${' '} </i><a href="#" class="w3-hover-red">Book</a><i class="w3-right">${'Air'}</i></div>`;
-          list += `<div id="dl2" tabindex="2" class="w3-padding w3-light-blue"><div><b>${'10KG DUSURFACE'}</b><b class="w3-right">${v[2][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this,'dl0')" class="w3-hover-red">Save</a><i> ETD: ${' '} </i><a href="#" onclick="dlfn(this,'dl2')" class="w3-hover-red">Book</a><i class="w3-right">${'Surface'}</i></div>`;
+          list += `<div id="dl0" tabindex="0" class="w3-padding w3-light-blue"><div><b>DUSHIRTS01 SURFACE</b><b class="w3-right">${v[0][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this,'dl0')" class="w3-hover-red">Save</a><i> ... </i><a href="#" onclick="dlfn(this,'dl0')" class="w3-hover-red">Book</a><i class="w3-right">Surface</i></div>`;
+          list += `<div id="dl1" tabindex="1" class="w3-padding w3-light-blue"><div><b>DUSHIRTSEXPRESS</b><b class="w3-right">${v[1][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this,'dl1')" class="w3-hover-red">Save</a><i> ... </i><a href="#" onclick="dlfn(this,'dl1')" class="w3-hover-red">Book</a><i class="w3-right">Air</i></div>`;
+          list += `<div id="dl2" tabindex="2" class="w3-padding w3-light-blue"><div><b>10KG DUSURFACE</b><b class="w3-right">${v[2][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this,'dl2')" class="w3-hover-red">Save</a><i> ... </i><a href="#" onclick="dlfn(this,'dl2')" class="w3-hover-red">Book</a><i class="w3-right">Surface</i></div>`;
           for (let i in v[3]) {
             // console.log(i,v[3][i])
             if (String(i).includes("Delhivery") || String(i).includes("Gati")) {
@@ -1310,7 +1315,7 @@ async function dlfn(v, id) {
   let intt = v.innerText; v.id = intt;
   dlid = { "id": v9, "coid": pe.tabIndex, "dl": id, "tch": Math.ceil(my0), ...dlid };
 
-  if ((ptd.add == '') || (ptd.mn1 == '')) {
+  if (((ptd.add == '') || (ptd.mn1 == '')) && (intt != 'Save')) {
     console.log('hi');
     goadd(0, v9, ptd); // goadd(3123131,3065);
     document.getElementById('cnm0').style.display = '';
@@ -1319,7 +1324,6 @@ async function dlfn(v, id) {
     document.getElementById('cnm3').style.display = 'none';
   } else {
     let mytt; document.getElementById('allcor').innerHTML = '<p class="loading"></p>';
-    console.log('Now do..');
     if (intt == 'Save') {
       mytt = 'Order Saved'; dlid.st = 1;
     } else {// { "p": "0", "g": gd, "od": { ...zsr, "pc":{...odprice}},ptd,total,pcwt,pctt };
@@ -1348,40 +1352,53 @@ async function dlfn(v, id) {
     } else {
       dlid.book = new Dl0(x);
     }
-    await stockm();
+    document.querySelector('.w3-bar.w3-panel').style.display = "";
 
     console.log(dlid, dlid.book);
     if (!dlid.st) {
-      let fmd = new FormData();
-      fmd.append("myd", JSON.stringify(dlid.book));
-      fmd.append("t", dlid.dl);
-      fmd.append("id", dlid.coid);
-      console.log(fmd);
-      await fetch(dlurl, { method: 'POST', body: fmd }).then(res => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! Status: ${res.status}`);
-        }
-        return res.json();
-      })
-        .then(data => {
-          console.log(data);
-          if (dlid.dl == 'shp') {
-            dlid.order = data.a;
-          } else {
-            dlid.order = data.packages[0].waybill;
+      await new Promise(async (rez) => {
+        let fmd = new FormData();
+        fmd.append("myd", JSON.stringify(dlid.book));
+        fmd.append("t", dlid.dl);
+        fmd.append("id", dlid.coid);
+        console.log(fmd);
+        dlurl = ['h', 't', 't', 'p', 's', ':', '/', '/', 's', 'c', 'r', 'i', 'p', 't', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'c', 'o', 'm', '/', 'm', 'a', 'c', 'r', 'o', 's', '/', 's', '/', 'A', 'K', 'f', 'y', 'c', 'b', 'x', 'V', '9', 'v', 'G', '5', 'z', 'P', 'S', 'A', 'u', '2', 'x', 'F', 'A', 'Z', 'j', 'X', 'p', 'E', 'V', 'f', 'v', 'y', 'M', 'l', 'J', 'O', 'O', 'Z', 'g', 'b', 'x', 'v', 'G', 'a', 'f', 's', 'z', '6', '0', '9', 'Q', 'm', 'U', 'n', 'H', 'a', 'l', '2', 'H', 'W', 'N', 'C', 'c', '9', 'T', 'T', 'o', 'X', 'O', '1', '7', 'x', 'p', 'z', 'w', 'g', '/', 'e', 'x', 'e', 'c'].join('');
+        await fetch(dlurl, { method: 'POST', body: fmd }).then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! Status: ${res.status}`);
           }
-          // document.querySelector("#allcor .loading").remove();
+          return res.json();
         })
-        .catch(error => {
-          console.error('Error:', error);
-        });
+          .then((data) => {
+            console.log(data);
+            if (dlid.dl == 'shp') {
+              dlid.order = data.a;
+            } else {
+              dlid.order = data.packages[0].waybill;
+            }
+            // document.querySelector("#allcor .loading").remove();
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            mytt = 'Error: ' + error;
+            dlid.st = 1;
+          })
+          .finally(() => {
+            rez();
+          });
+      })
     }
-    await dldb.dl.put(dlid, dlid.id);
-    await snackbar(mytt, 800);
-    // dlid.st&&(await stockm());
-    // dlid.st||(await stockm());//(document.getElementById('tre6').innerHTML='<br><br><br><h1 style="text-align:center">'+mytt+'</h1>');
+    await new Promise(async (rez) => {
+      await dldb.dl.put(dlid, dlid.id);
+      await stockm();
+      await snackbar(mytt, 1000);
+      setTimeout(rez(), 300);
+    });
   }
+  // dlid.st&&(await stockm());
+  // dlid.st||(await stockm());//(document.getElementById('tre6').innerHTML='<br><br><br><h1 style="text-align:center">'+mytt+'</h1>');
 }
+
 
 class Dl0 {
   constructor(d) {
@@ -1405,3 +1422,17 @@ class Dl0 {
     this.pickup_location = { name: (cv == '110062') ? 'ownknitted.com' : 'T ownknitted.com' };
   }
 }
+
+let rkbpc = async () => {
+  if (!localStorage.rkb) { localStorage.setItem('rkb', '00') }
+  if (localStorage.rkb) {
+    let cur = date.slice(0, 2);
+    let s = {};
+    if (localStorage.rkb.slice(2, 4) != cur) {
+      await fetch('https://zcfero2hroldoxsjo767pcage40opezl.lambda-url.ap-south-1.on.aws')
+        .then((v) => v.json()).then((v) => { s[cur] = v.result; localStorage.setItem('rkb', JSON.stringify(s)); })
+    }
+  }
+}
+
+rkbpc(); // Object.values(JSON.parse(localStorage.rkb))[0]

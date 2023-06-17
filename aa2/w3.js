@@ -35,14 +35,14 @@ async function sendd(urld, d9, b, q) {
     })
       .then((res) => {
         console.log(b + ' data send successfully ', d9);
-        cuuid[1].push(da); rez();
+        rez();//cuuid[1].push(da);
       })
       .catch(async (error) => {
         if (q !== 'z') {
           await erdb.err.put(da);
         } else {
           console.log(da.id);
-          cuuid[0].push(da);
+          // cuuid[0].push(da);
         }
         console.log(b + ' sendd failed ' + error);
         console.log(d9);

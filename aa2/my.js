@@ -3,28 +3,29 @@ var doc = document, zzz = (s, o = doc) => o.querySelectorAll(s), zz = (s, o = do
 // get all ods list
 async function getods(gd) {
   try {
-    // await mthdb(gd.slice(-1)+date1);
-    // let allod=await oddb.od.toArray((v)=>{
-    // return v.sort((a,b)=>{
-    //     return a.id - b.id;
-    //     });
-    // });
-
-    // await appdli(allod);
     selgo(gd);
     let j = JSON.parse(pinloc); let vb = '';
     let hmtl0 = '';
     for (let k in j) {
-      let pf = k.slice(2, 6);
+      let pf = k.slice(2, 6); let id = Number(k.slice(3));
       // console.log(pf,k);
+      let book = await dldb.dl.get(id).then(i => {
+        if (i == undefined) {
+          return ''
+        } else if (i.st) {
+          return "class='light'"
+        } else {
+          return "class='light-max'"
+        }
+      });
       if (vb != pf) { vb = pf; await mthdb(pf); }
-      await oddb.od.get(Number(k.slice(3))).then(i => {
+      await oddb.od.get(id).then(i => {
         let ifz = '';
         if (!(i.tot)) { ifz = "class='delt'" };
         let gstr = "<span style='padding: 0 1.55em'></span>";
         let inp = "<input onclick='selod(this)' id='ods" + i.id + "' class='w3-check' type='checkbox'>";
         let vtag = "<span id='vtag' ><span name=" + 'ods' + i.id + ">" + "</span></span>";
-        hmtl0 = "<li id=s" + i.id + " " + "tabindex=" + i.pt + " " + ifz + ">" + inp + ' ' + "<b onclick='goadd(" + i.pt + ',' + i.id + ")'>" + i.id + '. ' + i.cn + '</b>' + vtag + "<span onclick='opodli(this)'>" + i.tot + ' ' + gstr + ' ' + i.dt.slice(0, 6) + "</span></li>" + hmtl0;
+        hmtl0 = "<li " + book + " id=s" + i.id + " " + "tabindex=" + i.pt + " " + ifz + ">" + inp + ' ' + "<b onclick='goadd(" + i.pt + ',' + i.id + ")'>" + i.id + '. ' + i.cn + '</b>' + vtag + "<span onclick='opodli(this)'>" + i.tot + ' ' + gstr + ' ' + i.dt.slice(0, 6) + "</span></li>" + hmtl0;
       });
     }
     document.getElementById('oderli').innerHTML = hmtl0;
