@@ -1209,7 +1209,6 @@ async function gosh(obj1, obj2, obj3) {
     new Promise(rez => {
       let list = "";
       dlurl = ['h', 't', 't', 'p', 's', ':', '/', '/', 'h', 'z', 'q', 'l', '5', 'j', 'd', 'j', 'q', 'u', '6', 'd', 'p', 'v', 'b', '2', 'd', 'n', 'r', 'y', '5', '6', '5', 'o', 'p', 'a', '0', 'd', 'q', 'j', 'd', 'u', '.', 'l', 'a', 'm', 'b', 'd', 'a', '-', 'u', 'r', 'l', '.', 'a', 'p', '-', 's', 'o', 'u', 't', 'h', '-', '1', '.', 'o', 'n', '.', 'a', 'w', 's'].join('');
-      obj1.ss = Object.values(JSON.parse(localStorage.rkb))[0];
       fetch(dlurl + "?" + new URLSearchParams(obj1), { method: 'GET', signal })
         .then(res => res.json())
         .then((v) => {
@@ -1220,7 +1219,7 @@ async function gosh(obj1, obj2, obj3) {
           for (let i in v[3]) {
             // console.log(i,v[3][i])
             if (String(i).includes("Delhivery") || String(i).includes("Gati")) {
-              list += `<div class="w3-padding w3-lime"><div><b>${i}</b><b class="w3-right">${v[3][i]["rates"]}₹</b></div><i>ETD: ${v[3][i]["tat"] + ' / ' + v[3][i]["avg_delivery_days"]}</i><i class="w3-right">${v[3][i]["mode_name"]}</i></div>`;
+              list += `<div id="rkb" class="w3-padding w3-lime"><div><b>${i}</b><b class="w3-right">${v[3][i]["rates"]}₹</b></div><a href="#" onclick="dlfn(this,'rkb')" class="w3-hover-red">Save</a><i> ETD: ${v[3][i]["tat"] + ' / ' + v[3][i]["avg_delivery_days"]}</i><i class="w3-right">${v[3][i]["mode_name"]}</i></div>`;
             }
           }
           document.getElementById('allcor').innerHTML += list; rez();
@@ -1423,16 +1422,16 @@ class Dl0 {
   }
 }
 
-let rkbpc = async () => {
-  if (!localStorage.rkb) { localStorage.setItem('rkb', '00') }
-  if (localStorage.rkb) {
-    let cur = date.slice(0, 2);
-    let s = {};
-    if (localStorage.rkb.slice(2, 4) != cur) {
-      await fetch('https://zcfero2hroldoxsjo767pcage40opezl.lambda-url.ap-south-1.on.aws')
-        .then((v) => v.json()).then((v) => { s[cur] = v.result; localStorage.setItem('rkb', JSON.stringify(s)); })
-    }
-  }
-}
+// let rkbpc = async () => {
+//   if (!localStorage.rkb) { localStorage.setItem('rkb', '00') }
+//   if (localStorage.rkb) {
+//     let cur = date.slice(0, 2);
+//     let s = {};
+//     if (localStorage.rkb.slice(2, 4) != cur) {
+//       await fetch('https://zcfero2hroldoxsjo767pcage40opezl.lambda-url.ap-south-1.on.aws')
+//         .then((v) => v.json()).then((v) => { s[cur] = v.result; localStorage.setItem('rkb', JSON.stringify(s)); })
+//     }
+//   }
+// }
 
-rkbpc(); // Object.values(JSON.parse(localStorage.rkb))[0]
+// rkbpc(); // Object.values(JSON.parse(localStorage.rkb))[0]
