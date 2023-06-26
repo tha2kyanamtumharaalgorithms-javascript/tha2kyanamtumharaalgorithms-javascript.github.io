@@ -138,7 +138,10 @@
           </p>
         </div>
         <p id="cnm" class="w3-hide">
-          <button onclick='gonext()' class="w3-button w3-green">Next</button>
+          <input id="pnm" class="w3-input w3-border" placeholder="Please Enter Purchase Order No.*" type="tel">
+          <br>
+          <button onclick="(document.getElementById('pnm').value.trim())&&gonext()"
+            class="w3-button w3-green">Next</button>
         </p>
       </div><br>
     </div>
