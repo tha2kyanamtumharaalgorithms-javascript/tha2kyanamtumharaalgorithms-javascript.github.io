@@ -424,7 +424,7 @@ function gonext() {
   // alert(document.getElementById('instock').checked);
   if (document.getElementById('instock').checked) {
     let mypnm = document.getElementById('pnm');
-    document.getElementById("incn").value = mypnm.value.trim(); mypnm.value = ""; // document.querySelector('#gall input[type="radio"]:checked').labels[0].innerText;
+    document.getElementById("incn").value = mypnm.value.replace(/\s+/g, ' ').trim(); mypnm.value = ""; // document.querySelector('#gall input[type="radio"]:checked').labels[0].innerText;
   }
   let ur = document.getElementById("incn").value.replace(/\s+/g, ' ').trim();
   if (ur) {
