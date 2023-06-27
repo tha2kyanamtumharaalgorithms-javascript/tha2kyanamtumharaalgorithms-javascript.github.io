@@ -7,9 +7,11 @@
 
 <body>
     <h1>Google Sign-In</h1>
+    <script src="https://apis.google.com/js/api.js"></script>
 
     <script src="https://apis.google.com/js/platform.js"></script>
     <script>
+        import { google } from "googleapis";
         // Initialize the Google Sign-In client.
         let myd = JSON.parse(localStorage.mydata);
         const auth = google.auth();
