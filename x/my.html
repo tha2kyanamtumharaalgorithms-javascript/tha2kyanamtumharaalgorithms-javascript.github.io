@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <meta name="google-signin-client_id"
+        content="363816362004-40aa92sbvtuv2r25q6ipjp2vrbjg8us1.apps.googleusercontent.com" />
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <script src="my.js"></script>
+</head>
+
+<body>
+
+    <br /><br />
+    <div class="well">
+        <div class="g-signin2" data-onsuccess="onSignIn" data-width="240" data-height="50" data-longtitle="true"></div>
+        <br /><br />
+        <a href="#" onclick="signOut();">Sign out of Google</a>
+    </div>
+
+    <style>
+        .g-signin2 {
+            margin-left: 300px;
+        }
+
+        .well {
+            text-align: center;
+            margin-right: 20%;
+            margin-left: 20%;
+        }
+
+        a:link {
+            text-decoration: none;
+            font-family: Station Medium;
+            font-size: 24px;
+        }
+
+        h2 {
+            text-align: center;
+            font-family: Station Medium;
+        }
+    </style>
+</body>
+
+</html>
