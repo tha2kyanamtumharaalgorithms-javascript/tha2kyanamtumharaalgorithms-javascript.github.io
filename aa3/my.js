@@ -1,6 +1,7 @@
 
 var doc = document, zzz = (s, o = doc) => o.querySelectorAll(s), zz = (s, o = doc) => o.querySelector(s), zc = console.log.bind(doc);
 // get all ods list
+
 async function getods(gd) {
   try {
     selgo(gd);
@@ -11,11 +12,11 @@ async function getods(gd) {
       // console.log(pf,k);
       let book = await dldb.dl.get(id).then(i => {
         if (i == undefined) {
-          return ''
+          return ["", ""]
         } else if (i.st) {
-          return "class='light'"
+          return ["class='light'", "<button onclick='book()' class='w3-display-middle'>Book</button>"]
         } else {
-          return "class='light-max'"
+          return ["class='light-max'", ""]
         }
       });
       if (vb != pf) { vb = pf; await mthdb(pf); }
@@ -24,8 +25,8 @@ async function getods(gd) {
         if (!(i.tot)) { ifz = "class='delt'" };
         let gstr = "<span style='padding: 0 1.55em'></span>";
         let inp = "<input onclick='selod(this)' id='ods" + i.id + "' class='w3-check' type='checkbox'>";
-        let vtag = "<span id='vtag' ><span name=" + 'ods' + i.id + ">" + "</span></span>";
-        hmtl0 = "<li " + book + " id=s" + i.id + " " + "tabindex=" + i.pt + " " + ifz + ">" + inp + ' ' + "<b onclick='goadd(" + i.pt + ',' + i.id + ")'>" + i.id + '. ' + i.cn + '</b>' + vtag + "<span onclick='opodli(this)'>" + i.tot + ' ' + gstr + ' ' + i.dt.slice(0, 6) + "</span></li>" + hmtl0;
+        let vtag = "<span id='vtag' ><span name=" + 'ods' + i.id + ">" + "</span></span>" + book[1];
+        hmtl0 = "<li " + book[0] + " id=s" + i.id + " " + "tabindex=" + i.pt + " " + ifz + ">" + inp + ' ' + "<b onclick='goadd(" + i.pt + ',' + i.id + ")'>" + i.id + '. ' + i.cn + '</b>' + vtag + "<span onclick='opodli(this)'>" + i.tot + ' ' + gstr + ' ' + i.dt.slice(0, 6) + "</span></li>" + hmtl0;
       });
     }
     document.getElementById('oderli').innerHTML = hmtl0;
@@ -287,7 +288,7 @@ function tot() {
     document.getElementById('u13').innerText = document.getElementById('frt').innerText;
     let v9 = (pk8) ? pk8 : (date1 + (Number(localStorage.clickcount) + 1));
     // console.log(pk8,v9);
-    document.querySelector('#tot table thead th span').innerText = '#' + v9;
+    document.querySelector('#tot table thead span').innerText = '#' + v9;
 
     let dtt2 = ', ' + new Date().toLocaleTimeString('en', { hour: "2-digit", minute: "2-digit", hour12: true }).replace(' ', '');
 

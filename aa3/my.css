@@ -438,3 +438,15 @@ ul#m1list li {
 .light-max {
   background: #fff !important;
 }
+
+#tot thead tr {
+  border: 1px solid black;
+}
+
+#tot thead tr b {
+  font-weight: 650;
+}
+
+#tot thead tr i {
+  font-style: normal;
+}

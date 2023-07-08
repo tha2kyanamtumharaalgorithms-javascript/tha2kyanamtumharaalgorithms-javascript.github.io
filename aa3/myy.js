@@ -194,7 +194,6 @@ async function creatod() {
         zsr.c = cods;
         console.log(cods);
       }
-
       let shod0 = {};
       let oldid = ptd.id;
       let odno = gd.slice(-1) + odid; // s30424
@@ -202,28 +201,21 @@ async function creatod() {
       //genlink(genid(ptd.id,3),ptd.cn);
       if (document.getElementById('bulkc').checked) {
         ptd.ods.push(odno);
-
         await bulkdb.bk.add({ ...zsr, "pt": ptd });
-
       }
       console.log(ptd);
       if (!oldid) {
         // save party details
         await db.pt.add(ptd);
-
       } else {
         //  in case key is not found, put() would create a new object while update() wont change anything.
         //  The returned Promise will NOT fail if key was not found but resolve with value 0 instead of 1.
         // update party details
         await db.pt.update(oldid, ptd);
-
       }
       zsr.pt = ptd.id;
       shod0 = { "p": "0", "g": gd, "od": { ...zsr, "pc": { ...odprice } }, ptd };
-      //  zc(window,'hiiiiiii');
-      // }else{shod0={ "p": "0", "g": gd, "od": { ...zsr, "pc":{...odprice}}};}
-      // let st = new Localbase('st');
-      //await st.collection(gd).add(shod0.od, 'od' + (Number(zxc)+1)).then((res) => {
+
       await mthdb(gd.slice(-1) + date1);
       await oddb.od.add(shod0.od, ctcn).then((res) => {
         console.log(res, 'added');
@@ -237,7 +229,6 @@ async function creatod() {
         alert('error in add order fn-', error);
       });
 
-
       let html33 = document.getElementById("html33");
       html33.style.width = '455px';
       await html2canvas(html33,
@@ -245,7 +236,6 @@ async function creatod() {
           allowTaint: true,
           useCORS: true
         }).then(async (canvas) => {
-
           shod0.pcwt = pcwt;
           let txtcn = shod0.od.id + ' ' + shod0.od.cn; let imgcn = canvas.toDataURL();
           let imglastod = {}; imglastod['cn'] = txtcn; imglastod['im5'] = imgcn;
@@ -298,22 +288,15 @@ async function updateod(myz) {
       ptd.ods.push(selg.slice(-1) + pk8);
       let uniq = [...new Set(ptd.ods)];
       ptd.ods = uniq;
-
       await bulkdb.bk.put({ ...zsr, "pt": ptd }, zsr.id);
-
     } else {
       // let yu=ptd.ods.indexOf(selg.slice(-1)+id55);
       if (yu > (-1)) {
         ptd.ods.splice(yu, 1);
-
         await bulkdb.bk.put({ ...zsr, "pt": ptd }, zsr.id);
-
       }
     }
-
     await db.pt.update(ptd.id, ptd);
-
-
     const gsel = document.getElementById("gsel").value;
     let shod1 = {};
     if (!(selg == gsel)) {
@@ -322,13 +305,9 @@ async function updateod(myz) {
       //document.querySelector("#oderli #"+pk8).parentElement.remove();
       shod1 = { "p": "4", "g": selg, "gl": gsel, "od": { ...zsr, "pc": { ...odprice } } };
       await moveod(selg, gsel, 'ods' + pk8);
-
     }
-
     // alert('g normal')
     shod1 = { "p": "1", "g": gsel, "od": { ...zsr, "pc": { ...odprice } }, ptd };
-
-
     // let st = new Localbase('st');
     // st.collection(selg).doc('od'+pk8).set(shod1.od)
     await mthdb(selg.slice(-1) + String(pk8).slice(0, 3));
@@ -343,7 +322,6 @@ async function updateod(myz) {
             allowTaint: true,
             useCORS: true
           }).then(function (canvas) {
-
             //console.log('zsr',zsr,'sho',shod1);
             let imglastod = {};
             let txtcn = shod1.od.id + ' ' + shod1.od.cn; let imgcn = canvas.toDataURL();
@@ -404,13 +382,13 @@ async function saveinst(v) {
   let pkx = {};
   // pkx.id = (Number(zxc)+1);
   //pkx.cn = document.getElementById('gsel').options[document.getElementById('gsel').selectedIndex].innerText;
-  pkx.cn = document.querySelector('#gsel').selectedOptions[0].innerText;
+  // pkx.cn = document.querySelector('#gsel').selectedOptions[0].innerText;
+  let my = document.getElementById("incn");
+  pkx.cn = my.value.replace(/\s+/g, ' ').trim(); my.value = '';
+
   pkx.tot = Number(total);
   pkx.dt = date.split(' ').join('/');
   pkx.it = od;
-
-  //  let st = new Localbase('st');
-
   if (v === 0) {
     pkx.id = oldod.id;
   }
@@ -562,7 +540,6 @@ function mnvalid(v) {
     document.getElementById('ptmn').innerHTML = "<b style='color:blue'>" + p + " Digits!</b>";
   }
 }
-
 
 // pincode check
 function pincode(v) {
@@ -1121,8 +1098,9 @@ async function getcor(k) {
   }
   let urlx = 'https://apiv2.shiprocket.in/v1/external/open/postcode/details?postcode=' + ptd.pin;
   let optx = { method: 'GET', redirect: 'follow', headers: { 'Content-Type': 'application/json', 'Authorization': shipr1 } };
-  await fetch(urlx, optx)
-    .then((v) => v.json()).then((v) => { dlid.c = v.postcode_details.city; dlid.s = v.postcode_details.state; });
+  let urlx1 = 'https://hzql5jdjqu6dpvb2dnry565opa0dqjdu.lambda-url.ap-south-1.on.aws/pin/' + ptd.pin;
+  Promise.all[fetch(urlx, optx).then((v) => v.json()).then((v) => { dlid.c = v.postcode_details.city; dlid.s = v.postcode_details.state; }),
+    fetch(urlx1).then((v) => v.json()).then((v) => { dlid.c1 = v.location[0]; dlid.s1 = v.location[1] })];
   document.getElementById('alltab').style.display = '';
   document.getElementById('cor1').style.display = 'none';
   document.getElementById('id01').style.display = 'block';
@@ -1134,7 +1112,7 @@ function getcor1(v) {
   pkj.style.display = '';
   document.getElementById('bnm7').style.display = 'none';
   document.getElementById('p78').style.display = 'none';
-  let dlpc = new Delhivery("S");
+  let dlpc = new Delhivery();
   let dlsh1 = new shrkt("Surface");
   let dlsh2 = new shrkt("Air");
   pkj.innerHTML = `<div id="tre6" class="w3-container">
@@ -1219,7 +1197,7 @@ async function gosh(obj1, obj2, obj3) {
           for (let i in v[3]) {
             // console.log(i,v[3][i])
             if (String(i).includes("Delhivery") || String(i).includes("Gati")) {
-              list += `<div id="rkb" class="w3-padding w3-lime"><div><b>${i}</b><b class="w3-right">${v[3][i]["rates"]}₹</b></div><a href="#" onclick="dlfn(this,'rkb')" class="w3-hover-red">Save</a><i> ETD: ${v[3][i]["tat"] + ' / ' + v[3][i]["avg_delivery_days"]}</i><i class="w3-right">${v[3][i]["mode_name"]}</i></div>`;
+              list += `<div id="rkb" title="${v[3][i].mode_id},${v[3][i].id}" class="w3-padding w3-lime"><div><b>${i}</b><b class="w3-right">${v[3][i]["rates"]}₹</b></div><a href="#" onclick="dlfn(this,'rkb')" class="w3-hover-red">Save</a><i> ETD: ${v[3][i]["tat"] + ' / ' + v[3][i]["avg_delivery_days"]}</i><a href="#" onclick="dlfn(this,'rkb')" class="w3-hover-red">Book</a><i class="w3-right">${v[3][i]["mode_name"]}</i></div>`;
             }
           }
           document.getElementById('allcor').innerHTML += list; rez();
@@ -1271,6 +1249,66 @@ class shbook {
   }
 }
 
+
+class rkbs {
+  constructor(pt, c, s, spdoc, wt) {
+    let nop = ((wt > 30) ? Number(prompt("Enter no. of packages", 1)) : 1);
+    let appwt = ((wt * 0.8).toFixed(2));
+    this.no_of_packages = nop;
+    this.approx_weight = appwt;
+    let cv = (document.querySelector('#pinclick input[type="radio"]:checked').value == '110062');
+    this.source_warehouse_name = (cv ? "ownknitteddotcom" : "townknitteddotcom");
+    this.source_address_line1 = (cv ? "F120, tshirt wala Godown, khanpur" : "26/14 bridge way colony, 1st street");
+    this.source_address_line2 = (cv ? "Near shutter wali gali, gujjar chowk" : "lakshmi nagar east, tiruppur, tamilnadu");
+    this.source_pincode = (cv ? "110062" : "641607");
+    this.source_city = (cv ? "New Delhi" : "Tiruppur");
+    this.source_state = (cv ? "Delhi" : "Tamil Nadu");
+    this.sender_contact_person_name = "ownknitted.com";
+    this.sender_contact_person_email = "sales.dushirts@gmail.com";
+    this.sender_contact_person_contact_no = (cv ? "9336695049" : "9500725678");
+
+    this.destination_warehouse_name = pt.cn;
+    let add = pt.add.match(/\w+/g); let addn = Math.floor(add.length / 2);
+    this.destination_address_line1 = add.slice(0, addn).join(' ');
+    this.destination_address_line2 = add.slice(addn).join(' ');
+    this.destination_pincode = pt.pin;
+    this.destination_city = c;
+    this.destination_state = s;
+    this.recipient_contact_person_name = pt.cn;
+    this.recipient_contact_person_email = "ketu.okbw@gmail.com";
+    this.recipient_contact_person_contact_no = pt.mn1;
+    this.client_id = 3410;
+    let dat = [{ "units": 1, "weight": Number(Number(appwt) / nop), "length": 1, "height": 3, "width": 2, "display_in": "cm" }];
+    if (nop > 1) {
+      for (let i = 1; i < nop; i++) {
+        m.push(dat[0]);
+      }
+    }
+    this.packaging_unit_details = dat;
+    this.supporting_docs = [spdoc];
+    this.shipment_type = "forward";
+    this.mode_name = "surface";
+    this.source = "API";
+  }
+}
+
+class rkbf {
+  constructor(inn, inv, mid, pid, docid) {
+    let mydt = formatDate(new Date());
+    this.client_id = "3410";
+    this.order_id = 22222;
+    this.remarks = "Handle With Care";
+    this.mode_id = mid;
+    this.delivery_partner_id = pid;
+    this.pickup_date_time = mydt;
+    this.invoice_value = inv;
+    this.invoice_number = inn;
+    this.invoice_date = mydt.slice(0, 10);
+    this.source = "API";
+    this.supporting_docs = [docid];
+  }
+}
+
 class shrkt {
   constructor(d) {
     this.pickup_postcode = 110062;
@@ -1284,9 +1322,9 @@ class Delhivery {
   constructor(d) {
     this.o_pin = 110062;
     this.d_pin = Number(ptd.pin);
-    this.md = d; // "S"/"E"
+    // this.md = d; // "S"/"E"
     this.cgm = Number((pcwt * 1000).toFixed()); // gram
-    this.ss = 'Delivered';
+    // this.ss = 'Delivered';
   }
 }
 
@@ -1307,6 +1345,27 @@ async function sptcor(id) {
   }
 }
 
+async function uplodimg(odn, v, url) {
+  let myfrom = `<tr><td colspan="4"><div id="u13" style="display:none"></div><b>Bill No. - ${odn}</b><span></span></td></tr><tr><td colspan="4"><b>From - </b><i>Own Knitted Blank Wears F-120, Near Gujjar Chowk, Shutter wali gali, Khanpur, Nearby Saket Metro, Delhi-110062<br>Phone No. - +91-9336695049<br>GSTIN - 07BBNPG0866M2Z7</i></td></tr>`;
+  let myto = `<tr><td colspan="4"><b>To - </b><i>${v.cn + ' '}${v.add + '<br>'}${v.mn1 + '<br>'}${v.gst && ('GSTIN - ' + v.gst)}</i></td></tr><tr><td colspan="4"><b>HSN Code - </b><i>6109(For All Products)</i></td></tr>`;
+
+  let mdiv = document.querySelector("#tot thead");
+  let fdiv = mdiv.innerHTML;
+  mdiv.innerHTML = myfrom + myto;
+  let html33 = document.getElementById("tot");
+  html33.style.width = '455px';
+  await html2canvas(html33, { allowTaint: true, useCORS: true }).then((canvas) => {
+    canvas.toBlob((blob) => {
+      mdiv.innerHTML = fdiv; html33.style.width = '';
+      fetch(url, { body: blob, headers: { 'Content-Type': 'image/png' }, method: 'PUT' })
+        .then((res) => {
+          console.log('Image uploaded successfully')
+        })
+        .catch((er) => { alert('Error uploading image:', JSON.stringify(er)); });
+    });
+  })
+}
+
 async function dlfn(v, id) {
   let v9 = (pk8) ? pk8 : Number((date1 + (Number(localStorage.clickcount) + 1)));
   let pe = v.parentElement;
@@ -1322,11 +1381,14 @@ async function dlfn(v, id) {
     document.getElementById('cnm2').style.display = 'none';
     document.getElementById('cnm3').style.display = 'none';
   } else {
-    let mytt; document.getElementById('allcor').innerHTML = '<p class="loading"></p>';
+    // let mytt; 
+    document.getElementById('allcor').innerHTML = '<p class="loading"></p>';
     if (intt == 'Save') {
-      mytt = 'Order Saved'; dlid.st = 1;
+      // mytt = 'Order Saved';
+      dlid.st = 1;
     } else {// { "p": "0", "g": gd, "od": { ...zsr, "pc":{...odprice}},ptd,total,pcwt,pctt };
-      mytt = 'Order Booked'; dlid.st = 0;
+      // mytt = 'Order Booked';
+      dlid.st = 0;
     }
     if (!document.getElementById('dl0')) {
       controller.abort();
@@ -1339,6 +1401,11 @@ async function dlfn(v, id) {
     }
     dlid.och = och;
     document.getElementById('tch').value = dlid.tch + och;
+    if (id == 'rkb') {
+      let myl = "https://aeurwxjtlxzk.s3.ap-south-1.amazonaws.com/" + date1 + '/' + v9 + ".png"; dlid.durl = myl;
+      await uplodimg(v9, ptd, myl);
+    }
+
     let x;
     if (pk8) {
       x = await updateod('u');
@@ -1346,63 +1413,85 @@ async function dlfn(v, id) {
       x = await creatod();
     }
     console.log(x);
-    if (dlid.dl == 'shp') {
-      dlid.book = new shbook(x.od.id, dlid.c, dlid.s, x.od.tot, x.od.inv[1], x.pcwt, x.ptd.cn, x.ptd.add, x.ptd.pin, x.ptd.mn1, x.ptd.mn2);
-    } else {
+    let myd;
+    if (id == 'shp') {
+      dlid.book = new shbook(x.od.id, dlid.c, dlid.s, x.od.tot, x.od.inv[1], x.pcwt, x.ptd.cn, x.ptd.add.replace(/\s+/g, ' ').trim(), x.ptd.pin, x.ptd.mn1, x.ptd.mn2);
+      dlurl += '/shp/' + dlid.coid;
+      myd = JSON.stringify(dlid.book);
+      console.log(dlurl);
+    } else if (id == 'rkb') {
+      let pid = pe.title.split(',');
+      dlid.book = [new rkbs(x.ptd, dlid.c1, dlid.s1, dlid.durl, x.pcwt), new rkbf(x.od.id, x.od.inv[1], Number(pid[0]), Number(pid[1]), dlid.durl)];
+      // dlurl += '/rkb/' + dlid.coid;
+      myd = new FormData();
+      myd.append('myd', JSON.stringify(dlid.book[0]));
+      myd.append('t', 'rkb');
+      myd.append('id', JSON.stringify(dlid.book[1]));
+      dlurl = "https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec";
+    } else if ((id == 'dl0') || (id == 'dl1') || (id == 'dl2')) {
       dlid.book = new Dl0(x);
+      dlurl = "https://nlfsah3nl2.execute-api.ap-south-1.amazonaws.com/v1/" + id;
+      myd = 'format=json&data=' + JSON.stringify(dlid.book);
     }
+    dlid.url = dlurl;
     document.querySelector('.w3-bar.w3-panel').style.display = "";
-
-    console.log(dlid, dlid.book);
     if (!dlid.st) {
-      await new Promise(async (rez) => {
-        let fmd = new FormData();
-        fmd.append("myd", JSON.stringify(dlid.book));
-        fmd.append("t", dlid.dl);
-        fmd.append("id", dlid.coid);
-        console.log(fmd);
-        dlurl = ['h', 't', 't', 'p', 's', ':', '/', '/', 's', 'c', 'r', 'i', 'p', 't', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'c', 'o', 'm', '/', 'm', 'a', 'c', 'r', 'o', 's', '/', 's', '/', 'A', 'K', 'f', 'y', 'c', 'b', 'x', 'V', '9', 'v', 'G', '5', 'z', 'P', 'S', 'A', 'u', '2', 'x', 'F', 'A', 'Z', 'j', 'X', 'p', 'E', 'V', 'f', 'v', 'y', 'M', 'l', 'J', 'O', 'O', 'Z', 'g', 'b', 'x', 'v', 'G', 'a', 'f', 's', 'z', '6', '0', '9', 'Q', 'm', 'U', 'n', 'H', 'a', 'l', '2', 'H', 'W', 'N', 'C', 'c', '9', 'T', 'T', 'o', 'X', 'O', '1', '7', 'x', 'p', 'z', 'w', 'g', '/', 'e', 'x', 'e', 'c'].join('');
-        await fetch(dlurl, { method: 'POST', body: fmd }).then(res => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! Status: ${res.status}`);
-          }
-          return res.json();
-        })
-          .then((data) => {
-            console.log(data);
-            if (dlid.dl == 'shp') {
-              dlid.order = data.a;
-            } else {
-              dlid.order = data.packages[0].waybill;
-            }
-            // document.querySelector("#allcor .loading").remove();
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            mytt = 'Error: ' + error;
-            dlid.st = 1;
-          })
-          .finally(() => {
-            rez();
-          });
-      })
+      console.log(dlid.dl, myd, dlurl);
+      worker.postMessage([dlid, { method: 'POST', body: myd, headers: { 'Content-Type': 'application/json' } }]);
+      // document.querySelector("#allcor .loading").remove();
     }
-    await new Promise(async (rez) => {
-      await dldb.dl.put(dlid, dlid.id);
-      await stockm();
-      await snackbar(mytt, 1000);
-      setTimeout(rez(), 300);
-    });
   }
-  // dlid.st&&(await stockm());
-  // dlid.st||(await stockm());//(document.getElementById('tre6').innerHTML='<br><br><br><h1 style="text-align:center">'+mytt+'</h1>');
+  new Promise(async (rez) => {
+    await dldb.dl.put(dlid, dlid.id);
+    await stockm();
+    await snackbar("Booking your order", 1000);
+    setTimeout(rez(), 300);
+  });
 }
 
+// background worker
+const worker = new Worker('sw.js');
+worker.addEventListener('message', event => {
+  const alldata = event.data;
+  const data = alldata[1];
+  let dlid = alldata[0];
+  let id = dlid.dl;
+  let mysms = dlid.id + ' Booked';
+  dlid.st = 0;
+  if (data.error) {
+    mysms = 'Error: ' + data.error;
+    dlid.st = 1;
+    alert('Error: ', data.error);
+  } else if (id == 'shp') {
+    console.log('Data shp:', data);
+    dlid.order = data;
+  } else if (id == 'rkb') {
+    console.log('Data rkb:', data);
+    dlid.order = [data.label_url];
+  } else if ((id == 'dl0') || (id == 'dl1') || (id == 'dl2')) {
+    let dt = data.packages[0];
+    console.log('Data dl:', data);
+    if (dt.status == 'Fail') {
+      mysms = dlid.id + ' Failed To Book';
+      dlid.st = 1;
+      alert(mysms + '\n' + dt.remarks[0]);
+    } else {
+      dlid.order = [dt.waybill];
+    }
+  }
+  new Promise(async (rez) => {
+    await snackbar(mysms, 1000);
+    await dldb.dl.put(dlid, dlid.id);
+    setTimeout(rez(), 100);
+  })
+});
+
+// worker.postMessage(['',{}]); // [0]url,[1]data
 
 class Dl0 {
   constructor(d) {
     this.shipments = [{
-      add: d.ptd.add,
+      add: d.ptd.addreplace(/\s+/g, ' ').trim(),
       phone: d.ptd.mn1,
       name: d.ptd.cn,
       pin: Number(d.ptd.pin),
@@ -1422,13 +1511,53 @@ class Dl0 {
   }
 }
 
+
+function book() {
+  alert("Gandu!! Abhi Nhi");
+}
+
+// let temp0 = {};
+// async function addbill(v) {
+//   let vkid = (pk8) ? pk8 : ((date1 + (Number(localStorage.clickcount) + 1)));
+//   let myfrom = `<tr><td colspan="4"><div id="u13" style="display:none"></div><b>Bill No. - ${vkid}</b></td></tr><tr><td colspan="4"><b>From - </b><i>Own Knitted Blank Wears F-120, Near Gujjar Chowk, Shutter wali gali, Khanpur, Nearby Saket Metro, Delhi-110062<br>Phone No. - +919336695049<br>GSTIN - 07BBNPG0866M2Z7</i></td></tr>`;
+//   let myto = `<tr><td colspan="4"><b>To - </b><i>${v.cn + ' '}${v.add + '<br>'}${v.mn1 + '<br>'}${v.gst && ('GSTIN - ' + v.gst)}</i></td></tr><tr><td colspan="4"><i>HSN Code - </i><i>6109(For All Products)</i></td></tr>`;
+
+//   let mdiv = document.querySelector("#tot thead");
+//   let fdiv = mdiv.innerHTML;
+//   mdiv.innerHTML = myfrom + myto;
+//   let html33 = document.getElementById("tot");
+//   html33.style.width = '455px';
+//   await html2canvas(html33, { allowTaint: true, useCORS: true }).then((canvas) => {
+//     canvas.toBlob((blob) => {
+//       mdiv.innerHTML = fdiv; html33.style.width = '';
+//       let imgdata = {};
+//       let lx = 'https://aeurwxjtlxzk.s3.ap-south-1.amazonaws.com/' + vkid.slice(0, 3) + '/' + genid(vkid.slice(3), 3) + '.png';
+//       fetch(lx, { body: blob, headers: { 'Content-Type': 'image/png' }, method: 'PUT' })
+//         .then((res) => {
+//           console.log('Image uploaded successfully');
+//           imgdata.st = 'success';
+//         })
+//         .catch((er) => {
+//           console.error('Error uploading image:', er);
+//           imgdata.st = er;
+//         }).finally(() => {
+//           imgdata.url = lx;
+//           dlid.img = imgdata;
+//         })
+//     });
+//   })
+// }
+
+
+
+
 // let rkbpc = async () => {
 //   if (!localStorage.rkb) { localStorage.setItem('rkb', '00') }
 //   if (localStorage.rkb) {
 //     let cur = date.slice(0, 2);
 //     let s = {};
 //     if (localStorage.rkb.slice(2, 4) != cur) {
-//       await fetch('https://zcfero2hroldoxsjo767pcage40opezl.lambda-url.ap-south-1.on.aws')
+//       await fetch('https://')
 //         .then((v) => v.json()).then((v) => { s[cur] = v.result; localStorage.setItem('rkb', JSON.stringify(s)); })
 //     }
 //   }

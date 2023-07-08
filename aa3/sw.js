@@ -1,3 +1,17 @@
+self.addEventListener('message', event => {
+    const d = event.data;
+    console.log(d[0]); // dlid
+    console.log(d[1]); // data
+    fetch(d[0].url,d[1])
+      .then(res => res.json())
+      .then(data => {
+        self.postMessage([d[0],data]);
+      })
+      .catch(error => {
+        self.postMessage({ error: error });
+      });
+  });
+
 // self.addEventListener("fetch", (event) => {
 //     let url=event.request.url;
 //     if (/script.google.com/.test(url)) return;
@@ -55,5 +69,3 @@
 // caches.open('v1').then((cache)=>{
 //     cache.addAll(d);
 // })
-
-
