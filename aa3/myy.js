@@ -1491,7 +1491,7 @@ worker.addEventListener('message', event => {
 class Dl0 {
   constructor(d) {
     this.shipments = [{
-      add: d.ptd.addreplace(/\s+/g, ' ').trim(),
+      add: d.ptd.add.replace(/\s+/g, ' ').trim(),
       phone: d.ptd.mn1,
       name: d.ptd.cn,
       pin: Number(d.ptd.pin),
