@@ -543,10 +543,8 @@ function mnvalid(v) {
 
 // pincode check
 function pincode(v) {
-  let pin = v.value.trim();
-  console.log(pin);
-  if (pin.length == 6) {
-    fetch('https://api.postalpincode.in/pincode/' + pin)
+  if (v.value.trim().length == 6) {
+    fetch('https://api.postalpincode.in/pincode/' + v.value.trim())
       .then((response) => response.json())
       .then((data) => {
         if (data[0].Message != "No records found") {
@@ -857,7 +855,7 @@ function gr() {
   document.getElementById('ptd').classList.toggle("ptds");
   document.getElementById('instaa').classList.toggle("hide");
   document.getElementById('gall').classList.toggle("hide");
-  // document.getElementById('tre6').classList.toggle("hide"); //display none
+  // document.getElementById('tre6').classList.toggle("hide");//display none
   document.getElementById('cnm3').classList.toggle("hide");
   document.getElementById('cnm1').classList.toggle("hide");
   document.querySelector("#gstall > div.w3-blue-gray").style.display = 'flex';
@@ -866,12 +864,10 @@ function gr() {
 async function goadd(b, z, m) { //b(ptid),z(odid),m(ptd)object
   b = Number(b);
   ptid = 0, ptods = {};
-  console.log(b, z, m);
-  gr();
+  console.log(b, z);
   let myfn = (v) => {
-    document.getElementById('id01').scrollTop = 0;
+    gr(); document.getElementById('id01').scrollTop = 0;
     document.querySelector("#gstall > div.w3-blue-gray").style.display = 'none';
-    // console.log(v.cn, document.getElementById('incn'), document.querySelector("#gstall > div.w3-blue-gray"));
     document.getElementById('incn').value = v.cn;
     document.getElementById('ptm').value = v.mn1;
     document.getElementById('ptm1').value = v.mn2 ?? '';
@@ -880,7 +876,7 @@ async function goadd(b, z, m) { //b(ptid),z(odid),m(ptd)object
     (k1.value) ? k1.dispatchEvent(new Event('input')) : document.getElementById('ptst').innerText = 'State 07BBNPG0866M2Z7';
     let k2 = document.getElementById('ptp');
     k2.value = v.pin ?? '';
-    (k2.value && (b != 0)) ? k2.dispatchEvent(new Event('input')) : document.getElementById('ptplace').innerText = 'State, District';
+    (k2.value) ? k2.dispatchEvent(new Event('input')) : document.getElementById('ptplace').innerText = 'State, District';
     document.getElementById('pta').value = v.add ?? '';
     ptods = v.ods; ptid = v.id; cid = z;
   }
@@ -894,7 +890,6 @@ async function goadd(b, z, m) { //b(ptid),z(odid),m(ptd)object
       }
     });
   } else {
-    console.log(m);
     myfn(m);
   }
 }
@@ -1191,7 +1186,7 @@ async function gosh(obj1, obj2, obj3) {
     }),
     new Promise(rez => {
       let list = "";
-      dlurl = ['h', 't', 't', 'p', 's', ':', '/', '/', 'b', 'l', 'd', 'n', '7', 'y', 'e', '7', 'c', 'v', '2', 'p', 'b', 'd', 'm', 'd', 'm', 'g', 'n', '4', 'd', 'h', 'i', 'b', 'i', '4', '0', 'f', 'v', 'i', 'w', 'c', '.', 'l', 'a', 'm', 'b', 'd', 'a', '-', 'u', 'r', 'l', '.', 'a', 'p', '-', 's', 'o', 'u', 't', 'h', '-', '1', '.', 'o', 'n', '.', 'a', 'w', 's'].join('');
+      dlurl = 'https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws';//.join('');
       fetch(dlurl + "?" + new URLSearchParams(obj1), { method: 'GET', signal })
         .then(res => res.json())
         .then((v) => {
@@ -1410,6 +1405,7 @@ async function dlfn(v, id) {
       let myl = "https://aeurwxjtlxzk.s3.ap-south-1.amazonaws.com/" + date1 + '/' + v9 + ".png"; dlid.durl = myl;
       await uplodimg(v9, ptd, myl);
     }
+
     let x;
     if (pk8) {
       x = await updateod('u');
@@ -1426,12 +1422,11 @@ async function dlfn(v, id) {
     } else if (id == 'rkb') {
       let pid = pe.title.split(',');
       dlid.book = [new rkbs(x.ptd, dlid.c1, dlid.s1, dlid.durl, x.pcwt), new rkbf(x.od.id, x.od.inv[1], Number(pid[0]), Number(pid[1]), dlid.durl)];
-      myd = '';
       // dlurl += '/rkb/' + dlid.coid;
-      // myd = new FormData();
-      // myd.append('myd', JSON.stringify(dlid.book[0]));
-      // myd.append('t', 'rkb');
-      // myd.append('id', JSON.stringify(dlid.book[1]));
+      myd = new FormData();
+      myd.append('myd', JSON.stringify(dlid.book[0]));
+      myd.append('t', 'rkb');
+      myd.append('id', JSON.stringify(dlid.book[1]));
       dlurl = "https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec";
     } else if ((id == 'dl0') || (id == 'dl1') || (id == 'dl2')) {
       dlid.book = new Dl0(x);
@@ -1442,8 +1437,8 @@ async function dlfn(v, id) {
     document.querySelector('.w3-bar.w3-panel').style.display = "";
     if (!dlid.st) {
       console.log(dlid.dl, myd, dlurl);
-      // worker.postMessage([dlid, { method: 'POST', body: myd, headers: { 'Content-Type': 'application/json' } }]);
-      document.querySelector("#allcor .loading").remove();
+      worker.postMessage([dlid, { method: 'POST', body: myd, headers: { 'Content-Type': 'application/json' } }]);
+      // document.querySelector("#allcor .loading").remove();
     }
   }
   new Promise(async (rez) => {
