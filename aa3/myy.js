@@ -1103,7 +1103,7 @@ async function getcor(k) {
   }
   let urlx = 'https://apiv2.shiprocket.in/v1/external/open/postcode/details?postcode=' + ptd.pin;
   let optx = { method: 'GET', redirect: 'follow', headers: { 'Content-Type': 'application/json', 'Authorization': shipr1 } };
-  let urlx1 = 'https://hzql5jdjqu6dpvb2dnry565opa0dqjdu.lambda-url.ap-south-1.on.aws/pin/' + ptd.pin;
+  let urlx1 = 'https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws/pin/' + ptd.pin;
   Promise.all[fetch(urlx, optx).then((v) => v.json()).then((v) => { dlid.c = v.postcode_details.city; dlid.s = v.postcode_details.state; }),
     fetch(urlx1).then((v) => v.json()).then((v) => { dlid.c1 = v.location[0]; dlid.s1 = v.location[1] })];
   document.getElementById('alltab').style.display = '';
