@@ -82,9 +82,18 @@ let dldb = new Dexie("dldb"); dldb.version(1).stores({ dl: "id,st" });
 var selod5 = {}; var zsr = {}; let selg; let odimgbob;
 //var om=document.getElementById("tb").innerHTML;
 var od = {}; var zxc = 0;
-if (localStorage.clickcount) { zxc = localStorage.clickcount; }
+if (localStorage.clickcount) { zxc = localStorage.clickcount; };
 
-//  // date today
+// shp
+if (((Date.now() > (Number(localStorage.shpdt) + 691200000)) || (!localStorage.shpdt))) {
+  fetch('https://dsfdyyhqqgvk6duva445txkioq0jzoqe.lambda-url.ap-south-1.on.aws').then((v) => v.json())
+    .then((v) => {
+      localStorage.shipr1 = '{"a":"Bearer ' + v[0] + '"}';
+      localStorage.setItem('shpdt', Date.now());
+    })
+}
+
+// date today
 var date; let date1;
 function todaydate() {
   let d = new Date();
@@ -93,14 +102,12 @@ function todaydate() {
     month: 'short',
     year: 'numeric'
   });
-  // for order id
+
   date1 = d.toLocaleDateString('LT', {
     month: '2-digit',
     year: '2-digit'
   }).split('-').join('').slice(-3);
-  // reset order id and reset download after 1 month
   if (localStorage.m != (d.getMonth() + 1)) {
-    // resetd();
     localStorage.clickcount = 0; zxc = 0; localStorage.m = (d.getMonth() + 1);
     localStorage.fromod = 0;
   }
