@@ -1430,7 +1430,7 @@ async function dlfn(v, id) {
       dlurl = "https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec";
     } else if ((id == 'dl0') || (id == 'dl1') || (id == 'dl2')) {
       dlid.book = new Dl0(x);
-      dlurl = "https://nlfsah3nl2.execute-api.ap-south-1.amazonaws.com/v1/" + id;
+      dlurl = "https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws/del/" + id;
       myd = 'format=json&data=' + JSON.stringify(dlid.book);
     }
     dlid.url = dlurl;
@@ -1511,56 +1511,6 @@ class Dl0 {
   }
 }
 
-
 function book() {
   alert("Gandu!! Abhi Nhi");
 }
-
-// let temp0 = {};
-// async function addbill(v) {
-//   let vkid = (pk8) ? pk8 : ((date1 + (Number(localStorage.clickcount) + 1)));
-//   let myfrom = `<tr><td colspan="4"><div id="u13" style="display:none"></div><b>Bill No. - ${vkid}</b></td></tr><tr><td colspan="4"><b>From - </b><i>Own Knitted Blank Wears F-120, Near Gujjar Chowk, Shutter wali gali, Khanpur, Nearby Saket Metro, Delhi-110062<br>Phone No. - +919336695049<br>GSTIN - 07BBNPG0866M2Z7</i></td></tr>`;
-//   let myto = `<tr><td colspan="4"><b>To - </b><i>${v.cn + ' '}${v.add + '<br>'}${v.mn1 + '<br>'}${v.gst && ('GSTIN - ' + v.gst)}</i></td></tr><tr><td colspan="4"><i>HSN Code - </i><i>6109(For All Products)</i></td></tr>`;
-
-//   let mdiv = document.querySelector("#tot thead");
-//   let fdiv = mdiv.innerHTML;
-//   mdiv.innerHTML = myfrom + myto;
-//   let html33 = document.getElementById("tot");
-//   html33.style.width = '455px';
-//   await html2canvas(html33, { allowTaint: true, useCORS: true }).then((canvas) => {
-//     canvas.toBlob((blob) => {
-//       mdiv.innerHTML = fdiv; html33.style.width = '';
-//       let imgdata = {};
-//       let lx = 'https://aeurwxjtlxzk.s3.ap-south-1.amazonaws.com/' + vkid.slice(0, 3) + '/' + genid(vkid.slice(3), 3) + '.png';
-//       fetch(lx, { body: blob, headers: { 'Content-Type': 'image/png' }, method: 'PUT' })
-//         .then((res) => {
-//           console.log('Image uploaded successfully');
-//           imgdata.st = 'success';
-//         })
-//         .catch((er) => {
-//           console.error('Error uploading image:', er);
-//           imgdata.st = er;
-//         }).finally(() => {
-//           imgdata.url = lx;
-//           dlid.img = imgdata;
-//         })
-//     });
-//   })
-// }
-
-
-
-
-// let rkbpc = async () => {
-//   if (!localStorage.rkb) { localStorage.setItem('rkb', '00') }
-//   if (localStorage.rkb) {
-//     let cur = date.slice(0, 2);
-//     let s = {};
-//     if (localStorage.rkb.slice(2, 4) != cur) {
-//       await fetch('https://')
-//         .then((v) => v.json()).then((v) => { s[cur] = v.result; localStorage.setItem('rkb', JSON.stringify(s)); })
-//     }
-//   }
-// }
-
-// rkbpc(); // Object.values(JSON.parse(localStorage.rkb))[0]
