@@ -1461,7 +1461,8 @@ worker.addEventListener('message', event => {
   if (data.error) {
     mysms = 'Error: ' + data.error;
     dlid.st = 1;
-    alert('Error: ', data.error);
+    console.log(data);
+    alert('Error: ', JSON.stringify(data));
   } else if (id == 'shp') {
     console.log('Data shp:', data);
     dlid.order = data;
