@@ -1361,13 +1361,14 @@ async function uplodimg(odn, v, url) {
         .then((res) => {
           console.log('Image uploaded successfully')
         })
-        .catch((er) => { alert('Error uploading image:', JSON.stringify(er)); });
+        .catch((er) => { alert('Error uploading Rocketbox order image:', JSON.stringify(er)); });
     });
   })
 }
 
 async function dlfn(v, id) {
   let v9 = (pk8) ? pk8 : Number((date1 + (Number(localStorage.clickcount) + 1)));
+  let mhj = "woxdk-4" + v9 + "0-k" + Math.random().toString(36).slice(6) + "d";
   let pe = v.parentElement;
   let my0 = pe.querySelector('div b.w3-right').innerText.slice(0, -1); console.log(my0);
   let intt = v.innerText; v.id = intt;
@@ -1401,10 +1402,6 @@ async function dlfn(v, id) {
     }
     dlid.och = och;
     document.getElementById('tch').value = dlid.tch + och;
-    if (id == 'rkb') {
-      let myl = "https://aeurwxjtlxzk.s3.ap-south-1.amazonaws.com/" + date1 + '/' + v9 + ".png"; dlid.durl = myl;
-      await uplodimg(v9, ptd, myl);
-    }
 
     let x;
     if (pk8) {
@@ -1420,14 +1417,14 @@ async function dlfn(v, id) {
       myd = JSON.stringify(dlid.book);
       console.log(dlurl);
     } else if (id == 'rkb') {
+      let myl = "https://kcqawrffldi2xw.s3.ap-south-1.amazonaws.com/zcoyad/files/" + mhj + ".png"; dlid.durl = myl;
+      // if (!dlid.st) {
+      await uplodimg(v9, ptd, myl); // upload always so book later
+      // }
       let pid = pe.title.split(',');
       dlid.book = [new rkbs(x.ptd, dlid.c1, dlid.s1, dlid.durl, x.pcwt), new rkbf(x.od.id, x.od.inv[1], Number(pid[0]), Number(pid[1]), dlid.durl)];
-      // dlurl += '/rkb/' + dlid.coid;
-      myd = new FormData();
-      myd.append('myd', JSON.stringify(dlid.book[0]));
-      myd.append('t', 'rkb');
-      myd.append('id', JSON.stringify(dlid.book[1]));
       dlurl = "https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec";
+      myd = '';
     } else if ((id == 'dl0') || (id == 'dl1') || (id == 'dl2')) {
       dlid.book = new Dl0(x);
       dlurl = "https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws/del/" + id;
