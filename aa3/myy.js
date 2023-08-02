@@ -1403,112 +1403,118 @@ async function dlfn(v, id) {
     dlid.och = och;
     document.getElementById('tch').value = dlid.tch + och;
 
-    let x;
-    if (pk8) {
-      x = await updateod('u');
-    } else {
-      x = await creatod();
-    }
-    console.log(x);
-    let myd;
-    if (id == 'shp') {
-      dlid.book = new shbook(x.od.id, dlid.c, dlid.s, x.od.tot, x.od.inv[1], x.pcwt, x.ptd.cn, x.ptd.add.replace(/\s+/g, ' ').trim(), x.ptd.pin, x.ptd.mn1, x.ptd.mn2);
-      dlurl += '/shp/' + dlid.coid;
-      myd = JSON.stringify(dlid.book);
-      console.log(dlurl);
-    } else if (id == 'rkb') {
+    if (id == 'rkb') {
       let myl = "https://kcqawrffldi2xw.s3.ap-south-1.amazonaws.com/zcoyad/files/" + mhj + ".png"; dlid.durl = myl;
       // if (!dlid.st) {
       await uplodimg(v9, ptd, myl); // upload always so book later
       // }
-      let pid = pe.title.split(',');
-      dlid.book = [new rkbs(x.ptd, dlid.c1, dlid.s1, dlid.durl, x.pcwt), new rkbf(x.od.id, x.od.inv[1], Number(pid[0]), Number(pid[1]), dlid.durl)];
-      dlurl = "https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec";
-      myd = '';
-    } else if ((id == 'dl0') || (id == 'dl1') || (id == 'dl2')) {
-      dlid.book = new Dl0(x);
-      dlurl = "https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws/del/" + id;
-      myd = 'format=json&data=' + JSON.stringify(dlid.book);
-    }
-    dlid.url = dlurl;
-    document.querySelector('.w3-bar.w3-panel').style.display = "";
-    if (!dlid.st) {
-      console.log(dlid.dl, myd, dlurl);
-      worker.postMessage([dlid, { method: 'POST', body: myd, headers: { 'Content-Type': 'application/json' } }]);
-      // document.querySelector("#allcor .loading").remove();
-    }
-  }
-  new Promise(async (rez) => {
-    await dldb.dl.put(dlid, dlid.id);
-    await stockm();
-    await snackbar("Booking your order", 1000);
-    setTimeout(rez(), 300);
-  });
-}
 
-// background worker
-const worker = new Worker('sw.js');
-worker.addEventListener('message', event => {
-  const alldata = event.data;
-  const data = alldata[1];
-  let dlid = alldata[0];
-  let id = dlid.dl;
-  let mysms = dlid.id + ' Booked';
-  dlid.st = 0;
-  if (data.error) {
-    mysms = 'Error: ' + data.error;
-    dlid.st = 1;
-    console.log(data);
-    alert('Error: ', JSON.stringify(data));
-  } else if (id == 'shp') {
-    console.log('Data shp:', data);
-    dlid.order = data;
-  } else if (id == 'rkb') {
-    console.log('Data rkb:', data);
-    dlid.order = [data.label_url];
-  } else if ((id == 'dl0') || (id == 'dl1') || (id == 'dl2')) {
-    let dt = data.packages[0];
-    console.log('Data dl:', data);
-    if (dt.status == 'Fail') {
-      mysms = dlid.id + ' Failed To Book';
+      let x;
+      if (pk8) {
+        x = await updateod('u');
+      } else {
+        x = await creatod();
+      }
+      console.log(x);
+      let myd;
+      if (id == 'shp') {
+        dlid.book = new shbook(x.od.id, dlid.c, dlid.s, x.od.tot, x.od.inv[1], x.pcwt, x.ptd.cn, x.ptd.add.replace(/\s+/g, ' ').trim(), x.ptd.pin, x.ptd.mn1, x.ptd.mn2);
+        dlurl += '/shp/' + dlid.coid;
+        myd = JSON.stringify(dlid.book);
+        console.log(dlurl);
+      } else if (id == 'rkb') {
+        // let myl = "https://kcqawrffldi2xw.s3.ap-south-1.amazonaws.com/zcoyad/files/" + mhj + ".png"; dlid.durl = myl;
+        // // if (!dlid.st) {
+        // await uplodimg(v9, ptd, myl); // upload always so book later
+        // // }
+        let pid = pe.title.split(',');
+        dlid.book = [new rkbs(x.ptd, dlid.c1, dlid.s1, dlid.durl, x.pcwt), new rkbf(x.od.id, x.od.inv[1], Number(pid[0]), Number(pid[1]), dlid.durl)];
+        dlurl = "https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec";
+        myd = '';
+      } else if ((id == 'dl0') || (id == 'dl1') || (id == 'dl2')) {
+        dlid.book = new Dl0(x);
+        dlurl = "https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws/del/" + id;
+        myd = 'format=json&data=' + JSON.stringify(dlid.book);
+      }
+      dlid.url = dlurl;
+      document.querySelector('.w3-bar.w3-panel').style.display = "";
+      if (!dlid.st) {
+        console.log(dlid.dl, myd, dlurl);
+        worker.postMessage([dlid, { method: 'POST', body: myd, headers: { 'Content-Type': 'application/json' } }]);
+        // document.querySelector("#allcor .loading").remove();
+      }
+    }
+    new Promise(async (rez) => {
+      await dldb.dl.put(dlid, dlid.id);
+      await stockm();
+      await snackbar("Booking your order", 1000);
+      setTimeout(rez(), 300);
+    });
+  }
+
+  // background worker
+  const worker = new Worker('sw.js');
+  worker.addEventListener('message', event => {
+    const alldata = event.data;
+    const data = alldata[1];
+    let dlid = alldata[0];
+    let id = dlid.dl;
+    let mysms = dlid.id + ' Booked';
+    dlid.st = 0;
+    if (data.error) {
+      mysms = 'Error: ' + data.error;
       dlid.st = 1;
-      alert(mysms + '\n' + dt.remarks[0]);
-    } else {
-      dlid.order = [dt.waybill];
+      console.log(data);
+      alert('Error: ', JSON.stringify(data));
+    } else if (id == 'shp') {
+      console.log('Data shp:', data);
+      dlid.order = data;
+    } else if (id == 'rkb') {
+      console.log('Data rkb:', data);
+      dlid.order = [data.label_url];
+    } else if ((id == 'dl0') || (id == 'dl1') || (id == 'dl2')) {
+      let dt = data.packages[0];
+      console.log('Data dl:', data);
+      if (dt.status == 'Fail') {
+        mysms = dlid.id + ' Failed To Book';
+        dlid.st = 1;
+        alert(mysms + '\n' + dt.remarks[0]);
+      } else {
+        dlid.order = [dt.waybill];
+      }
+    }
+    new Promise(async (rez) => {
+      await snackbar(mysms, 1000);
+      await dldb.dl.put(dlid, dlid.id);
+      setTimeout(rez(), 100);
+    })
+  });
+
+  // worker.postMessage(['',{}]); // [0]url,[1]data
+
+  class Dl0 {
+    constructor(d) {
+      this.shipments = [{
+        add: d.ptd.add.replace(/\s+/g, ' ').trim(),
+        phone: d.ptd.mn1,
+        name: d.ptd.cn,
+        pin: Number(d.ptd.pin),
+        order: String(d.od.id),
+        weight: (d.pcwt * 0.8 * 1000).toFixed(),   //  pcwt in gm
+        total_amount: d.od.inv[1],
+        quantity: String(d.od.tot),
+        payment_mode: 'Prepaid',
+        seller_name: 'OwnKnitted.com',
+        category_of_goods: 'Clothes',
+        shipment_length: 1,
+        shipment_width: 2,
+        shipment_height: 3,
+      }];
+      let cv = document.querySelector('#pinclick input[type="radio"]:checked').value;
+      this.pickup_location = { name: (cv == '110062') ? 'ownknitted.com' : 'T ownknitted.com' };
     }
   }
-  new Promise(async (rez) => {
-    await snackbar(mysms, 1000);
-    await dldb.dl.put(dlid, dlid.id);
-    setTimeout(rez(), 100);
-  })
-});
 
-// worker.postMessage(['',{}]); // [0]url,[1]data
-
-class Dl0 {
-  constructor(d) {
-    this.shipments = [{
-      add: d.ptd.add.replace(/\s+/g, ' ').trim(),
-      phone: d.ptd.mn1,
-      name: d.ptd.cn,
-      pin: Number(d.ptd.pin),
-      order: String(d.od.id),
-      weight: (d.pcwt * 0.8 * 1000).toFixed(),   //  pcwt in gm
-      total_amount: d.od.inv[1],
-      quantity: String(d.od.tot),
-      payment_mode: 'Prepaid',
-      seller_name: 'OwnKnitted.com',
-      category_of_goods: 'Clothes',
-      shipment_length: 1,
-      shipment_width: 2,
-      shipment_height: 3,
-    }];
-    let cv = document.querySelector('#pinclick input[type="radio"]:checked').value;
-    this.pickup_location = { name: (cv == '110062') ? 'ownknitted.com' : 'T ownknitted.com' };
+  function book() {
+    alert("Gandu!! Abhi Nhi");
   }
-}
-
-function book() {
-  alert("Gandu!! Abhi Nhi");
-}
