@@ -1294,7 +1294,7 @@ class rkbs {
 
 class rkbf {
   constructor(inn, inv, mid, pid, docid) {
-    let mydt = formatDate(new Date(new Date().getTime() + (1000 * 60 * 2)));
+    let mydt = formatDate(new Date(new Date().getTime() + (1000 * 60 * 3)));
     this.client_id = "3410";
     this.order_id = 22222;
     this.remarks = "Handle With Care";
