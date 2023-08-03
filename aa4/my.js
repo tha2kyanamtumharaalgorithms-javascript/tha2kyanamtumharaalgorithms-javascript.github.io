@@ -132,10 +132,10 @@ if ((navigator.platform) === 'iPhone') {
 //console.log('intp:',intp);
 
 // change type name
-const typep7 = { "Bio": "RN Bio", "NBio": "RN Non Bio", "Polo": "Polo", "OverS": "Oversize", "Hood": "Hoodie", "Sweat": "Sweatshirt", "Kids": "Kids RN" };
+const typep7 = { "Bio": "RN Bio", "NBio": "RN Non Bio", "Polo": "Polo", "O/S210": "Oversize", "O/S180": "Oversize", "Hood": "Hoodie", "Sweat": "Sweatshirt", "Kids": "Kids RN" };
 
 // for image bill
-const typep77 = { "Bio": "Bio-RN", "NBio": "Cotton-RN", "Polo": "Polo", "OverS": "O/S Dropsholder", "Hood": "Hoodie", "Sweat": "Sweatshirt", "Kids": "Kids-RN" };
+const typep77 = { "Bio": "Bio-RN", "NBio": "Cotton-RN", "Polo": "Polo", "O/S210": "O/S Dropsholder 210", "O/S180": "O/S Dropsholder 180", "Hood": "Hoodie", "Sweat": "Sweatshirt", "Kids": "Kids-RN" };
 // typep7[variable] //console.log(typep7["Bio"]);
 
 //gen. table start

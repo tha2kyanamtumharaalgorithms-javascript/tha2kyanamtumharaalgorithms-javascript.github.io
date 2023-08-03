@@ -4,7 +4,7 @@ self.addEventListener('message', event => {
   let dlid=d[0];
   if (dlid.dl=='rkb') {
     let myd1 = new FormData();
-    console.log(dlid.book);
+    console.log(JSON.stringify(dlid.book));
     myd1.append('myd', JSON.stringify(dlid.book[0]));
     myd1.append('t', 'rkb');
     myd1.append('id', JSON.stringify(dlid.book[1]));
