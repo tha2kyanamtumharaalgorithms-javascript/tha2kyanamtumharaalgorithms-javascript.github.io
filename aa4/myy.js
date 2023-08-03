@@ -1100,7 +1100,13 @@ async function getcor(k) {
   let optx = { method: 'GET', redirect: 'follow', headers: { 'Content-Type': 'application/json', 'Authorization': shipr1 } };
   let urlx1 = 'https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws/pin/' + ptd.pin;
   Promise.all[fetch(urlx, optx).then((v) => v.json()).then((v) => { dlid.c = v.postcode_details.city; dlid.s = v.postcode_details.state; }),
-    fetch(urlx1).then((v) => v.json()).then((v) => { dlid.c1 = v.location[0]; dlid.s1 = v.location[1] })];
+    fetch(urlx1).then((v) => v.json()).then((v) => {
+      if (v.location.length) {
+        dlid.c1 = v.location[0]; dlid.s1 = v.location[1];
+      } else {
+        setTimeout(() => { dlid.c1 = dlid.c; dlid.s1 = dlid.s; }, 300);
+      }
+    })];
   document.getElementById('alltab').style.display = '';
   document.getElementById('cor1').style.display = 'none';
   document.getElementById('id01').style.display = 'block';
