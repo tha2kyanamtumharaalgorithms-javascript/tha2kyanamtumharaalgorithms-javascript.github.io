@@ -1258,7 +1258,7 @@ class rkbs {
     this.approx_weight = appwt;
     let cv = (document.querySelector('#pinclick input[type="radio"]:checked').value == '110062');
     this.source_warehouse_name = (cv ? "ownknitteddotcom" : "townknitteddotcom");
-    this.source_address_line1 = (cv ? "F120, tshirt wala Godown, khanpur" : "26/14 bridge way colony, 1st street");
+    this.source_address_line1 = (cv ? "F120, own knitted, khanpur" : "26/14 bridge way colony, 1st street");
     this.source_address_line2 = (cv ? "Near shutter wali gali, gujjar chowk" : "lakshmi nagar east, tiruppur, tamilnadu");
     this.source_pincode = (cv ? "110062" : "641607");
     this.source_city = (cv ? "New Delhi" : "Tiruppur");
