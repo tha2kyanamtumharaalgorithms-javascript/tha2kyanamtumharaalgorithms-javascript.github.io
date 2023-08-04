@@ -62,10 +62,10 @@
                 <th>{{ pc.wt.NBio+'kg' }}</th>
             </tr>
             <tr>
-                <th>OverS (S-XL)</th>
+                <th>O/S210 (S-XL)</th>
                 <td @blur='pcs.pc.OverS[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.OverS[0]+'₹' }}</td>
                 <td @blur='pc.pc.OverS[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.OverS[0]+'₹' }}</td>
-                <th>{{ pc.wt.OverS+'kg' }}</th>
+                <th>{{ pc.wt['O/S210']+'kg' }}</th>
             </tr>
             <tr>
                 <th>Polo (XS-XL)</th>
@@ -130,7 +130,7 @@
 
 
 <script type="module">
-if(!localStorage.pcs){localStorage.setItem('pcs','{ "pc": { "Bio": [180, 185], "NBio": [130, 135, 15], "OverS": [215], "Polo": [205, 215], "Hood": [305, 315], "Sweat": [205, 215], "Kids": [140] }, "wt": { "Bio": 0.20, "NBio": 0.20, "OverS": 0.25, "Polo": 0.25, "Hood": 0.55, "Sweat": 0.45, "Kids": 0.150 }}')}
+if(!localStorage.pcs){localStorage.setItem('pcs','{ "pc": { "Bio": [180, 185], "NBio": [130, 135, 15], "O/S210": [215], "O/S2180": [215], "Polo": [205, 215], "Hood": [305, 315], "Sweat": [205, 215], "Kids": [140] }, "wt": { "Bio": 0.20, "NBio": 0.20, "OverS": 0.25, "Polo": 0.25, "Hood": 0.55, "Sweat": 0.45, "Kids": 0.150 }}')}
 
 let pc=JSON.parse(localStorage.pc);
 let pcs=JSON.parse(localStorage.pcs);   
