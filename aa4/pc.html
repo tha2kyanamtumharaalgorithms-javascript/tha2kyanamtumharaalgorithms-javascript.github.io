@@ -63,9 +63,15 @@
             </tr>
             <tr>
                 <th>O/S210 (S-XL)</th>
-                <td @blur='pcs.pc.OverS[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.OverS[0]+'₹' }}</td>
-                <td @blur='pc.pc.OverS[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.OverS[0]+'₹' }}</td>
+                <td @blur="pcs.pc['O/S210'][0] = Number($event.target.innerText.match(/\d+/)[0])">{{ pcs.pc['O/S210'][0]+'₹' }}</td>
+                <td @blur="pc.pc['O/S210'][0] = Number($event.target.innerText.match(/\d+/)[0])">{{ pc.pc['O/S210'][0]+'₹' }}</td>
                 <th>{{ pc.wt['O/S210']+'kg' }}</th>
+            </tr>
+            <tr>
+                <th>O/S180 (S-XL)</th>
+                <td @blur="pcs.pc['O/S180'][0] = Number($event.target.innerText.match(/\d+/)[0])">{{ pcs.pc['O/S180'][0]+'₹' }}</td>
+                <td @blur="pc.pc['O/S180'][0] = Number($event.target.innerText.match(/\d+/)[0])">{{ pc.pc['O/S180'][0]+'₹' }}</td>
+                <th>{{ pc.wt['O/S180']+'kg' }}</th>
             </tr>
             <tr>
                 <th>Polo (XS-XL)</th>

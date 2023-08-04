@@ -460,7 +460,7 @@ function pc(v, vx, a, b, c, d, e) { // v(type) a(36-42), b(44), c(46), d(32), e(
       let wht1 = "<td colspan='2'><b>" + (a + b + c - wha - whb) + ' ' + vx + "</b><b class='sa2'>" + (((a - wha) != 0) ? sva = (a - wha) + '×' + prc.pc[v][0] : sva = '') + ((((a - wha) != 0) && ((b + c - whb) != 0)) ? svpls1 = '+' : svpls1 = '') + (((b + c - whb) != 0) ? svbc = (b + c - whb) + '×' + prc.pc[v][1] : svbc = '') + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
       return (((a + b + c - wha - whb) || '') && ('<tr>' + wht1 + '<tr/><tr>')) + (((wha + whb) || '') && ('<tr>' + wht0 + '<tr/>'))
     } else { }
-  } else if (v == 'O/S210' || v == 'Kids') { //console.log('O')
+  } else if (v == 'O/S210' || v == 'O/S180' || v == 'Kids') { //console.log('O')
     pj1 = ((a + b + c + d + e) * prc.pc[v][0]); odprice[v] = prc.pc[v];
     pctt += pj1; pcwt += (a + b + c + d + e) * Number(prc.wt[v]);
     return "<td colspan='2'><b>" + (a + b + c + d + e) + ' ' + vx + "</b><b class='sa2'>" + (a + b + c + d + e) + '×' + prc.pc[v][0] + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
@@ -1287,7 +1287,7 @@ class rkbs {
     let dat = [{ "units": 1, "weight": Number(Number(appwt) / nop), "length": 1, "height": 3, "width": 2, "display_in": "cm" }];
     if (nop > 1) {
       for (let i = 1; i < nop; i++) {
-        m.push(dat[0]);
+        dat.push(dat[0]);
       }
     }
     this.packaging_unit_details = dat;
