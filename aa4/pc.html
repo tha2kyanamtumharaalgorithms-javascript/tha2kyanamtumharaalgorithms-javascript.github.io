@@ -62,16 +62,16 @@
                 <th>{{ pc.wt.NBio+'kg' }}</th>
             </tr>
             <tr>
-                <th>O/S210 (S-XL)</th>
-                <td @blur="pcs.pc['O/S210'][0] = Number($event.target.innerText.match(/\d+/)[0])">{{ pcs.pc['O/S210'][0]+'₹' }}</td>
-                <td @blur="pc.pc['O/S210'][0] = Number($event.target.innerText.match(/\d+/)[0])">{{ pc.pc['O/S210'][0]+'₹' }}</td>
-                <th>{{ pc.wt['O/S210']+'kg' }}</th>
+                <th>OS210 (S-XL)</th>
+                <td @blur="pcs.pc['OS210'][0] = Number($event.target.innerText.match(/\d+/)[0])">{{ pcs.pc['OS210'][0]+'₹' }}</td>
+                <td @blur="pc.pc['OS210'][0] = Number($event.target.innerText.match(/\d+/)[0])">{{ pc.pc['OS210'][0]+'₹' }}</td>
+                <th>{{ pc.wt['OS210']+'kg' }}</th>
             </tr>
             <tr>
-                <th>O/S180 (S-XL)</th>
-                <td @blur="pcs.pc['O/S180'][0] = Number($event.target.innerText.match(/\d+/)[0])">{{ pcs.pc['O/S180'][0]+'₹' }}</td>
-                <td @blur="pc.pc['O/S180'][0] = Number($event.target.innerText.match(/\d+/)[0])">{{ pc.pc['O/S180'][0]+'₹' }}</td>
-                <th>{{ pc.wt['O/S180']+'kg' }}</th>
+                <th>OS180 (S-XL)</th>
+                <td @blur="pcs.pc['OS180'][0] = Number($event.target.innerText.match(/\d+/)[0])">{{ pcs.pc['OS180'][0]+'₹' }}</td>
+                <td @blur="pc.pc['OS180'][0] = Number($event.target.innerText.match(/\d+/)[0])">{{ pc.pc['OS180'][0]+'₹' }}</td>
+                <th>{{ pc.wt['OS180']+'kg' }}</th>
             </tr>
             <tr>
                 <th>Polo (XS-XL)</th>
@@ -136,7 +136,7 @@
 
 
 <script type="module">
-if(!localStorage.pcs){localStorage.setItem('pcs','{ "pc": { "Bio": [180, 185], "NBio": [130, 135, 15], "O/S210": [215], "O/S2180": [215], "Polo": [205, 215], "Hood": [305, 315], "Sweat": [205, 215], "Kids": [140] }, "wt": { "Bio": 0.20, "NBio": 0.20, "OverS": 0.25, "Polo": 0.25, "Hood": 0.55, "Sweat": 0.45, "Kids": 0.150 }}')}
+if(!localStorage.pcs){localStorage.setItem('pcs','{ "pc": { "Bio": [180, 185], "NBio": [130, 135, 15], "OS210": [215], "OS2180": [215], "Polo": [205, 215], "Hood": [305, 315], "Sweat": [205, 215], "Kids": [140] }, "wt": { "Bio": 0.20, "NBio": 0.20, "OverS": 0.25, "Polo": 0.25, "Hood": 0.55, "Sweat": 0.45, "Kids": 0.150 }}')}
 
 let pc=JSON.parse(localStorage.pc);
 let pcs=JSON.parse(localStorage.pcs);   
