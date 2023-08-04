@@ -1288,7 +1288,7 @@ class rkbs {
     let dat = [{ "units": 1, "weight": Number(Number(appwt) / nop), "length": 1, "height": 3, "width": 2, "display_in": "cm" }];
     if (nop > 1) {
       for (let i = 1; i < nop; i++) {
-        m.push(dat[0]);
+        dat.push(dat[0]);
       }
     }
     this.packaging_unit_details = dat;
