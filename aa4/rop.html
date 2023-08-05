@@ -630,9 +630,12 @@
                       apnd(t, nbio46, p.pc[t][1], i, 1, w);
                     }
                   }
-                } else if (t == 'OverS') {
+                } else if (t == 'OverS' || t == 'OS210') {
                   ows += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][0];
                   apnd(t, ows, p.pc[t][0], i, 0, w);
+                } else if (t == 'OS180') {
+                  os180 += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][0];
+                  apnd(t, os180, p.pc[t][0], i, 0, w);
                 } else if (t == 'Kids') {
                   kid += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][0];
                   apnd(t, kid, p.pc[t][0], i, 0, w);
