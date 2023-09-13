@@ -749,6 +749,56 @@ const ptdJSON = JSON.stringify(ptd);
 localStorage.setItem('client_data', ptdJSON);
 console.log('Data stored in localStorage.');
 
+      // featching and write entry in csv file
+const localStorageData = JSON.parse(localStorage.getItem('client_data'));
+
+if (localStorageData) {
+  // Step 2: Fetch the existing CSV file from the URL
+  const csvFileURL = 'https://docs.google.com/spreadsheets/d/1_D1ff1lCQcJuK8-2k6VoD290mvRvYeR42lAu4MKYigw/edit#gid=0'; // Replace with your CSV file URL
+
+  fetch(csvFileURL)
+    .then(response => response.text())
+    .then(csvData => {
+      // Step 3: Parse the CSV data
+      const lines = csvData.trim().split('\n');
+      const headers = lines[0].split(',');
+
+      // Step 4: Append data from localStorage to the parsed CSV data
+      const appendedData = [headers]; // Start with the existing headers
+
+      // Customize this part to match the structure of your CSV and the data in localStorage
+      const appendedRecord = [
+        localStorageData.field1,
+       
+        // Add more fields as needed
+      ];
+
+      appendedData.push(appendedRecord);
+
+      // Step 5: Create a new CSV file with the appended data
+      const appendedCSV = appendedData.map(row => row.join(',')).join('\n');
+
+      // Step 6: Offer the new CSV file for download
+      const blob = new Blob([appendedCSV], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'appended_data.csv'; // Specify the filename
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+      console.error('Error fetching or processing CSV file:', error);
+    });
+} else {
+  console.error('No data found in localStorage.');
+}
+
+      // here my code is end 
+
       if (v == 1) { gonext(); } // save and next 
       return true
     } else { console.log(cn, ptg); alert('⚠️Something wroug! Check all details.'); return false }
