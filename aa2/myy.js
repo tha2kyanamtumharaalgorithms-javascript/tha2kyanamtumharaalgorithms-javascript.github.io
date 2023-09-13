@@ -760,6 +760,7 @@ if (localStorageData) {
     .then(response => response.text())
     .then(csvData => {
       // Step 3: Parse the CSV data
+      console.log(here is parse csv data);
       const lines = csvData.trim().split('\n');
       const headers = lines[0].split(',');
 
