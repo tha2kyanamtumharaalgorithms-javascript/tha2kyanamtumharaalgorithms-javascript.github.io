@@ -719,7 +719,7 @@ function sptd(v) {
 
     if ((cn && vn) || (ptg.length == 2)) {
       console.log(ptd);
-      const ptdJSON = JSON.stringify(ptd);
+      const ptdJSON = JSON.stringify(ptd.pin);
        localStorage.setItem('client_data', ptdJSON);
       if (v == 1) { gonext(); } // save and next 
       return true
