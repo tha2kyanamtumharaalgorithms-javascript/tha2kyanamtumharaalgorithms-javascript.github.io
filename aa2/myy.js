@@ -742,6 +742,13 @@ function sptd(v) {
 
     if ((cn && vn) || (ptg.length == 2)) {
       console.log(ptd);
+      
+     // Assuming 'ptd' is already an object
+const ptdJSON = JSON.stringify(ptd);
+// Store the JSON string in localStorage with a specific key ('client_data' in this case)
+localStorage.setItem('client_data', ptdJSON);
+console.log('Data stored in localStorage.');
+
       if (v == 1) { gonext(); } // save and next 
       return true
     } else { console.log(cn, ptg); alert('⚠️Something wroug! Check all details.'); return false }
