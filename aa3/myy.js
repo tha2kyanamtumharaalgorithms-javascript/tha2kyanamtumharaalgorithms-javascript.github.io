@@ -719,6 +719,7 @@ function sptd(v) {
 
     if ((cn && vn) || (ptg.length == 2)) {
       console.log(ptd);
+       localStorage.setItem('client_data', ptd);
       if (v == 1) { gonext(); } // save and next 
       return true
     } else { console.log(cn, ptg); alert('⚠️Something wroug! Check all details.'); return false }
