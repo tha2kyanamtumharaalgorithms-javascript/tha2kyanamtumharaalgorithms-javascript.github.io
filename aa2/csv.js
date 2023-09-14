@@ -182,3 +182,81 @@ getDataFromIndexedDB(dbName, storeName)
     console.error('Error exporting data:', error);
   });
 
+
+// restore data in indexed db
+function insertDataIntoIndexedDB(dbName, storeName, csvData) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(dbName);
+
+    request.onsuccess = (event) => {
+      const db = event.target.result;
+      const transaction = db.transaction(storeName, 'readwrite');
+      const objectStore = transaction.objectStore(storeName);
+
+      csvData.forEach((row) => {
+        objectStore.add(row); // Assuming row is an object matching your object store structure
+      });
+
+      transaction.oncomplete = () => {
+        resolve();
+      };
+
+      transaction.onerror = (e) => {
+        reject(e.target.error);
+      };
+    });
+
+    request.onerror = (e) => {
+      reject(e.target.error);
+    };
+  });
+}
+function parseCSV(csvText) {
+  const lines = csvText.split('\n');
+  const data = [];
+
+  const headers = lines[0].split(',');
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(',');
+    const row = {};
+
+    for (let j = 0; j < headers.length; j++) {
+      row[headers[j]] = values[j];
+    }
+
+    data.push(row);
+  }
+
+  return data;
+}
+// Replace 'csvText' with your CSV data as a string
+const csvText = '[
+  {
+    "id": "3081",
+    "cn": "sfgdsfgdfg",
+    "tot": "33",
+    "bulk": "1",
+    "dt": "02/Aug/2023",
+    "it": "[object Object]",
+    "inv": "4950",
+    "tch": "5649",
+    "och": "451",
+    "dis": "0",
+    "pt": "0"
+  }
+]'; // Your CSV data as a string
+
+const dbName = 'bulk';
+const storeName = 'bk';
+
+const csvData = parseCSV(csvText);
+
+insertDataIntoIndexedDB(dbName, storeName, csvData)
+  .then(() => {
+    console.log('Data inserted into IndexedDB successfully');
+  })
+  .catch((error) => {
+    console.error('Error inserting data into IndexedDB:', error);
+  });
+
