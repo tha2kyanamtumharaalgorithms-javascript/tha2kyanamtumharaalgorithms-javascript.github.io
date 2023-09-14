@@ -110,3 +110,75 @@
             const popup = document.getElementById('popup');
             popup.style.display = 'none';
         }
+
+
+// export dbs data from indexed db
+function getDataFromIndexedDB(bulk, bk) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(dbName);
+
+    request.onsuccess = (event) => {
+      const db = event.target.result;
+      const transaction = db.transaction(storeName, 'readonly');
+      const objectStore = transaction.objectStore(storeName);
+      const data = [];
+
+      objectStore.openCursor().onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          data.push(cursor.value);
+          cursor.continue();
+        } else {
+          resolve(data);
+        }
+      };
+
+      transaction.onerror = (e) => {
+        reject(e.target.error);
+      };
+    };
+
+    request.onerror = (e) => {
+      reject(e.target.error);
+    };
+  });
+}
+function convertToCSV(data) {
+  const csv = [];
+  const header = Object.keys(data[0]);
+  csv.push(header.join(','));
+
+  for (const item of data) {
+    const row = header.map((key) => item[key]);
+    csv.push(row.join(','));
+  }
+
+  return csv.join('\n');
+}
+function exportCSV(csvData, fileName) {
+  const blob = new Blob([csvData], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  URL.revokeObjectURL(url);
+}
+const dbName = 'YourDatabaseName';
+const storeName = 'YourObjectStoreName';
+const fileName = 'exported_data.csv';
+
+getDataFromIndexedDB(dbName, storeName)
+  .then((data) => {
+    const csvData = convertToCSV(data);
+    exportCSV(csvData, fileName);
+  })
+  .catch((error) => {
+    console.error('Error exporting data:', error);
+  });
+
