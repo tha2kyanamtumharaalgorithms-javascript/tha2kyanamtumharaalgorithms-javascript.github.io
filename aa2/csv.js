@@ -113,14 +113,14 @@
 
 
 // export dbs data from indexed db
-function getDataFromIndexedDB(bulk, bk) {
+function getDataFromIndexedDB(dldb, dl) {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(dbName);
 
     request.onsuccess = (event) => {
       const db = event.target.result;
-      const transaction = db.transaction(bk, 'readonly');
-      const objectStore = transaction.objectStore(bk);
+      const transaction = db.transaction(dl, 'readonly');
+      const objectStore = transaction.objectStore(dl);
       const data = [];
 
       objectStore.openCursor().onsuccess = (e) => {
@@ -169,8 +169,8 @@ function exportCSV(csvData, fileName) {
 
   URL.revokeObjectURL(url);
 }
-const dbName = 'bulk';
-const storeName = 'bk';
+const dbName = 'dldb';
+const storeName = 'dl';
 const fileName = 'exported_data.csv';
 
 getDataFromIndexedDB(dbName, storeName)
