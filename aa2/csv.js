@@ -119,8 +119,8 @@ function getDataFromIndexedDB(bulk, bk) {
 
     request.onsuccess = (event) => {
       const db = event.target.result;
-      const transaction = db.transaction(storeName, 'readonly');
-      const objectStore = transaction.objectStore(storeName);
+      const transaction = db.transaction(bk, 'readonly');
+      const objectStore = transaction.objectStore(bk);
       const data = [];
 
       objectStore.openCursor().onsuccess = (e) => {
@@ -169,8 +169,8 @@ function exportCSV(csvData, fileName) {
 
   URL.revokeObjectURL(url);
 }
-const dbName = 'YourDatabaseName';
-const storeName = 'YourObjectStoreName';
+const dbName = 'bulk';
+const storeName = 'bk';
 const fileName = 'exported_data.csv';
 
 getDataFromIndexedDB(dbName, storeName)
