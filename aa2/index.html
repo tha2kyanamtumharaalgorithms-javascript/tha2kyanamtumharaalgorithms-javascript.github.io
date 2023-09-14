@@ -97,8 +97,14 @@
           <label for='in3'>Kolkata</label>
           <input id='in4' class="w3-radio" type="radio" name="gender" value="3">
           <label for='in4'>PD</label>
-            <input type="file" id="csvFileInput" accept=".csv">
-           <pre id="jsonDataDisplay"></pre>
+          <input type="file" id="csvFileInput" accept=".csv">
+    <pre id="jsonDataDisplay"></pre>
+
+    <!-- Define the popup container -->
+    <div id="popup" class="popup">
+        <span class="close-button" onclick="closePopup()">&times;</span>
+        <table id="jsonTable" border="1"></table>
+    </div>
         </div>
         <p class="hide">
           <label for="seldt">Select Date:</label>
