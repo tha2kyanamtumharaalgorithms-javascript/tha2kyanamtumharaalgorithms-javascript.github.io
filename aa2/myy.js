@@ -763,6 +763,7 @@ if (localStorageData) {
       console.log(here is parse csv data);
       const lines = csvData.trim().split('\n');
       const headers = lines[0].split(',');
+      console.log('fetch csv file',headers,line);
 
       // Step 4: Append data from localStorage to the parsed CSV data
       const appendedData = [headers]; // Start with the existing headers
