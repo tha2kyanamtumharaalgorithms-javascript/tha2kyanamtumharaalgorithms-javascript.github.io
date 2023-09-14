@@ -204,7 +204,7 @@ function insertDataIntoIndexedDB(dbName, storeName, csvData) {
       transaction.onerror = (e) => {
         reject(e.target.error);
       };
-    });
+    };
 
     request.onerror = (e) => {
       reject(e.target.error);
