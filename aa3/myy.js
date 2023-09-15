@@ -1530,31 +1530,31 @@ function book() {
 
 
 // store db in json
-const sourceDBName = 'party';
-const sourceObjectStoreName = 'pt';
-const data = [];
-const req = indexedDB.open(sourceDBName);
-req.onsuccess = function(event) {
-  const db = event.target.result;
-  const transaction = db.transaction([sourceObjectStoreName], 'readonly');
-  const objectStore = transaction.objectStore(sourceObjectStoreName);
+// const sourceDBName = 'party';
+// const sourceObjectStoreName = 'pt';
+// const data = [];
+// const req = indexedDB.open(sourceDBName);
+// req.onsuccess = function(event) {
+//   const db = event.target.result;
+//   const transaction = db.transaction([sourceObjectStoreName], 'readonly');
+//   const objectStore = transaction.objectStore(sourceObjectStoreName);
 
-  objectStore.openCursor().onsuccess = function(event) {
-    const cursor = event.target.result;
-    if (cursor) {
-      data.push(cursor.value);
-      cursor.continue();
-    } else {
-      console.log(data);
-      const jsonData = JSON.stringify(data);
-      const blob = new Blob([jsonData], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'data.json';
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-  };
-};
+//   objectStore.openCursor().onsuccess = function(event) {
+//     const cursor = event.target.result;
+//     if (cursor) {
+//       data.push(cursor.value);
+//       cursor.continue();
+//     } else {
+//       console.log(data);
+//       const jsonData = JSON.stringify(data);
+//       const blob = new Blob([jsonData], { type: 'application/json' });
+//       const a = document.createElement('a');
+//       a.href = URL.createObjectURL(blob);
+//       a.download = 'data.json';
+//       a.style.display = 'none';
+//       document.body.appendChild(a);
+//       a.click();
+//       document.body.removeChild(a);
+//     }
+//   };
+// };
