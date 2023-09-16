@@ -1117,7 +1117,8 @@ document.getElementById('alltab').onclick = function () {
   document.getElementById('cor1').style.display = '';
 };
 
-let shipr1 = JSON.parse(localStorage.shipr1).a;
+// let shipr1 = JSON.parse(localStorage.shipr1).a;
+let shipr1 = 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2FwaXYyLnNoaXByb2NrZXQuaW4vdjEvZXh0ZXJuYWwvYXV0aC9sb2dpbiIsImlhdCI6MTY5NDg1NTY4NiwiZXhwIjoxNjk1NzE5Njg2LCJuYmYiOjE2OTQ4NTU2ODYsImp0aSI6ImxSR0xrTG45ZlA1MnpPenoiLCJzdWIiOjM1NjkzNDIsInBydiI6IjA1YmI2NjBmNjdjYWM3NDVmN2IzZGExZWVmMTk3MTk1YTIxMWU2ZDkifQ.VGVpVw67jy22A4XYFd7q0h-1zXbzerSBca4Cwh_ZAVU';
 let dlid; // {"id":3065,"coid":55,"ch":286.7,"st":0};
 async function getcor(k) {
   console.log('HI');
