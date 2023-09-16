@@ -219,3 +219,26 @@ console.log('this is first step for json update');
     }
   };
 };
+
+
+function transferDb_to_otherBrower(data){
+const targetDBName = 'party';
+const targetObjectStoreName = 'pt';
+const request = indexedDB.open(targetDBName);
+request.onsuccess = function(event) {
+  const db = event.target.result;
+  const transaction = db.transaction([targetObjectStoreName], 'readwrite');
+  const objectStore = transaction.objectStore(targetObjectStoreName);
+
+ 
+  jsonData.forEach(data => {
+    const addRequest = objectStore.add(data);
+    addRequest.onsuccess = function() {
+      console.log('Data added successfully.');
+    };
+    addRequest.onerror = function() {
+      console.error('Error adding data:', addRequest.error);
+    };
+  });
+};
+}
