@@ -207,21 +207,21 @@ console.log('this is first step for json update');
       const blob = new Blob([jsonData], { type: 'application/json' });
       
       // Create a FileWriter to save the Blob to a file
-      window.webkitRequestFileSystem(window.TEMPORARY, 1024 * 1024, function(fs) {
-       console.log('this is last step for json update');
-        fs.root.getFile('data.json', { create: true }, function(fileEntry) {
-          fileEntry.createWriter(function(fileWriter) {
-            fileWriter.write(blob);
-            console.log('JSON data saved as data.json in the current directory.');
-          });
-        });
-      });
+      // window.webkitRequestFileSystem(window.TEMPORARY, 1024 * 1024, function(fs) {
+      //  console.log('this is last step for json update');
+      //   fs.root.getFile('data.json', { create: true }, function(fileEntry) {
+      //     fileEntry.createWriter(function(fileWriter) {
+      //       fileWriter.write(blob);
+      //       console.log('JSON data saved as data.json in the current directory.');
+      //     });
+      //   });
+      // });
     }
   };
 };
 
 
-function transferDb_to_otherBrower(data){
+function transferDb_to_otherBrower(jsonData){
 const targetDBName = 'party';
 const targetObjectStoreName = 'pt';
 const request = indexedDB.open(targetDBName);
