@@ -28,7 +28,8 @@ function resetd() {
 
 async function delod() {
   let an5 = {}; let shod11 = {}; let ptc;
-  let latsel = Object.keys(selod5);
+  let latsel = Object.keys(selod5);'
+    console.log(latsel);
   if (latsel.length) {
     let r = latsel.pop();
     let odno = r.slice(3);
