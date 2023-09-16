@@ -6,6 +6,8 @@ async function getods(gd) {
   try {
     selgo(gd);
     let j = JSON.parse(pinloc); let vb = '';
+     console.log('this is j');
+    console.log(j);
     let hmtl0 = '';
     for (let k in j) {
       let pf = k.slice(2, 6); let id = Number(k.slice(3));
