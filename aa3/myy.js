@@ -1089,6 +1089,8 @@ document.getElementById('alltab').onclick = function () {
 
 let shipr1 = JSON.parse(localStorage.shipr1).a;
 console.log(shipr1);
+console.log('second',localStorage.shipr1);
+console.log('second',a);
 let dlid; // {"id":3065,"coid":55,"ch":286.7,"st":0};
 async function getcor(k) {
   console.log('HI');
