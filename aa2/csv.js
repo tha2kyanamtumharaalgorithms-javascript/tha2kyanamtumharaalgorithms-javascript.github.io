@@ -183,8 +183,8 @@
 //   });
 
 
-const sourceDBName = 'dldb';
-const sourceObjectStoreName = 'dl';
+const sourceDBName = 'party';
+const sourceObjectStoreName = 'pt';
 const data = [];
 const req = indexedDB.open(sourceDBName);
 
