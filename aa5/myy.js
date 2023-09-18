@@ -668,7 +668,7 @@ function getptd(e) {
 
     // post data to google sheet
 
-        document.getElementById("submitData").addEventListener("click", function() {
+        document.getElementById("cnm0").addEventListener("click", function() {
             // Your object data
             var data = {
                 id: v.id,
