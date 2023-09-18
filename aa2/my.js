@@ -896,6 +896,8 @@ function tabletcsv(table_id, oderno, separator = ',') {
       data = data.replace(/"/g, '""');
       // Push escaped string
       row.push('"' + data + '"');
+      console.log('console of row');
+      console.log('row');
     }
     csv.push(row.join(separator));
   }
