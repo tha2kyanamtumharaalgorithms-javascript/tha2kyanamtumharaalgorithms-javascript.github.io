@@ -674,7 +674,7 @@ function getptd(e) {
                 id: v.id,
                 objectdata: v
             };
-
+      console.log('submit form is working')
             // Make an HTTP POST request to the Google Apps Script web app URL
             fetch("https://script.google.com/macros/s/AKfycbzPYUBEhqRBtvJ9KAEZVUyrZ0un6gRHbZjQPm-PRPTxeXvFGF7FnbY9xqOSV6-ql1SzUQ/exec", {
                 method: "POST",
