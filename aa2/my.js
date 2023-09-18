@@ -72,6 +72,8 @@ async function getinst() {
     hmtl0 = "<li id=s" + i.id + " " + lid + " >" + ' ' + "<b>" + i.id + '. ' + i.cn + '</b>' + vtag + "<span onclick='opodli(this)'>" + i.tot + ' ' + gstr + ' ' + i.dt.slice(0, 6) + "</span></li>" + hmtl0;
   }
   document.getElementById('oderli').innerHTML = hmtl0;
+  console.log('this is html10');
+  console.log(document.getElementById('oderli').innerHTML = hmtl0);
 }
 let db = new Dexie("party"); db.version(2).stores({ pt: "id,cn,mn1,mn2,*ods" });
 let erdb = new Dexie("erro"); erdb.version(1).stores({ err: "id" });
