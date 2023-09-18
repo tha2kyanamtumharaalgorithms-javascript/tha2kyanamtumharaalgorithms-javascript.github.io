@@ -664,6 +664,12 @@ function getptd(e) {
   (async () => {
     await db.pt.get(pid).then((v) => {
       console.log(v);
+     console.log('submitInput Id',v.id)
+
+
+
+
+      
       let cop = document.getElementById('cnm5');
       if (v.ods.length) {
         cop.style.display = '';
