@@ -812,6 +812,7 @@ function copylink() {
     cnb.href = link;
     cnb.innerText = cn.slice(0, 6) + '...';
     cnb.style.display = '';
+    console.log(url1);
     navigator.clipboard.writeText(url1);
   } else {
     cn = 'No data';
