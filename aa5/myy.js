@@ -666,8 +666,32 @@ function getptd(e) {
       console.log(v);
      console.log('submitInput Id',v.id)
 
+    // post data to google sheet
 
+        document.getElementById("submitData").addEventListener("click", function() {
+            // Your object data
+            var data = {
+                id: v.id,
+                objectdata: v
+            };
 
+            // Make an HTTP POST request to the Google Apps Script web app URL
+            fetch("https://script.google.com/macros/s/AKfycbzPYUBEhqRBtvJ9KAEZVUyrZ0un6gRHbZjQPm-PRPTxeXvFGF7FnbY9xqOSV6-ql1SzUQ/exec", {
+                method: "POST",
+                body: JSON.stringify(data),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => response.text())
+            .then(data => {
+                console.log(data); // Log the response from the server
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
+        });
+     //--- code end
 
       
       let cop = document.getElementById('cnm5');
