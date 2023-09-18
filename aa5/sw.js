@@ -10,6 +10,7 @@ self.addEventListener('message', event => {
     myd1.append('id', JSON.stringify(dlid.book[1]));
     d[1].body=myd1;delete d[1].headers;
   }
+  console.log(d[0].url);
   fetch(d[0].url,d[1])
     .then(res => res.json())
     .then(data => {
