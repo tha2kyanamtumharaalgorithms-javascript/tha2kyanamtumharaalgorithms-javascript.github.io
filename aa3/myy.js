@@ -794,8 +794,10 @@ function copylink() {
 function copylink1(v) {
   let p = document.getElementById(v);
   let p1 = p.tabIndex;
+  console.log(p1);
   let cn = p.querySelector('b').innerText.match(/[^\d+.].+/g)[0].trim();
   // console.log(p1,cn);
+  //let link = 'https://www.ownknitted.com/bill#' + genid(p1, 3);
   let link = 'https://www.ownknitted.com/bill#' + genid(p1, 3);
   let url1 = cn + ', save this link and download all your bills here👇\n\n' + link;
   navigator.clipboard.writeText(url1);
