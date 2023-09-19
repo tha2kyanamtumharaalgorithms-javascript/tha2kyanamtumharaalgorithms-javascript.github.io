@@ -800,7 +800,10 @@ function genid(v, i, b = 'a') {
   let p5 = (i == 1) ? Number(id1 + v.padStart(3, '0')) :
     (i == 2) ? b + id3 + s :
       (i == 3) ? [...btoa(btoa(b + id3 + s))].reverse().join('') : '';
-  return p5
+  return p5;
+  consloe.log('i am p5')
+  console.log(5);
+  
 }
 console.log(ptd.id);
 function copylink() {
