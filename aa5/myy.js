@@ -808,8 +808,9 @@ function genid(v, i, b = 'a') {
 console.log(ptd.id);
 function copylink() {
   let cn = document.getElementById('incn').value;
-  let link = 'https://www.ownknitted.com/bill#' + genid(ptid, 3);
-  console.log(link);
+  // let link = 'https://www.ownknitted.com/bill#' + genid(ptid, 3);
+  let link = 'https://www.ownknitted.com/bill#' + genid(230914016, 3);
+  //console.log('230914016');
   let url1 = cn + ', save this link and download all your bills here👇\n\n' + link;
   let cnb = document.getElementById('cnm4');
   if (cn) {
