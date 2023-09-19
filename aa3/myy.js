@@ -773,7 +773,7 @@ function genid(v, i, b = 'a') {
       (i == 3) ? [...btoa(btoa(b + id3 + s))].reverse().join('') : '';
   return p5
 }
-console.log(genid(ptid,3);
+
 function copylink() {
   let cn = document.getElementById('incn').value;
   let link = 'https://www.ownknitted.com/bill#' + genid(ptid, 3);
