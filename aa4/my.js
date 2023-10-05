@@ -135,7 +135,7 @@ if ((navigator.platform) === 'iPhone') {
 const typep7 = { "Bio": "RN Bio", "NBio": "RN Non Bio", "Polo": "Polo", "OS210": "Oversize 210", "OS180": "Oversize 180", "Hood": "Hoodie", "Sweat": "Sweatshirt", "Kids": "Kids RN" };
 
 // for image bill
-const typep77 = { "Bio": "Bio-RN", "NBio": "Cotton-RN", "Polo": "Polo", "OS210": "O/S Dropsholder 210", "OS180": "O/S Dropsholder 180", "Hood": "Hoodie", "Sweat": "Sweatshirt", "Kids": "Kids-RN" };
+const typep77 = { "Bio": "Bio-RN", "NBio": "Cotton-RN", "Polo": "Polo", "OS210": "Dropshoulder 210gsm", "OS180": "Dropshoulder 180gsm", "Hood": "Hoodie", "Sweat": "Sweatshirt", "Kids": "Kids-RN" };
 // typep7[variable] //console.log(typep7["Bio"]);
 
 //gen. table start

@@ -593,7 +593,7 @@
       doc.querySelector("#inno").innerHTML = `<p style='font-weight: 500;'>${gst && ('Place of Supply: ' + stgst)}</p><p>Invoice No.: ${t[1].id}</p><p>Date: ${t[1].dt}</p>`;
 
       function savepd2(kk) {
-        let bio42 = 0, bio46 = 0, nbio42 = 0, nbio46 = 0, whbio42 = 0, whbio46 = 0, poloxl = 0, poloxxl = 0, hoodxl = 0, hoodxxl = 0, swxl = 0, swxxl = 0, ows = 0, kid = 0;
+        let bio42 = 0, bio46 = 0, nbio42 = 0, nbio46 = 0, whbio42 = 0, whbio46 = 0, poloxl = 0, poloxxl = 0, hoodxl = 0, hoodxxl = 0, swxl = 0, swxxl = 0, ows = 0, os180 = 0, kid = 0;
         if (!(Object.keys(kk).length === 0)) {
           Object.keys(kk).forEach(function (t) {
             Object.keys(kk[t]).forEach(function (c) {
@@ -754,7 +754,7 @@
       Bio: ['Biowash R-neck, 36"-42"', 'Biowash R-neck, 44"-46"'],
       NBio: ['Cotton R-neck, 36"-42"', 'Cotton R-neck, 44"-46"', 'Cotton R-neck White, 36"-42"', 'Cotton R-neck White, 44"-46"'],
       Hood: ['Non Zipper Hoodie, S-XL', 'Non Zipper Hoodie, XXL'],
-      OverS: ['O/S Drop-shoulder R-neck, S-XXL'], OS210: ['O/S Drop-shoulder R-neck 210, S-XXL'], OS180: ['O/S Drop-shoulder R-neck 180, S-XXL'],
+      OverS: ['O/S Drop-shoulder R-neck, S-XXL'], OS210: ['O/S Drop-shoulder R-neck 210gsm, S-XXL'], OS180: ['O/S Drop-shoulder R-neck 180gsm, S-XXL'],
       Polo: ['Polo neck, XS-XL', 'Polo neck, XXL'],
       Sweat: ['Sweatshirt, S-XL', 'Sweatshirt, XXL'],
       Kids: ['Kids R-neck, 20"-34"'],
