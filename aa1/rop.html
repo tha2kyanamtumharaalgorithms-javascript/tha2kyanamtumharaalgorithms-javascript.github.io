@@ -593,7 +593,7 @@
       doc.querySelector("#inno").innerHTML = `<p style='font-weight: 500;'>${gst && ('Place of Supply: ' + stgst)}</p><p>Invoice No.: ${t[1].id}</p><p>Date: ${t[1].dt}</p>`;
 
       function savepd2(kk) {
-        let bio42 = 0, bio46 = 0, nbio42 = 0, nbio46 = 0, whbio42 = 0, whbio46 = 0, poloxl = 0, poloxxl = 0, hoodxl = 0, hoodxxl = 0, swxl = 0, swxxl = 0, ows = 0, os180 = 0, vs = 0, kid = 0;
+        let bio42 = 0, bio46 = 0, nbio42 = 0, nbio46 = 0, whbio42 = 0, whbio46 = 0, poloxl = 0, poloxxl = 0, hoodxl = 0, hoodxxl = 0, swxl = 0, swxxl = 0, ows = 0, os180 = 0, vs = 0, kid = 0, kidxl = 0;
         if (!(Object.keys(kk).length === 0)) {
           Object.keys(kk).forEach(function (t) {
             Object.keys(kk[t]).forEach(function (c) {
@@ -637,13 +637,18 @@
                   os180 += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][0];
                   apnd(t, os180, p.pc[t][0], i, 0, w);
                 } else if (t == 'Kids') {
-                  kid += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][0];
-                  apnd(t, kid, p.pc[t][0], i, 0, w);
+                  if (s > 26) {
+                    kidxl += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][1];
+                    apnd(t, kidxl, p.pc[t][1], i, 1, w);
+                  } else {
+                    kid += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][0];
+                    apnd(t, kid, p.pc[t][0], i, 0, w);
+                  }
                 } else if (t == 'Varsity') {
                   vs += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][0];
                   apnd(t, vs, p.pc[t][0], i, 0, w);
                 } else if (t == 'Polo') {
-                  if (s == 'XXL') {
+                  if (s > 44) {
                     poloxl += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][1];
                     apnd(t, poloxl, p.pc[t][1], i, 1, w);
                   } else {
@@ -758,9 +763,9 @@
       Hood: ['Non Zipper Hoodie, S-XL', 'Non Zipper Hoodie, XXL'],
       OverS: ['Drop-shoulder R-neck 210gsm, S-XXL', 'Drop-shoulder R-neck 180gsm, S-XXL'], OS210: ['Drop-shoulder R-neck 210gsm, S-XXL'], OS180: ['Drop-shoulder R-neck 180gsm, S-XXL'],
       Varsity: ['Varsity Jacket XS-XXL'],
-      Polo: ['Polo neck, XS-XL', 'Polo neck, XXL'],
+      Polo: ['Polo neck, 36"-44"', 'Polo neck, 46"'],
       Sweat: ['Sweatshirt, S-XL', 'Sweatshirt, XXL'],
-      Kids: ['Kids R-neck, 20"-34"'],
+      Kids: ['Kids R-neck, 20"-26"', 'Kids R-neck, 28"-34"'],
       c: []
     }
 
