@@ -616,9 +616,12 @@ if(!localStorage.pinpd){localStorage.setItem('inst','{}')}
 if(!localStorage.pend){localStorage.setItem("pend", '{}')}
 if(!localStorage.pend2){localStorage.setItem('pend2','{}');}
 if(!localStorage.today){localStorage.setItem("today", String(new Date().toLocaleDateString()))}
-if(!localStorage.pc){localStorage.setItem('pc','{ "pc": { "Bio": [150, 155], "NBio": [100, 105, 15], "OverS": [185], "Polo": [175, 185], "Hood": [275, 285], "Sweat": [205, 215], "Kids": [110] }, "wt": { "Bio": 0.20, "NBio": 0.20, "OverS": 0.25, "Polo": 0.25, "Hood": 0.55, "Sweat": 0.45, "Kids": 0.150 }, "sqt": 10 }')}
-if(!localStorage.pcs){localStorage.setItem('pcs','{ "pc": { "Bio": [150, 155], "NBio": [100, 105, 15], "OverS": [185], "Polo": [175, 185], "Hood": [275, 285], "Sweat": [205, 215], "Kids": [110] }, "wt": { "Bio": 0.20, "NBio": 0.20, "OverS": 0.25, "Polo": 0.25, "Hood": 0.55, "Sweat": 0.45, "Kids": 0.150 }}')}
-if(!localStorage.lastreset){localStorage.setItem('lastreset','305,0');}alert('hii');
+// if(!localStorage.pc){localStorage.setItem('pc','{ "pc": { "Bio": [150, 155], "NBio": [100, 105, 15], "OverS": [185], "Polo": [175, 185], "Hood": [275, 285], "Sweat": [205, 215], "Kids": [110] }, "wt": { "Bio": 0.20, "NBio": 0.20, "OverS": 0.25, "Polo": 0.25, "Hood": 0.55, "Sweat": 0.45, "Kids": 0.150 }, "sqt": 10 }')}
+// if(!localStorage.pcs){localStorage.setItem('pcs','{ "pc": { "Bio": [150, 155], "NBio": [100, 105, 15], "OverS": [185], "Polo": [175, 185], "Hood": [275, 285], "Sweat": [205, 215], "Kids": [110] }, "wt": { "Bio": 0.20, "NBio": 0.20, "OverS": 0.25, "Polo": 0.25, "Hood": 0.55, "Sweat": 0.45, "Kids": 0.150 }}')}
+ localStorage.setItem('pc', '{"pc":{"Bio":[145,150],"NBio":[100,105,15],"OverS":[185],"OS210": [185],"Varsity":[330], "OS180": [165],"Polo":[175,185],"Hood":[285,295],"Sweat":[215,225],"Kids":[110,120]},"wt":{"Bio":0.2,"NBio":0.2,"OverS":0.25,"OS210": 0.26,"Varsity": 0.55,"OS180": 0.25,"Polo":0.25,"Hood":0.55,"Sweat":0.45,"Kids":0.15},"sqt":10}')
+ localStorage.setItem('pcs', '{"pc":{"Bio":[190,190],"NBio":[135,135,0],"OverS":[240],"OS210": [240],"Varsity":[380], "OS180": [200],"Polo":[215,215],"Hood":[330,330],"Sweat":[265,265],"Kids":[140,140]},"wt":{"Bio":0.2,"NBio":0.2,"OverS":0.25,"OS210": 0.26,"Varsity": 0.55,"OS180": 0.25,"Polo":0.25,"Hood":0.55,"Sweat":0.45,"Kids":0.15}}')
+
+  if(!localStorage.lastreset){localStorage.setItem('lastreset','305,0');}alert('hii');
 }
   function shase() {
     localStorage.clear();alert('hii'); 
