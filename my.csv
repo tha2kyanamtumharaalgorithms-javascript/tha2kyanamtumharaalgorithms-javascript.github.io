@@ -1,0 +1,10 @@
+Product(Short Name),Product(Full Name),Color,Size,Price Bulk,Price Sample,Catlog URL,Sizechart URL,Weight(Avg. in kg)
+Bio,Biowash Rneck,"Black,White,Navy,Grey","36,38,40,42,44,46","145,150","190,190",1,11,0.2
+NBio,Non Bio Rneck,"Black,White,Navy,Grey","36,38,40,42,44,46","100,105,15","135,135,0",2,12,0.2
+Polo,Polo,"Black,White,Navy,Grey","36,38,40,42,44,46","175,185","215,215",3,13,0.25
+OS210,Oversize 210gsm,"Black,White,Navy,Grey","XS,S,M,L,XL,XXL",185,240,4,14,0.26
+Varsity,Varsity Jacket,"Black,White,Navy,Grey","XS,S,M,L,XL,XXL",330,380,5,15,0.55
+OS180,Oversize 180gsm,"Black,White,Navy,Grey","XS,S,M,L,XL,XXL",165,200,6,16,0.25
+Hood,Hoodie,"Black,White,Navy,Grey","XS,S,M,L,XL,XXL","285,295","330,330",7,17,0.55
+Sweat,Sweatshirt,"Black,White,Navy,Grey","XS,S,M,L,XL,XXL","215,225","265,265",8,18,0.45
+Kids,Kids Rneck,"Black,White,Navy,Grey","20,22,24,26,28,30,32,34","110,120","140,140",9,19,0.15
