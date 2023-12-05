@@ -231,7 +231,7 @@ async function creatod() {
       });
 
       let html33 = document.getElementById("html33");
-      newc(); localStorage.clickcount = ctcn; zxc = ctcn;
+      localStorage.clickcount = ctcn; zxc = ctcn;
       html33.style.width = '455px';
       await html2canvas(html33,
         {
@@ -243,7 +243,7 @@ async function creatod() {
           let imglastod = {}; imglastod['cn'] = txtcn; imglastod['im5'] = imgcn;
           document.getElementById('lastodimg').src = imgcn;
           document.getElementById('lastodcn').innerHTML = txtcn;
-          tt5 = imglastod;
+          tt5 = imglastod; newc();
           localStorage.setItem('imglastod', JSON.stringify(imglastod));
           html33.style.width = '';
           await sendd(urli, shod0, 'new order');
