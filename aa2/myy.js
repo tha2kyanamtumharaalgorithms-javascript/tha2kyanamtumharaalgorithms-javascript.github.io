@@ -243,7 +243,7 @@ async function creatod() {
           let imglastod = {}; imglastod['cn'] = txtcn; imglastod['im5'] = imgcn;
           document.getElementById('lastodimg').src = imgcn;
           document.getElementById('lastodcn').innerHTML = txtcn;
-          tt5 = imglastod; newc();
+          tt5 = imglastod; await newc();
           localStorage.setItem('imglastod', JSON.stringify(imglastod));
           html33.style.width = '';
           await sendd(urli, shod0, 'new order');
@@ -313,12 +313,12 @@ async function updateod(myz) {
     // st.collection(selg).doc('od'+pk8).set(shod1.od)
     await mthdb(selg.slice(-1) + String(pk8).slice(0, 3));
     await oddb.od.put(shod1.od, pk8)
-      .then(() => {
+      .then(async () => {
         shod1.pcwt = pcwt;
         console.log(pctt);
         let html33 = document.getElementById("html33");
         html33.style.width = '455px';
-        html2canvas(html33,
+        await html2canvas(html33,
           {
             allowTaint: true,
             useCORS: true
@@ -333,7 +333,7 @@ async function updateod(myz) {
             localStorage.setItem('imglastod', JSON.stringify(imglastod));
           });
         html33.style.width = '';
-        newc();
+        await newc();
         document.getElementById('btn_convert').style.display = '';
         document.getElementById('upd5').style.display = 'none';
       }).then(async (v) => {

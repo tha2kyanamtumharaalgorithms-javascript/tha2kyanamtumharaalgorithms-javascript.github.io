@@ -385,7 +385,7 @@ function stork(t, c, s, v) { // type color size value
 // end stork
 
 // create new, clear old input 
-function newc() {
+async function newc() {
   document.getElementById('bulkc').checked = 0;
   let hjk = document.querySelectorAll('.city table td input');
   for (let t of hjk) {
@@ -397,7 +397,7 @@ function newc() {
     let av = ty1[q];
     if (av.innerText != 'Total') { av.innerText = ''; }
   }
-  newc2();
+  await newc2();
   document.querySelector("body > div.bar > div.w3-bar.w3-purple > button:nth-child(1)").click();
   document.getElementById('id01').style.display = 'block';
   document.getElementById('incn').value = '';
@@ -407,7 +407,7 @@ function newc() {
   selg = '';
 }
 
-function newc2() {
+async function newc2() {
   document.querySelector('#gall input').checked;
   let ty3 = document.querySelectorAll("#ptd input");
   for (let t of ty3) {
@@ -418,10 +418,10 @@ function newc2() {
     t.innerHTML = '';
   }
   document.getElementById('pta').value = '';
-  newc1();
+  await newc1();
 }
 
-function newc1() {
+async function newc1() {
   for (let u in selod5) { document.getElementById(u).checked = false; }
   totqt = []; od = {}; zsr = {};
   ptd = {}; pk8 = 0; ptods = []; ptid = 0; selod5 = {};
