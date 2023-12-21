@@ -1421,9 +1421,9 @@ async function dlfn(v, id) {
 
     if (id == 'rkb') {
       let myl = "https://kcqawrffldi2xw.s3.ap-south-1.amazonaws.com/zcoyad/files/" + mhj + ".png"; dlid.durl = myl;
-      // if (!dlid.st) {
+      if (!dlid.st) {
       await uplodimg(v9, ptd, myl); // upload always so book later
-      // }
+      }
     }
 
     let x;
