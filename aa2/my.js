@@ -391,7 +391,7 @@ async function newc() {
   // for (let t of hjk) {
   //   if (t.value) { t.value = '' }
   // }
-  await document.querySelectorAll('.city table td input').forEach(t => t.value = '');
+  document.querySelectorAll('.city table td input').forEach(t => t.value = '');
 
   let ty1 = document.querySelectorAll(".city thead > tr.w3-blue-grey>th"); let ty11 = ty1.length;
   for (let q = 1; q < ty11; q++) {
