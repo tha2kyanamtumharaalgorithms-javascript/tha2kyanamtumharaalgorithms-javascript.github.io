@@ -23,7 +23,7 @@ let db = new Dexie("party");db.version(2).stores({pt: "id,cn,mn1,mn2,*ods"});
     });
 let excsv1;
 async function excsv(mth) {
-excsv1="GSTIN/UIN of Recipient,Receiver Name,Invoice Number,Invoice date,Invoice Value,Place Of Supply,Reverse Charge,Applicable % of Tax Rate,Invoice Type,E-Commerce GSTIN,Rate,Taxable Value,Cess Amount\r\n";
+excsv1="GSTIN/UIN of Recipient,Receiver Name,Invoice Number,Invoice date,Invoice Value,Place Of Supply,Reverse Charge,Applicable % of Tax Rate,Invoice Type,E-Commerce GSTIN,Rate,Taxable Value,Cess Amount,HSN Code,Quantity per Invoice\r\n";
 await new Promise(async(resolve, reject)=>{
 await mthdb(mth);
   await oddb.od.each(async(d)=>{
@@ -34,7 +34,7 @@ await mthdb(mth);
             if(pt.gst){
             let dt1=d.dt.split('/').join('-');
             let gsts=pt.gst.slice(0,2);
-            let poi=[pt.gst,d.cn,d.id,dt1,d.inv[1].toFixed(1),(gsts+'-'+stat[gsts]),"N","","Regular B2B","","5.0",d.inv[0].toFixed(1),"0.0\r\n"].toString();
+            let poi=[pt.gst,d.cn,d.id,dt1,d.inv[1].toFixed(1),(gsts+'-'+stat[gsts]),"N","","Regular B2B","","5.0",d.inv[0].toFixed(1),"0.0","6109",d.tot+"\r\n"].toString();
             excsv1+=poi;
             }
         })
