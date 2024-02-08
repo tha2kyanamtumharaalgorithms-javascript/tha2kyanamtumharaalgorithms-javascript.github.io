@@ -435,7 +435,7 @@ function pc(v, vx, a, b, c, d, e) { // v(type) a(36-42), b(44), c(46), d(32), e(
 
   // console.log('whawhb',vx);
   let pj1 = 0;
-  if ((v == 'Bio')) { //console.log('BN')
+  if ((v == 'Bio' || v == 'Vest')) { //console.log('BN')
     let pj1 = (a * prc.pc[v][0] + (b + c) * prc.pc[v][1]); odprice[v] = prc.pc[v];
     pctt += pj1; pcwt += (a + b + c) * Number(prc.wt[v]);
     return "<td colspan='2'><b>" + (a + b + c) + ' ' + vx + "</b><b class='sa2'>" + sva + svpls1 + svbc + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
@@ -1422,7 +1422,7 @@ async function dlfn(v, id) {
     if (id == 'rkb') {
       let myl = "https://kcqawrffldi2xw.s3.ap-south-1.amazonaws.com/zcoyad/files/" + mhj + ".png"; dlid.durl = myl;
       if (!dlid.st) {
-      await uplodimg(v9, ptd, myl); // upload always so book later
+        await uplodimg(v9, ptd, myl); // upload always so book later
       }
     }
 
