@@ -34,7 +34,7 @@ await mthdb(mth);
             if(pt.gst){
             let dt1=d.dt.split('/').join('-');
             let gsts=pt.gst.slice(0,2);
-            let poi=[pt.gst,d.cn,d.id,dt1,d.inv[1].toFixed(1),(gsts+'-'+stat[gsts]),"N","","Regular B2B","","5.0",d.inv[0].toFixed(1),"0.0\r\n","6109",d.tot].toString();
+            let poi=[pt.gst,d.cn,d.id,dt1,d.inv[1].toFixed(1),(gsts+'-'+stat[gsts]),"N","","Regular B2B","","5.0",d.inv[0].toFixed(1),"0.0","6109",d.tot+"\r\n"].toString();
             excsv1+=poi;
             }
         })
