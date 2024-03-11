@@ -496,7 +496,7 @@ async function omprint() {
 
       Object.keys(jk).forEach(function (t) {
         //  type loop
-        if ((t === 'Bio') || (t === 'NBio')) {
+        if ((t === 'Bio') || (t === 'NBio') || (t === 'Polo') || (t === 'Vest') || (t === 'PrePolo')) {
           sd1.innerHTML += "<tbody id='" + t.replace(/\s+/, "") + "' style=''><tr> <th>" + typep7[t] + "</th> <th>36</th> <th>38</th> <th>40</th> <th>42</th> <th>44</th> <th>46</th> </tr></tbody><table><tr><td style='border: none; background: white'><br></td></tr></table>";
         } else if ((t === 'Kids')) {
           sd1.innerHTML += "<tbody id='" + t.replace(/\s+/, "") + "'><tr> <th>" + typep7[t] + "</th> <th>20</th> <th>22</th> <th>24</th> <th>26</th> <th>28</th> <th>30</th> <th>32</th> <th>34</th> </tr></tbody><table><tr><td style='border: none; background: white'><br></td></tr></table>";
