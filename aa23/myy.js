@@ -474,7 +474,7 @@ function pc(v, vx, a, b, c, d, e) { // v(type) a(36-42), b(44), c(46), d(32), e(
     pj1 = (a * prc.pc[v][0]) + ((b + c + d + e) * prc.pc[v][1]); odprice[v] = prc.pc[v];
     pctt += pj1; pcwt += (a + b + c + d + e) * Number(prc.wt[v]);
     return "<td colspan='2'><b>" + (a + b + c + d + e) + ' ' + vx + "</b><b class='sa2'>" + sva + svpls3 + svbcde + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
-  } else if ((v == 'Polo') || (v == 'Hood') || (v == 'Sweat')) { //console.log('PHS')
+  } else if ((v == 'Polo') || (v == 'Hood') || (v == 'Sweat') || (v == 'PrePolo')) { //console.log('PHS')
     pj1 = ((a + b) * prc.pc[v][0] + c * prc.pc[v][1]); odprice[v] = prc.pc[v];
     pctt += pj1; pcwt += (a + b + c) * Number(prc.wt[v]);
     return "<td colspan='2'><b>" + (a + b + c) + ' ' + vx + "</b><b class='sa2'>" + svab + svpls2 + svc + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
