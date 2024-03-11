@@ -177,6 +177,24 @@
                 <th>{{ pc.wt.Vest+'kg' }}</th>
             </tr>
             <tr>
+                <th>PrePolo (36-44)</th>
+                <td @blur='pcs.pc.PrePolo[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.PrePolo[0]+'₹'
+                    }}
+                </td>
+                <td @blur='pc.pc.PrePolo[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.PrePolo[0]+'₹'
+                    }}</td>
+                <th>{{ pc.wt.PrePolo+'kg' }}</th>
+            </tr>
+            <tr>
+                <th>PrePolo (46)</th>
+                <td @blur='pcs.pc.PrePolo[1] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.PrePolo[1]+'₹'
+                    }}
+                </td>
+                <td @blur='pc.pc.PrePolo[1] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.PrePolo[1]+'₹'
+                    }}</td>
+                <th>{{ pc.wt.PrePolo+'kg' }}</th>
+            </tr>
+            <tr>
                 <th colspan="4" style="font-weight: 700;">MOQ For Bulk</th>
                 <!-- <th colspan="3">Sample Price</th> -->
             </tr>
@@ -185,6 +203,7 @@
                 </td>
                 <!-- <td colspan="3" @blur='pc.sp = Number($event.target.innerText.match(/\d+/)[0])'>{{'+'+pc.sp+'₹/pc'}}</td> -->
             </tr>
+
         </table>
     </div>
 
