@@ -32,9 +32,9 @@ await mthdb(mth);
         console.log('1');
         await db.pt.get(Number(d.pt)).then(async(pt) => {
             let dt1=d.dt.split('/').join('-');
-            let gsts="", pos="",gst="";
+            let pos="",gst="";
             if(pt.gst){
-                gsts=pt.gst.slice(0,2);
+                let gsts=pt.gst.slice(0,2);
                 pos=(gsts+'-'+stat[gsts]);
                 gst=pt.gst;
             }
