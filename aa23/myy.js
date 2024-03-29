@@ -1417,7 +1417,13 @@ async function dlfn(v, id) {
       och = 50 * Math.ceil(pcwt / 25);
     }
     dlid.och = och;
-    document.getElementById('tch').value = dlid.tch + och;
+    let tch = document.getElementById('tch').value;
+    if (tch) {
+      // document.getElementById('tch').value = tch;
+    } else {
+      document.getElementById('tch').value = dlid.tch + och;
+    }
+
 
     if (id == 'rkb') {
       let myl = "https://kcqawrffldi2xw.s3.ap-south-1.amazonaws.com/zcoyad/files/" + mhj + ".png"; dlid.durl = myl;
