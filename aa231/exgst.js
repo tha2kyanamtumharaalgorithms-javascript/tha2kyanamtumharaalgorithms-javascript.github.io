@@ -28,20 +28,23 @@ await new Promise(async(resolve, reject)=>{
 await mthdb(mth);
   await oddb.od.each(async(d)=>{
     console.log(d);
-    if (d.bulk&&d.tot) {
+    if (d.tot) {
         console.log('1');
         await db.pt.get(Number(d.pt)).then(async(pt) => {
-            if(pt.gst){
             let dt1=d.dt.split('/').join('-');
-            let gsts=pt.gst.slice(0,2);
-            let poi=[pt.gst,d.cn,d.id,dt1,d.inv[1].toFixed(1),(gsts+'-'+stat[gsts]),"N","","Regular B2B","","5.0",d.inv[0].toFixed(1),"0.0","6109",d.tot+"\r\n"].toString();
-            excsv1+=poi;
+            let gsts="", pos="",gst="";
+            if(pt.gst){
+                gsts=pt.gst.slice(0,2);
+                pos=(gsts+'-'+stat[gsts]);
+                gst=pt.gst;
             }
+            let poi=[gst,d.cn,d.id,dt1,d.inv[1].toFixed(1),pos,"N","","Regular B2B","","5.0",d.inv[0].toFixed(1),"0.0","6109",d.tot+"\r\n"].toString();
+            excsv1+=poi;
         })
     }
 });
     await oddb.od.count().then((v) => {
-         setTimeout(()=>{console.log('2');resolve();},v*2);
+         setTimeout(()=>{console.log('2');resolve();},v*4);
     });
 });
 await new Promise(async(resolve, reject)=>{
