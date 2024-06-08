@@ -594,7 +594,7 @@
 
       function savepd2(kk) {
         let bio42 = 0, bio46 = 0, nbio42 = 0, nbio46 = 0, whbio42 = 0, whbio46 = 0, poloxl = 0, poloxxl = 0, hoodxl = 0, hoodxxl = 0, swxl = 0, swxxl = 0, ows = 0, os180 = 0, vs = 0, kid = 0, kidxl = 0, vest = 0, vestxl = 0, ppoloxl = 0, ppoloxxl = 0;
-        let sht = 0, pant = 0;
+        let shtx = 0, pantx = 0;
         if (!(Object.keys(kk).length === 0)) {
           Object.keys(kk).forEach(function (t) {
             Object.keys(kk[t]).forEach(function (c) {
@@ -690,11 +690,11 @@
                     apnd(t, ppoloxxl, p.pc[t][0], i, 0, w);
                   }
                 } else if (t == 'Shorts') {
-                  vs += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][0];
-                  apnd(t, sht, p.pc[t][0], i, 0, w);
+                  shtx += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][0];
+                  apnd(t, shtx, p.pc[t][0], i, 0, w);
                 } else if (t == 'Pant') {
-                  vs += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][0];
-                  apnd(t, pant, p.pc[t][0], i, 0, w);
+                  pantx += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][0];
+                  apnd(t, pantx, p.pc[t][0], i, 0, w);
                 }
               });
             });
