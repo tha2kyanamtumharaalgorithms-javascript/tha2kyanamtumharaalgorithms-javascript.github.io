@@ -195,6 +195,24 @@
                 <th>{{ pc.wt.PrePolo+'kg' }}</th>
             </tr>
             <tr>
+                <th>Shorts (XS-XXL)</th>
+                <td @blur='pcs.pc.Shorts[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.Shorts[0]+'₹'
+                    }}
+                </td>
+                <td @blur='pc.pc.Shorts[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.Shorts[0]+'₹'
+                    }}</td>
+                <th>{{ pc.wt.Shorts+'kg' }}</th>
+            </tr>
+            <tr>
+                <th>Pant (XS-XXL)</th>
+                <td @blur='pcs.pc.Pant[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.Pant[0]+'₹'
+                    }}
+                </td>
+                <td @blur='pc.pc.Pant[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.Pant[0]+'₹'
+                    }}</td>
+                <th>{{ pc.wt.Pant+'kg' }}</th>
+            </tr>
+            <tr>
                 <th colspan="4" style="font-weight: 700;">MOQ For Bulk</th>
                 <!-- <th colspan="3">Sample Price</th> -->
             </tr>
@@ -216,8 +234,8 @@
 
     <script type="module">
         function loadst() {
-            localStorage.setItem('pc', '{"pc":{"Bio":[145,150],"NBio":[100,105,15],"OverS":[185],"OS210": [185],"Varsity":[330], "OS180": [165],"Polo":[175,185],"Hood":[285,295],"Sweat":[215,225],"Kids":[110,120],"Vest":[125,125],"PrePolo":[225,230]},"wt":{"Bio":0.21,"NBio":0.21,"OverS":0.26,"OS210": 0.27,"Varsity": 0.56,"OS180": 0.26,"Polo":0.26,"Hood":0.56,"Sweat":0.46,"Kids":0.16,"Vest":0.18,"PrePolo":0.26},"sqt":10}');
-            localStorage.setItem('pcs', '{"pc":{"Bio":[190,190],"NBio":[135,135,0],"OverS":[240],"OS210": [240],"Varsity":[380], "OS180": [200],"Polo":[215,215],"Hood":[330,330],"Sweat":[265,265],"Kids":[140,140],"Vest":[125,125],"PrePolo":[225,230]},"wt":{"Bio":0.21,"NBio":0.21,"OverS":0.26,"OS210": 0.27,"Varsity": 0.56,"OS180": 0.26,"Polo":0.26,"Hood":0.56,"Sweat":0.46,"Kids":0.16,"Vest":0.18,"PrePolo":0.26}}');
+            localStorage.setItem('pc', '{"pc":{"Bio":[145,150],"NBio":[100,105,15],"OverS":[185],"OS210": [185],"Varsity":[330], "OS180": [165],"Polo":[175,185],"Hood":[285,295],"Sweat":[215,225],"Kids":[110,120],"Vest":[125,125],"PrePolo":[225,230],"Shorts":[200,200],"Pant":[240,240]},"wt":{"Bio":0.21,"NBio":0.21,"OverS":0.26,"OS210": 0.27,"Varsity": 0.56,"OS180": 0.26,"Polo":0.26,"Hood":0.56,"Sweat":0.46,"Kids":0.16,"Vest":0.18,"PrePolo":0.26,"Shorts":0.25,"Pant":0.5},"sqt":10}');
+            localStorage.setItem('pcs', '{"pc":{"Bio":[190,190],"NBio":[135,135,0],"OverS":[240],"OS210": [240],"Varsity":[380], "OS180": [200],"Polo":[215,215],"Hood":[330,330],"Sweat":[265,265],"Kids":[140,140],"Vest":[125,125],"PrePolo":[225,230],"Shorts":[240,240],"Pant":[280,280]}},"wt":{"Bio":0.21,"NBio":0.21,"OverS":0.26,"OS210": 0.27,"Varsity": 0.56,"OS180": 0.26,"Polo":0.26,"Hood":0.56,"Sweat":0.46,"Kids":0.16,"Vest":0.18,"PrePolo":0.26,"Shorts":0.25,"Pant":0.5}}}');
         }
 
         if (!localStorage.pc) { loadst() }
