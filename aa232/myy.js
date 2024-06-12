@@ -880,6 +880,8 @@ async function goadd(b, z, m) { //b(ptid),z(odid),m(ptd)object
     document.querySelector("#gstall > div.w3-blue-gray").style.display = 'none';
     document.getElementById('incn').value = v.cn;
     document.getElementById('ptm').value = v.mn1;
+    document.getElementById('whlink').href = 'https://wa.me/+91'+v.mn1;
+
     document.getElementById('ptm1').value = v.mn2 ?? '';
     let k1 = document.getElementById('ptg');
     k1.value = v.gst ?? '';
@@ -902,6 +904,7 @@ async function goadd(b, z, m) { //b(ptid),z(odid),m(ptd)object
   } else {
     myfn(m);
   }
+  
 }
 
 function addtbl(v, pc, qt, d) {
