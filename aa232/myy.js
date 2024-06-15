@@ -881,7 +881,7 @@ async function goadd(b, z, m) { //b(ptid),z(odid),m(ptd)object
     document.getElementById('incn').value = v.cn;
     document.getElementById('ptm').value = v.mn1;
     document.getElementById('whlink1').href ='whatsapp://send/?phone=%2B91'+v.mn1+'&text&type=phone_number&app_absent=0';
-    document.getElementById('whlink').href = 'https://wa.me/+91'+v.mn1;
+    // document.getElementById('whlink').href = 'https://wa.me/+91'+v.mn1;
 
     document.getElementById('ptm1').value = v.mn2 ?? '';
     let k1 = document.getElementById('ptg');
