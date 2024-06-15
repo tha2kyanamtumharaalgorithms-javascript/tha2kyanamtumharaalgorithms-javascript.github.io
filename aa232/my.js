@@ -85,7 +85,7 @@ var od = {}; var zxc = 0;
 if (localStorage.clickcount) { zxc = localStorage.clickcount; };
 
 // shp
-if (((Date.now() > (Number(localStorage.shpdt) + 220000000)) || (!localStorage.shpdt))) {
+if (((Date.now() > (Number(localStorage.shpdt) + 40000000)) || (!localStorage.shpdt))) {
   fetch('https://dsfdyyhqqgvk6duva445txkioq0jzoqe.lambda-url.ap-south-1.on.aws').then((v) => v.json())
     .then((v) => {
       localStorage.shipr1 = '{"a":"Bearer ' + v[0] + '"}';
