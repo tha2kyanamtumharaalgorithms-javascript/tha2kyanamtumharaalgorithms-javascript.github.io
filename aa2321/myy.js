@@ -89,6 +89,7 @@ async function editod(tp) {
   // let st = new Localbase('st');
   // st.collection(selg).doc('od'+pk8).get().then(doc => {
   if (selg == 'inst') {
+    oddb = instdb;
     oddb.od = instdb.inst;
   } else {
     await mthdb(selg.slice(-1) + String(pk8).slice(0, 3));
