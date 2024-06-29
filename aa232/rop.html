@@ -502,6 +502,10 @@
                 <td id='dis'>&#8377;000.00</td>
               </tr>
               <tr>
+                <td>Shipping</td>
+                <td id='tch'>&#8377;000.00</td>
+              </tr>
+              <tr>
                 <td>Sub total</td>
                 <td id='st'>&#8377;000.00</td>
               </tr>
@@ -516,10 +520,6 @@
               <tr>
                 <td>IGST@5%</td>
                 <td id='igst'>&#8377;000.00</td>
-              </tr>
-              <tr>
-                <td>Shipping</td>
-                <td id='tch'>&#8377;000.00</td>
               </tr>
               <tr>
                 <td>Other charge</td>
@@ -739,7 +739,7 @@
           cttp += (v[1] * v[2]);
         });
       }
-      let txv = (cttp + pcx - t[1].dis);
+      let txv = (cttp + pcx - t[1].dis + t[1].tch);
       let phx = (txv * 0.05); let phxx = (Math.ceil(phx) - phx);
       if (phxx) {
         doc.querySelector('#roff').innerHTML = '&#8377;' + phxx.toFixed(2);
@@ -761,7 +761,7 @@
       doc.querySelector("#ttqt").innerHTML = qtx + cttq;
       doc.querySelector("#ttpc").innerHTML = `&#8377;${cttp + pcx}.00`;
 
-      let tttx = txv + phx + t[1].tch + t[1].och;
+      let tttx = txv + phx + t[1].och;
       doc.querySelector('#ttt').innerHTML = '&#8377;' + Math.ceil(tttx).toLocaleString('en-IN') + '.00';
 
       function apnd(v, qt, upc, j, y, z) {
