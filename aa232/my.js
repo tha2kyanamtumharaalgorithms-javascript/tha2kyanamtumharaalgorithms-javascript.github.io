@@ -348,18 +348,18 @@ function tot() {
         sd0 += "<tr>" + pc(sd2, sd21, cta, ctb, ctc, ctd, cte) + "</tr>";
       }
     }//console.log(sd0);
-    let txv = (Number(pctt) - Number(dis));
+    let txv = (Number(pctt) - Number(dis) + Number(tch));
 
     let vn = (document.getElementById('bulkc').checked) ? (Number(txv) * 0.05) : 0;
     let vn1 = (document.getElementById('bulkc').checked) ? '' : 'none';
     // let vn1 = (document.getElementById('bulkc').checked) ?  '+ 5% Tax' : '<span style="padding: 0 2.30em"></span>';
-    let inv = Math.ceil((vn + Number(txv) + Number(tch) + Number(och))); billinv = [txv, inv];
+    let inv = Math.ceil((vn + Number(txv) + Number(och))); billinv = [txv, inv];
     let pctt0 = dis && ("<tr><td colspan='2'><b class='sa2'>Discount -</b></td><td>" + "<b>" + dis + '₹' + '</b></td></tr>');
     let pctt1 = "<tr><td colspan='3' style='padding: 1px 4px 1px 2px!important'><div><b class='sc1'>" + total + " PCS Total</b><b class='sc1' style='margin-left: 2px;background: #2e2effd6'>" + Math.ceil(pcwt) + "kg</b><b class='sa2' style='display:" + vn1 + "'>" + txv + '₹ + 5% Tax' + '</b></div></td>' + '</tr>';
     let pctt2 = "<tr style=" + dptch + "><td colspan='2'><b class='sa2'>Transport Charge -</b></td><td>" + "<b>" + tch + '₹' + '</b></td></tr>';
     let pctt3 = "<tr style=" + dpoch + "><td colspan='2'><b class='sa2'>Other Charges -</b></td><td>" + "<b>" + och + '₹' + '</b></td></tr>';
     let pctt4 = "<tr><td colspan='2'><b style='font-size: 12px; font-weight: 500;'>" + dtt + dtt2 + "</b><b class='sa2'>Total Amount -</b></td><td>" + "<b class='sc1'>" + (inv.toLocaleString('en-IN')) + '₹' + '</b></td></tr>';
-    document.querySelector('#tot table tbody').innerHTML = sd0 + pctt0 + pctt1 + pctt2 + pctt3 + pctt4;
+    document.querySelector('#tot table tbody').innerHTML = sd0 + pctt0 + pctt2 + pctt1 + pctt3 + pctt4;
     //document.querySelector('#tot thead tr #u13').contentEditable=true;
     //document.querySelector('#tot thead tr #u23').innerText='Total-'+tote;
     rez();
