@@ -213,6 +213,15 @@
                 <th>{{ pc.wt.Pant+'kg' }}</th>
             </tr>
             <tr>
+                <th>Hood430 (S-XL)</th>
+                <td @blur='pcs.pc.Hood430[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.Hood430[0]+'₹'
+                    }}
+                </td>
+                <td @blur='pc.pc.Hood430[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.Hood430[0]+'₹'
+                    }}</td>
+                <th>{{ pc.wt.Hood430+'kg' }}</th>
+            </tr>
+            <tr>
                 <th>Hood430 (XXL)</th>
                 <td @blur='pcs.pc.Hood430[1] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.Hood430[1]+'₹'
                     }}
@@ -220,6 +229,14 @@
                 <td @blur='pc.pc.Hood430[1] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.Hood430[1]+'₹'
                     }}</td>
                 <th>{{ pc.wt.Hood430+'kg' }}</th>
+            </tr>
+            <tr>
+                <th>Hood2 (S-XL)</th>
+                <td @blur='pcs.pc.Hood2[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pcs.pc.Hood2[0]+'₹' }}
+                </td>
+                <td @blur='pc.pc.Hood2[0] = Number($event.target.innerText.match(/\d+/)[0])'>{{ pc.pc.Hood2[0]+'₹' }}
+                </td>
+                <th>{{ pc.wt.Hood2+'kg' }}</th>
             </tr>
             <tr>
                 <th>Hood2 (XXL)</th>
@@ -257,8 +274,6 @@
 
         if (!localStorage.pc) { loadst() }
         if (location.search.includes('okbw')) { loadst() }
-
-
 
         // if(!localStorage.pcs){localStorage.setItem('pcs','{ "pc": { "Bio": [180, 185], "NBio": [130, 135, 15], "OS210": [215], "OS180": [215], "Polo": [205, 215], "Hood": [305, 315], "Sweat": [205, 215], "Kids": [140] }, "wt": { "Bio": 0.20, "NBio": 0.20, "OverS": 0.25, "Polo": 0.25, "Hood": 0.55, "Sweat": 0.45, "Kids": 0.150 }}')}
 
