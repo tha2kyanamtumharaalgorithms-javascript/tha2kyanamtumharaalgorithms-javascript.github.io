@@ -474,7 +474,7 @@ function pc(v, vx, a, b, c, d, e) { // v(type) a(36-42), b(44), c(46), d(32), e(
     pj1 = (a * prc.pc[v][0]) + ((b + c + d + e) * prc.pc[v][1]); odprice[v] = prc.pc[v];
     pctt += pj1; pcwt += (a + b + c + d + e) * Number(prc.wt[v]);
     return "<td colspan='2'><b>" + (a + b + c + d + e) + ' ' + vx + "</b><b class='sa2'>" + sva + svpls3 + svbcde + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
-  } else if ((v == 'Polo') || (v == 'Hood') || (v == 'Sweat') || (v == 'PrePolo')) { //console.log('PHS')
+  } else if ((v == 'Polo') || (v == 'Hood') || (v == 'Sweat') || (v == 'PrePolo') || (v == 'Hood430') || (v == 'Hood2')) { //console.log('PHS')
     pj1 = ((a + b) * prc.pc[v][0] + c * prc.pc[v][1]); odprice[v] = prc.pc[v];
     pctt += pj1; pcwt += (a + b + c) * Number(prc.wt[v]);
     return "<td colspan='2'><b>" + (a + b + c) + ' ' + vx + "</b><b class='sa2'>" + svab + svpls2 + svc + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
@@ -880,7 +880,7 @@ async function goadd(b, z, m) { //b(ptid),z(odid),m(ptd)object
     document.querySelector("#gstall > div.w3-blue-gray").style.display = 'none';
     document.getElementById('incn').value = v.cn;
     document.getElementById('ptm').value = v.mn1;
-    document.getElementById('whlink1').href ='whatsapp://send/?phone=%2B91'+v.mn1+'&text&type=phone_number&app_absent=0';
+    document.getElementById('whlink1').href = 'whatsapp://send/?phone=%2B91' + v.mn1 + '&text&type=phone_number&app_absent=0';
     // document.getElementById('whlink').href = 'https://wa.me/+91'+v.mn1;
 
     document.getElementById('ptm1').value = v.mn2 ?? '';
@@ -905,7 +905,7 @@ async function goadd(b, z, m) { //b(ptid),z(odid),m(ptd)object
   } else {
     myfn(m);
   }
-  
+
 }
 
 function addtbl(v, pc, qt, d) {
