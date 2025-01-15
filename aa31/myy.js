@@ -1456,8 +1456,8 @@ async function dlfn(v, id) {
       // // }
       let pid = pe.title.split(',');
       dlid.book = [new rkbs(x.ptd, dlid.c1, dlid.s1, dlid.durl, x.pcwt), new rkbf(x.od.id, x.od.inv[1], Number(pid[0]), Number(pid[1]), dlid.durl)];
-      // dlurl = "https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec";
-      dlurl = "https://script.google.com/macros/s/AKfycbxXWJGTlbU8oiXqBJ7a678POQhCC7sdcqlotW4mXKmiQiOBsjMCpOtywWjINo28GGLtDg/exec";
+      dlurl = "https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec";
+      // dlurl = "https://script.google.com/macros/s/AKfycbxXWJGTlbU8oiXqBJ7a678POQhCC7sdcqlotW4mXKmiQiOBsjMCpOtywWjINo28GGLtDg/exec";
       myd = '';
     } else if ((id == 'dl0') || (id == 'dl1') || (id == 'dl2')) {
       dlid.book = new Dl0(x);
