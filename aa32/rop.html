@@ -593,7 +593,7 @@
       doc.querySelector("#inno").innerHTML = `<p style='font-weight: 500;'>${gst && ('Place of Supply: ' + stgst)}</p><p>Invoice No.: ${t[1].id}</p><p>Date: ${t[1].dt}</p>`;
 
       function savepd2(kk) {
-        let bio42 = 0, bio46 = 0, nbio42 = 0, nbio46 = 0, whbio42 = 0, whbio46 = 0, poloxl = 0, poloxxl = 0, hoodxl = 0, hoodxxl = 0, swxl = 0, swxxl = 0, ows = 0, os180 = 0, vs = 0, kid = 0, kidxl = 0, vest = 0, vestxl = 0, ppoloxl = 0, ppoloxxl = 0, h430xl = 0, h430xxl = 0, h2xl = 0, h2xxl = 0;
+        let bio42 = 0, bio46 = 0, nbio42 = 0, nbio46 = 0, whbio42 = 0, whbio46 = 0, poloxl = 0, poloxxl = 0, hoodxl = 0, hoodxxl = 0, swxl = 0, swxxl = 0, ows = 0, os180 = 0, vs = 0, kid = 0, kidxl = 0, vest = 0, vestxl = 0, ppoloxl = 0, ppoloxxl = 0, h430xl = 0, h430xxl = 0, h2xl = 0, h2xxl = 0, O240S = 0;
         let shtx = 0, pantx = 0;
         if (!(Object.keys(kk).length === 0)) {
           Object.keys(kk).forEach(function (t) {
@@ -711,6 +711,9 @@
                     h2xxl += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][0];
                     apnd(t, h2xxl, p.pc[t][0], i, 0, w);
                   }
+                } else if (t == 'O240S') {
+                  O240S += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][0];
+                  apnd(t, O240S, p.pc[t][0], i, 0, w);
                 }
               });
             });
