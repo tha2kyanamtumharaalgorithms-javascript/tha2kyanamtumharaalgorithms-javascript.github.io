@@ -153,7 +153,7 @@ if ((navigator.platform) === 'iPhone') {
 //console.log('intp:',intp);
 
 // change type name
-const typep7 = { "Bio": "RN Bio", "NBio": "RN Non Bio", "Polo": "Polo", "OS210": "Oversize 210", "Varsity": "Varsity", "OS180": "Oversize 180", "Hood": "Hoodie", "Sweat": "Sweatshirt", "Kids": "Kids RN", "Vest": "Vest", "PrePolo": "Premium Polo", "Shorts": "Shorts", "Pant": "Pant", "Hood430": "Hood430", "Hood2": "Hood2" };
+const typep7 = { "Bio": "RN Bio", "NBio": "RN Non Bio", "Polo": "Polo", "OS210": "Oversize 210", "Varsity": "Varsity", "OS180": "Oversize 180", "Hood": "Hoodie", "Sweat": "Sweatshirt", "Kids": "Kids RN", "Vest": "Vest", "PrePolo": "Premium Polo", "Shorts": "Shorts", "Pant": "Pant", "Hood430": "Hood430", "Hood2": "Hood2", "O240S": "Oversize 240gsm" };
 
 // for image bill
 const typep77 = { "Bio": "Bio-RN", "NBio": "Cotton-RN", "Polo": "Polo", "OS210": "Dropshoulder 210gsm", "Varsity": "Varsity Jacket", "OS180": "Dropshoulder 180gsm", "Hood": "Hoodie", "Sweat": "Sweatshirt", "Kids": "Kids-RN", "Vest": "Vest", "PrePolo": "Premium Polo", "Shorts": "Shorts", "Pant": "Pant", "Hood430": "Hood430", "Hood2": "Hood2", "O240S": "Oversize 240gsm" };
