@@ -22,6 +22,8 @@ input::-webkit-inner-spin-button {
   display: none;
 }
 
+.dn{display: none!important;}
+.db{display: block!important;}
 td {
   padding: 0 !important;
   width: 60px;
@@ -361,7 +363,7 @@ ul#m1list li {
 
 #tot table thead th span {
   float: left;
-  background: #00000015;
+  background: #a37e7e15;
   padding: 0 4px;
   font-size: 12px;
   font-weight: 400;
@@ -439,14 +441,15 @@ ul#m1list li {
   background: #fff !important;
 }
 
-#tot thead tr {
-  border: 1px solid black;
-}
 
-#tot thead tr b {
-  font-weight: 650;
-}
 
-#tot thead tr i {
-  font-style: normal;
+#tot table tr td:last-child{width: 20%!important;padding: 0px 2px 0px 5px!important}
+#tot table td {padding: 1px 4px!important;}
+#tot tbody tr,#add .w3-input,#logh .w3-input{border:1px solid #000;}
+.sc1{background:#000;color:#fff;padding: 1px 4px;font-weight:500!important;vertical-align: text-top;}
+
+#id01 .w3-modal-content{min-height: 86%;margin: 0 auto;}
+
+#html33 td input[type='button']{
+  background-image: linear-gradient(to bottom right, transparent calc(50% - 1px), #7f3732, transparent calc(50% + 1px));
 }

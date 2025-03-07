@@ -38,7 +38,7 @@ async function delod() {
       await mthdb(selg.slice(-1) + odno.slice(0, 3));
       await oddb.od.get(Number(odno)).then((doc) => {
         // od=doc.it;//let odno=selg.slice(-1)+doc.id;
-        an5 = doc; an5.tot = 0; an5.it = {}; an5.tch = 0; an5.och = 0; an5.dis = 0; an5.c = []; an5.pc = {}; an5.inv = [], an5.bulk = 0;
+        an5 = doc; an5.tot = 0; an5.od = {}; an5.tch = 0; an5.och = 0; an5.dis = 0; an5.c = []; an5.pc = {}; an5.inv = [], an5.bulk = 0;
         shod11 = { "p": "1", "g": selg, "od": { ...an5 } };
         sendd(urli, shod11, 'del order');
         // console.log(an5);
@@ -69,16 +69,16 @@ var pk8; var oldod;
 var instg = { Delhi: 'ods', Tiruppur: 'odt', Kolkata: 'odk', PD: 'odpd' };
 
 async function editod(tp) {
-  let nm = {
-    Bio: ['Biowash R-neck, 36"-42"', 'Biowash R-neck, 44"-46"'],
-    NBio: ['Cotton R-neck, 36"-42"', 'Cotton R-neck, 44"-46"', 'Cotton R-neck White, 36"-42"', 'Cotton R-neck White, 44"-46"'],
-    Hood: ['Non Zipper Hoodie, S-XL', 'Non Zipper Hoodie, XXL'],
-    OverS: ['Drop-shoulder R-neck 210gsm, S-XXL', 'Drop-shoulder R-neck 180gsm, S-XXL'],
-    Varsity: ['Varsity Jacket XS-XXL'],
-    Polo: ['Polo neck, 36"-44"', 'Polo neck, 46"'],
-    Sweat: ['Sweatshirt, S-XL', 'Sweatshirt, XXL'],
-    Kids: ['Kids R-neck, 20"-26"', 'Kids R-neck, 28"-34"']
-  };
+  // let nm = {
+  //   Bio: ['Biowash R-neck, 36"-42"', 'Biowash R-neck, 44"-46"'],
+  //   NBio: ['Cotton R-neck, 36"-42"', 'Cotton R-neck, 44"-46"', 'Cotton R-neck White, 36"-42"', 'Cotton R-neck White, 44"-46"'],
+  //   Hood: ['Non Zipper Hoodie, S-XL', 'Non Zipper Hoodie, XXL'],
+  //   OverS: ['Drop-shoulder R-neck 210gsm, S-XXL', 'Drop-shoulder R-neck 180gsm, S-XXL'],
+  //   Varsity: ['Varsity Jacket XS-XXL'],
+  //   Polo: ['Polo neck, 36"-44"', 'Polo neck, 46"'],
+  //   Sweat: ['Sweatshirt, S-XL', 'Sweatshirt, XXL'],
+  //   Kids: ['Kids R-neck, 20"-26"', 'Kids R-neck, 28"-34"']
+  // };
   document.getElementById('cor1').setAttribute("onclick", "getcor('u')");
   pk8 = Number(tp.id.slice(1));// order id b34
   let cnv = document.getElementById('s' + pk8).tabIndex;
@@ -92,71 +92,71 @@ async function editod(tp) {
   await oddb.od.get(pk8).then((doc) => {
     let ht = doc.cn;
     oldod = doc;
-    oldod.tch && (document.getElementById('tch').value = oldod.tch || '');
-    oldod.och && (document.getElementById('och').value = oldod.och || '');
-    oldod.dis && (document.getElementById('dis').value = oldod.dis || '');
+    document.getElementById('tch').value = oldod.xch[0] || '';
+    document.getElementById('och').value = oldod.xch[1] || '';
+    document.getElementById('dis').value = oldod.xch[2] || '';
     if (oldod.c) {
       oldod.c.forEach((v) => {
         // addtbl(v,pc,qt,d);
         let p9 = v[0].slice(1).slice(0, -1);
-        if (Number(v[0][0])) {
-          addtbl(nm[p9][Number(v[0].slice(-1))], v[1], v[2], v[0]);
-        } else {
-          addtbl(p9, v[1], v[2], v[0]);
-        }
+        addtbl(p9, v[1], v[2], v[0]);
+        // if (Number(v[0][0])) {
+        //   addtbl(nm[p9][Number(v[0].slice(-1))], v[1], v[2], v[0]);
+        // } else {
+        //   addtbl(p9, v[1], v[2], v[0]);
+        // }
       })
     }
 
     document.getElementById('frt').innerHTML = "<strong>" + ht + "</strong>";
     // if(doc.bulk){document.getElementById('bulkc').checked=true;bulks();}else{document.getElementById('bulkc').checked=false;bulks();}
-    if (doc.bulk) { document.getElementById('bulkc').checked = true; } else { document.getElementById('bulkc').checked = false; }
+    // if (doc.bulk) { document.getElementById('bulkc').checked = true; } else { document.getElementById('bulkc').checked = false; }
+    document.getElementById('bulkc').checked = doc.bulk;
+    
     if (selg == 'inst') {
       document.getElementById("gsel").value = instg[ht.trim()];
     } else {
       document.getElementById("gsel").value = selg;
     }
-    if (doc.pc) {
-      let obj1 = JSON.parse(localStorage.pc);
-      let obj2 = doc.pc;
-      prc = { ...obj1, pc: { ...obj1.pc, ...obj2 } };
-    }
+    // if (doc.pc) {
+    //   let obj1 = JSON.parse(localStorage.pc);
+    //   let obj2 = doc.pc;
+    //   prc = { ...obj1, pc: { ...obj1.pc, ...obj2 } };
+    // }
     //console.log(prc);
     // console.log(doc.it)
   })
 
-  document.querySelectorAll('#id01 #tblom1 tbody').forEach(kjhu)
-  // for edit order
-  function kjhu(v) {//alert(v.id);document.getElementById('frt').innerText=.innerText.split('\n')[0].split(' ')[2];
-    let qs1 = v.innerText.split('\n');
-    for (let u = 0; u < qs1.length; u++) {
-      var wer5;
-      if (u === 0) {
-        wer5 = qs1[u].split('\t')[0];
-      } else {
-        let jk = qs1[u].split('\t');
-        for (let i = 0; i < jk.length; i++) {
-          var wer6;
-          if (i === 0) { wer6 = jk[i] } else if (jk[i]) {
-            // console.log(wer5,wer6,jk[i],i); // t,c,value,index
-            let ty6 = document.querySelector('#' + wer5 + ' #' + wer6.replace(/\s+/, "") + ' td:nth-child(' + (i + 1) + ') input');
-            ty6.value = jk[i]; triggerInput(ty6);
-          }
-        }
-      }
-    }
-  }
+  console.log("oldod",oldod)
 
+  let d=oldod.od;
+  let d1=Object.keys(d);
+  // let m={};
+  d1.forEach(t=>{// m[t]=0;
+    Object.keys(d[t]).forEach(c=>{
+      Object.keys(d[t][c]).forEach(s=>{ // console.log( t,c,s, d[t][c][s]); 
+      let tin = document.querySelector(`.city [title='${t}'] tr[title='${c}'] [name='${s}']`);
+      tin.value = d[t][c][s];triggerInput(tin);//m[t]+=1;
+      });
+    });
+  });
+  
   document.getElementById('id01').style.display = '';
-  document.querySelector("div.bar button.tablink[onclick]").click();
+  document.querySelector("div.bar button.tablink").click();
   document.getElementById('btn_convert').style.display = 'none';
   document.getElementById('upd5').style.display = '';
   function triggerInput(v) {
-    let event = new Event('input', { 'bubbles': true, 'cancelable': true });
-    v.dispatchEvent(event);
+    let event = new Event('input', { 'bubbles': true, 'cancelable': true });v.dispatchEvent(event);
   }
 }
 
-async function creatod() {
+
+function addtbl(v, pc, qt, d) {
+  document.getElementById('ctm9').innerHTML += `<tr data-p="${d}"><td>${v}</td><th>${pc}</th><th>${qt}</th>
+  <td style="width: 10px;" onclick="this.parentElement.remove()"><b class="w3-block w3-button w3-ripple w3-teal">Del</b></td></tr>`;
+}
+
+function creatod() {
   return new Promise(async (rez) => {
     let gd = document.getElementById("gsel").value;
     await viewtotal();
@@ -170,15 +170,15 @@ async function creatod() {
       // zc(ptd,'hiii76868iiii');
       zsr.id = odid;
       zsr.cn = document.getElementById('u13').innerText;
-      zsr.tot = Number(total);
+      zsr.tot = odqt;
       zsr.bulk = Number(document.getElementById('bulkc').checked);
       zsr.dt = date.split(' ').join('/');
-      zsr.it = od;
+      zsr.od = od;
       zsr.inv = billinv;
-      zsr.tch = othch[0];
-      zsr.och = othch[1];
-      zsr.dis = othch[2];
-
+      // zsr.tch = othch[0];
+      zsr.xch = [...othch,tbl[6].gst];
+      // zsr.dis = othch[2];
+      
       let jkl = document.querySelectorAll('#ctm9 tr');
       if (jkl.length) {
         let cods = [];
@@ -200,10 +200,10 @@ async function creatod() {
       let odno = gd.slice(-1) + odid; // s30424
       ptd.id = ptd.id || genid(ptcounter(), 1);
       //genlink(genid(ptd.id,3),ptd.cn);
-      if (document.getElementById('bulkc').checked) {
-        ptd.ods.push(odno);
-        await bulkdb.bk.add({ ...zsr, "pt": ptd });
-      }
+      // if (document.getElementById('bulkc').checked) {
+      //   ptd.ods.push(odno);
+      //   await bulkdb.bk.add({ ...zsr, "pt": ptd });
+      // }
       console.log(ptd);
       if (!oldid) {
         // save party details
@@ -215,7 +215,13 @@ async function creatod() {
         await db.pt.update(oldid, ptd);
       }
       zsr.pt = ptd.id;
-      shod0 = { "p": "0", "g": gd, "od": { ...zsr, "pc": { ...odprice } }, ptd };
+      let pcb={};
+      if(odqt>tbl[3].moq){
+        Object.keys(od).forEach(v=>pcb[v]=pc[v]);
+      }else{
+        Object.keys(od).forEach(v=>pcb[v]=tbl[2][v]);
+      }
+      shod0 = { "p": "0", "g": gd, "od": { ...zsr, "pc": { ...pcb } }, ptd };
 
       await mthdb(gd.slice(-1) + date1);
       await oddb.od.add(shod0.od, ctcn).then((res) => {
@@ -238,7 +244,7 @@ async function creatod() {
           allowTaint: true,
           useCORS: true
         }).then(async (canvas) => {
-          shod0.pcwt = pcwt;
+          shod0.pcwt = odwt;
           let txtcn = shod0.od.id + ' ' + shod0.od.cn; let imgcn = canvas.toDataURL();
           let imglastod = {}; imglastod['cn'] = txtcn; imglastod['im5'] = imgcn;
           document.getElementById('lastodimg').src = imgcn;
@@ -256,16 +262,23 @@ async function creatod() {
 async function updateod(myz) {
   return new Promise(async (rez) => {
     await viewtotal();
+    let pcb={};
+    if(odqt>tbl[3].moq){
+      Object.keys(od).forEach(v=>pcb[v]=pc[v]);
+    }else{
+      Object.keys(od).forEach(v=>pcb[v]=tbl[2][v]);
+    }
     zsr.id = pk8;
     zsr.cn = document.getElementById('u13').innerText.replace(/\s+/g, ' ').trim();
-    zsr.tot = Number(total);
+    zsr.tot = odqt;
     zsr.bulk = Number(document.getElementById('bulkc').checked);
     zsr.dt = oldod.dt;
-    zsr.it = od;
+    zsr.od = od;
     zsr.inv = billinv;
-    zsr.tch = othch[0];
-    zsr.och = othch[1];
-    zsr.dis = othch[2];
+    zsr.xch = [...othch,tbl[6].gst];
+    // zsr.tch = othch[0];
+    // zsr.och = othch[1];
+    // zsr.dis = othch[2];
     let jkl = document.querySelectorAll('#ctm9 tr');
     if (jkl.length) {
       let cods = [];
@@ -284,37 +297,37 @@ async function updateod(myz) {
       console.log(cods);
     }
     zsr.pt = ptd.id; console.log(ptd.id);
-    let yu = ptd.ods.indexOf(selg.slice(-1) + pk8);
-    if (document.getElementById('bulkc').checked) {
-      ptd.ods.push(selg.slice(-1) + pk8);
-      let uniq = [...new Set(ptd.ods)];
-      ptd.ods = uniq;
-      await bulkdb.bk.put({ ...zsr, "pt": ptd }, zsr.id);
-    } else {
+    // let yu = ptd.ods.indexOf(selg.slice(-1) + pk8);
+    // if (document.getElementById('bulkc').checked) {
+    //   ptd.ods.push(selg.slice(-1) + pk8);
+    //   let uniq = [...new Set(ptd.ods)];
+    //   ptd.ods = uniq;
+      // await bulkdb.bk.put({ ...zsr, "pt": ptd }, zsr.id);
+    // } else {
       // let yu=ptd.ods.indexOf(selg.slice(-1)+id55);
-      if (yu > (-1)) {
-        ptd.ods.splice(yu, 1);
-        await bulkdb.bk.put({ ...zsr, "pt": ptd }, zsr.id);
-      }
-    }
-    await db.pt.update(ptd.id, ptd);
+      // if (yu > (-1)) {
+      //   ptd.ods.splice(yu, 1);
+      //   await bulkdb.bk.put({ ...zsr, "pt": ptd }, zsr.id);
+      // }
+    // }
+    // await db.pt.update(ptd.id, ptd);
     const gsel = document.getElementById("gsel").value;
     let shod1 = {};
     if (!(selg == gsel)) {
       for (let u in selod5) { document.getElementById(u).checked = false; };
       selod5 = {}; selod5[pk8] = pk8; unpin(1); selod5 = {}; // order id pk8=od34
       //document.querySelector("#oderli #"+pk8).parentElement.remove();
-      shod1 = { "p": "4", "g": selg, "gl": gsel, "od": { ...zsr, "pc": { ...odprice } } };
+      shod1 = { "p": "4", "g": selg, "gl": gsel, "od": { ...zsr, "pc": { ...pcb } } };
       await moveod(selg, gsel, 'ods' + pk8);
     }
     // alert('g normal')
-    shod1 = { "p": "1", "g": gsel, "od": { ...zsr, "pc": { ...odprice } }, ptd };
+    shod1 = { "p": "1", "g": gsel, "od": { ...zsr, "pc": { ...pcb } } };
     // let st = new Localbase('st');
     // st.collection(selg).doc('od'+pk8).set(shod1.od)
     await mthdb(selg.slice(-1) + String(pk8).slice(0, 3));
     await oddb.od.put(shod1.od, pk8)
       .then(async () => {
-        shod1.pcwt = pcwt;
+        shod1.pcwt = odwt;
         console.log(pctt);
         let html33 = document.getElementById("html33");
         html33.style.width = '455px';
@@ -389,7 +402,7 @@ async function saveinst(v) {
 
   pkx.tot = Number(total);
   pkx.dt = date.split(' ').join('/');
-  pkx.it = od;
+  pkx.od = od;
   if (v === 0) {
     pkx.id = oldod.id;
   }
@@ -418,82 +431,90 @@ function expt(v) {
   }, 3000)
 }
 // price calculator
-function pc(v, vx, a, b, c, d, e) { // v(type) a(36-42), b(44), c(46), d(32), e(34)
-  //odprice
-  console.log(v, vx, a, b, c, d, e);
-  let svc = '', sva = '', svbc = '', svab = '', svpls1 = '', svpls2 = '';
-  svbc = ((b + c) != 0) ? svbc = (b + c) + '×' + prc.pc[v][1] : svbc = '';
-  svab = ((a + b) != 0) ? svab = (a + b) + '×' + prc.pc[v][0] : svab = '';
-  svc = (c != 0) ? svc = c + '×' + prc.pc[v][1] : svc = '';
-  sva = (a != 0) ? sva = a + '×' + prc.pc[v][0] : sva = '';
+// function pc(v, vx, a, b, c, d, e) {
+//   // write price calculator for od object
+//   // v=type, a=36-42, b=44, c=46, d=32, e=34
+//   console.log(v, vx, a, b, c, d, e);
 
-  svpls1 = ((a != 0) && ((b + c) != 0)) ? svpls1 = '+' : svpls1 = '';
-  svpls2 = ((c != 0) && ((a + b) != 0)) ? svpls2 = '+' : svpls2 = '';
 
-  let svbcde = (b + c + d + e) ? (b + c + d + e) + '×' + prc.pc[v][1] : ''; // updated code
-  let svpls3 = (a && (b + c + d + e)) ? '+' : ''; // updated code
 
-  // console.log('whawhb',vx);
-  let pj1 = 0;
-  if ((v == 'Bio' || v == 'Vest')) { //console.log('BN')
-    let pj1 = (a * prc.pc[v][0] + (b + c) * prc.pc[v][1]); odprice[v] = prc.pc[v];
-    pctt += pj1; pcwt += (a + b + c) * Number(prc.wt[v]);
-    return "<td colspan='2'><b>" + (a + b + c) + ' ' + vx + "</b><b class='sa2'>" + sva + svpls1 + svbc + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
-  } else if ((v == 'NBio')) {
-    if (document.querySelector('#NBio #White.oj')) {
-      let wh11 = document.querySelectorAll('#NBio #White.oj td input');
-      let wha = 0, whb = 0;
-      for (let h = 0; h < wh11.length; h++) {
-        let njh = Number(wh11[h].value);
-        if (h <= 3) {
-          wha += njh;
-        } else {
-          whb += njh;
-        }
-        // console.log('whawhb',vx);
-      }
-      let whpc = prc.pc[v][2]; let whva = '', whvpls1 = '', whvbc = '';
-      let pj10 = (wha * (prc.pc[v][0] + whpc) + (whb) * (prc.pc[v][1] + whpc)); odprice[v] = prc.pc[v];
-      pctt += pj10; pcwt += (wha + whb) * Number(prc.wt[v]);
-      whva = (wha != 0) ? whva = wha + '×' + (prc.pc[v][0] + whpc) : whva = '';
-      whvpls1 = ((wha != 0) && ((whb) != 0)) ? whvpls1 = '+' : whvpls1 = '';
-      whvbc = ((whb) != 0) ? whvbc = (whb) + '×' + (prc.pc[v][1] + whpc) : whvbc = '';
+// }
+// function pc(v, vx, a, b, c, d, e) { // v(type) a(36-42), b(44), c(46), d(32), e(34)
+//   //odprice
+//   console.log(v, vx, a, b, c, d, e);
+//   let svc = '', sva = '', svbc = '', svab = '', svpls1 = '', svpls2 = '';
+//   svbc = ((b + c) != 0) ? svbc = (b + c) + '×' + prc.pc[v][1] : svbc = '';
+//   svab = ((a + b) != 0) ? svab = (a + b) + '×' + prc.pc[v][0] : svab = '';
+//   svc = (c != 0) ? svc = c + '×' + prc.pc[v][1] : svc = '';
+//   sva = (a != 0) ? sva = a + '×' + prc.pc[v][0] : sva = '';
 
-      let pj1 = ((a - wha) * prc.pc[v][0] + (b + c - whb) * prc.pc[v][1]);
-      pctt += pj1; pcwt += (a + b + c - wha - whb) * Number(prc.wt[v]);
+//   svpls1 = ((a != 0) && ((b + c) != 0)) ? svpls1 = '+' : svpls1 = '';
+//   svpls2 = ((c != 0) && ((a + b) != 0)) ? svpls2 = '+' : svpls2 = '';
 
-      let wht0 = "<td colspan='2'><b>" + (wha + whb) + ' ' + vx + ' White' + "</b><b class='sa2'>" + whva + whvpls1 + whvbc + " = </b></td><td class='sb3'><b>" + pj10 + '₹</b></td>';
-      let wht1 = "<td colspan='2'><b>" + (a + b + c - wha - whb) + ' ' + vx + "</b><b class='sa2'>" + (((a - wha) != 0) ? sva = (a - wha) + '×' + prc.pc[v][0] : sva = '') + ((((a - wha) != 0) && ((b + c - whb) != 0)) ? svpls1 = '+' : svpls1 = '') + (((b + c - whb) != 0) ? svbc = (b + c - whb) + '×' + prc.pc[v][1] : svbc = '') + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
-      return (((a + b + c - wha - whb) || '') && ('<tr>' + wht1 + '<tr/><tr>')) + (((wha + whb) || '') && ('<tr>' + wht0 + '<tr/>'))
-    } else { }
-  } else if (v == 'OS210' || v == 'OS180' || v == 'Varsity' || v == 'Shorts' || v == 'Pant'|| v == 'O240S') {
-    pj1 = ((a + b + c + d + e) * prc.pc[v][0]); odprice[v] = prc.pc[v];
-    pctt += pj1; pcwt += (a + b + c + d + e) * Number(prc.wt[v]);
-    return "<td colspan='2'><b>" + (a + b + c + d + e) + ' ' + vx + "</b><b class='sa2'>" + (a + b + c + d + e) + '×' + prc.pc[v][0] + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
-  } else if (v == 'Kids') {
-    pj1 = (a * prc.pc[v][0]) + ((b + c + d + e) * prc.pc[v][1]); odprice[v] = prc.pc[v];
-    pctt += pj1; pcwt += (a + b + c + d + e) * Number(prc.wt[v]);
-    return "<td colspan='2'><b>" + (a + b + c + d + e) + ' ' + vx + "</b><b class='sa2'>" + sva + svpls3 + svbcde + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
-  } else if ((v == 'Polo') || (v == 'Hood') || (v == 'Sweat') || (v == 'PrePolo') || (v == 'Hood430') || (v == 'Hood2')) { //console.log('PHS')
-    pj1 = ((a + b) * prc.pc[v][0] + c * prc.pc[v][1]); odprice[v] = prc.pc[v];
-    pctt += pj1; pcwt += (a + b + c) * Number(prc.wt[v]);
-    return "<td colspan='2'><b>" + (a + b + c) + ' ' + vx + "</b><b class='sa2'>" + svab + svpls2 + svc + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
-  } else { }
-}
+//   let svbcde = (b + c + d + e) ? (b + c + d + e) + '×' + prc.pc[v][1] : ''; // updated code
+//   let svpls3 = (a && (b + c + d + e)) ? '+' : ''; // updated code
+
+//   // console.log('whawhb',vx);
+//   let pj1 = 0;
+//   if ((v == 'Bio' || v == 'Vest')) { //console.log('BN')
+//     let pj1 = (a * prc.pc[v][0] + (b + c) * prc.pc[v][1]); odprice[v] = prc.pc[v];
+//     pctt += pj1; pcwt += (a + b + c) * Number(prc.wt[v]);
+//     return "<td colspan='2'><b>" + (a + b + c) + ' ' + vx + "</b><b class='sa2'>" + sva + svpls1 + svbc + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
+//   } else if ((v == 'NBio')) {
+//     if (document.querySelector('#NBio #White.oj')) {
+//       let wh11 = document.querySelectorAll('#NBio #White.oj td input');
+//       let wha = 0, whb = 0;
+//       for (let h = 0; h < wh11.length; h++) {
+//         let njh = Number(wh11[h].value);
+//         if (h <= 3) {
+//           wha += njh;
+//         } else {
+//           whb += njh;
+//         }
+//         // console.log('whawhb',vx);
+//       }
+//       let whpc = prc.pc[v][2]; let whva = '', whvpls1 = '', whvbc = '';
+//       let pj10 = (wha * (prc.pc[v][0] + whpc) + (whb) * (prc.pc[v][1] + whpc)); odprice[v] = prc.pc[v];
+//       pctt += pj10; pcwt += (wha + whb) * Number(prc.wt[v]);
+//       whva = (wha != 0) ? whva = wha + '×' + (prc.pc[v][0] + whpc) : whva = '';
+//       whvpls1 = ((wha != 0) && ((whb) != 0)) ? whvpls1 = '+' : whvpls1 = '';
+//       whvbc = ((whb) != 0) ? whvbc = (whb) + '×' + (prc.pc[v][1] + whpc) : whvbc = '';
+
+//       let pj1 = ((a - wha) * prc.pc[v][0] + (b + c - whb) * prc.pc[v][1]);
+//       pctt += pj1; pcwt += (a + b + c - wha - whb) * Number(prc.wt[v]);
+
+//       let wht0 = "<td colspan='2'><b>" + (wha + whb) + ' ' + vx + ' White' + "</b><b class='sa2'>" + whva + whvpls1 + whvbc + " = </b></td><td class='sb3'><b>" + pj10 + '₹</b></td>';
+//       let wht1 = "<td colspan='2'><b>" + (a + b + c - wha - whb) + ' ' + vx + "</b><b class='sa2'>" + (((a - wha) != 0) ? sva = (a - wha) + '×' + prc.pc[v][0] : sva = '') + ((((a - wha) != 0) && ((b + c - whb) != 0)) ? svpls1 = '+' : svpls1 = '') + (((b + c - whb) != 0) ? svbc = (b + c - whb) + '×' + prc.pc[v][1] : svbc = '') + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
+//       return (((a + b + c - wha - whb) || '') && ('<tr>' + wht1 + '<tr/><tr>')) + (((wha + whb) || '') && ('<tr>' + wht0 + '<tr/>'))
+//     } else { }
+//   } else if (v == 'OS210' || v == 'OS180' || v == 'Varsity' || v == 'Shorts' || v == 'Pant'|| v == 'O240S') {
+//     pj1 = ((a + b + c + d + e) * prc.pc[v][0]); odprice[v] = prc.pc[v];
+//     pctt += pj1; pcwt += (a + b + c + d + e) * Number(prc.wt[v]);
+//     return "<td colspan='2'><b>" + (a + b + c + d + e) + ' ' + vx + "</b><b class='sa2'>" + (a + b + c + d + e) + '×' + prc.pc[v][0] + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
+//   } else if (v == 'Kids') {
+//     pj1 = (a * prc.pc[v][0]) + ((b + c + d + e) * prc.pc[v][1]); odprice[v] = prc.pc[v];
+//     pctt += pj1; pcwt += (a + b + c + d + e) * Number(prc.wt[v]);
+//     return "<td colspan='2'><b>" + (a + b + c + d + e) + ' ' + vx + "</b><b class='sa2'>" + sva + svpls3 + svbcde + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
+//   } else if ((v == 'Polo') || (v == 'Hood') || (v == 'Sweat') || (v == 'PrePolo') || (v == 'Hood430') || (v == 'Hood2')) { //console.log('PHS')
+//     pj1 = ((a + b) * prc.pc[v][0] + c * prc.pc[v][1]); odprice[v] = prc.pc[v];
+//     pctt += pj1; pcwt += (a + b + c) * Number(prc.wt[v]);
+//     return "<td colspan='2'><b>" + (a + b + c) + ' ' + vx + "</b><b class='sa2'>" + svab + svpls2 + svc + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
+//   } else { }
+// }
 
 
 // favicon set emoji
-if (localStorage.gr5) {
-  let cfa = document.createElement("canvas");
-  cfa.height = 64; cfa.width = 64;
-  let ctx = cfa.getContext("2d");
-  ctx.font = "64px serif";
-  //ctx.fillText("👕", 0, 64); 
-  ctx.fillText("🇮🇳", 0, 64);
-  //ctx.fillText("❤️", 0, 64);
-  //document.querySelector('link[rel="icon"]').href= cfa.toDataURL();
-  document.querySelector('link[rel="shortcut icon"]').href = cfa.toDataURL();
-}
+// if (localStorage.gr5) {
+//   let cfa = document.createElement("canvas");
+//   cfa.height = 64; cfa.width = 64;
+//   let ctx = cfa.getContext("2d");
+//   ctx.font = "64px serif";
+//   //ctx.fillText("👕", 0, 64); 
+//   ctx.fillText("🇮🇳", 0, 64);
+//   //ctx.fillText("❤️", 0, 64);
+//   //document.querySelector('link[rel="icon"]').href= cfa.toDataURL();
+//   document.querySelector('link[rel="shortcut icon"]').href = cfa.toDataURL();
+// }
 
 // on paste mobile no.
 document.getElementById('ptm').addEventListener('paste', (v) => { pastemn(v) })
@@ -908,10 +929,7 @@ async function goadd(b, z, m) { //b(ptid),z(odid),m(ptd)object
 
 }
 
-function addtbl(v, pc, qt, d) {
-  document.getElementById('ctm9').innerHTML += `<tr data-p="${d}"><td>${v}</td><th>${pc}</th><th>${qt}</th>
-  <td style="width: 10px;" onclick="this.parentElement.remove()"><b class="w3-block w3-button w3-ripple w3-teal">Del</b></td></tr>`;
-}
+
 document.querySelector('#addtbl0').addEventListener('click', (e) => {
   //console.log(e.currentTarget,e.target);
   let t = e.target;
@@ -1142,7 +1160,7 @@ function getcor1(v) {
                 <input class="w3-radio" type="radio" name="from" value="641607"><b> 641607</b>
                 <b class="w3-code w3-large"> To: ${ptd.pin}</b>
                 </p>
-                <p class="w3-code"><b>weight: ${pcwt.toFixed(2)}kg</b></p>
+                <p class="w3-code"><b>weight: ${odwt}kg</b></p>pcwt
                 <div id="allcor" style="display: grid;"><p class="loading">.</p></div>
                 </div><div class="w3-blue-gray"></p></div><br><br><br><br>`;
   document.getElementById('dlcn').innerText = ((pk8) ? pk8 : (date1 + (Number(localStorage.clickcount) + 1))) + ". " + document.getElementById('u13').innerText;
@@ -1334,7 +1352,7 @@ class shrkt {
     this.pickup_postcode = 110062;
     this.delivery_postcode = Number(ptd.pin);
     this.cod = 0;
-    this.weight = Number(pcwt.toFixed(2)); // kg
+    this.weight = odwt; // kg
     this.mode = d; // Surface or Air
   }
 }
@@ -1343,7 +1361,7 @@ class Delhivery {
     this.o_pin = 110062;
     this.d_pin = Number(ptd.pin);
     // this.md = d; // "S"/"E"
-    this.cgm = Number((pcwt * 1000).toFixed()); // gram
+    this.cgm = odwt * 1000; // gram
     // this.ss = 'Delivered';
   }
 }
@@ -1415,10 +1433,10 @@ async function dlfn(v, id) {
       controller.abort();
     }
     let och;
-    if (pcwt < 2) {
+    if (odwt < 2) {
       och = 20;
-    } else if (pcwt > 2) {
-      och = 50 * Math.ceil(pcwt / 25);
+    } else if (odwt > 2) {
+      och = 50 * Math.ceil(odwt / 25);
     }
     dlid.och = och;
     let tch = document.getElementById('tch').value;
@@ -1544,5 +1562,5 @@ class Dl0 {
 }
 
 function book() {
-  alert("Gandu!! Abhi Nhi");
+  alert("nnn");
 }
