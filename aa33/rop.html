@@ -594,7 +594,7 @@
 
       function savepd2(kk) {
         let bio42 = 0, bio46 = 0, nbio42 = 0, nbio46 = 0, whbio42 = 0, whbio46 = 0, poloxl = 0, poloxxl = 0, hoodxl = 0, hoodxxl = 0, swxl = 0, swxxl = 0, ows = 0, os180 = 0, vs = 0, kid = 0, kidxl = 0, vest = 0, vestxl = 0, ppoloxl = 0, ppoloxxl = 0, h430xl = 0, h430xxl = 0, h2xl = 0, h2xxl = 0, O240S = 0;
-        let shtx = 0, pantx = 0;
+        let shtx = 0, pantx = 0, bioYL42 = 0, bioYL46 = 0;
         if (!(Object.keys(kk).length === 0)) {
           Object.keys(kk).forEach(function (t) {
             Object.keys(kk[t]).forEach(function (c) {
@@ -608,8 +608,7 @@
                     bio46 += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][1];
                     apnd(t, bio46, p.pc[t][1], i, 1, w);
                   }
-                }
-                else if (t == 'NBio') {
+                } else if (t == 'NBio') {
                   let a = p.pc[t][2];
                   if (s <= 42) {
                     if (c == 'White') {
@@ -714,6 +713,14 @@
                 } else if (t == 'O240S') {
                   O240S += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][0];
                   apnd(t, O240S, p.pc[t][0], i, 0, w);
+                } else if (t == 'BioYL') {
+                  if (s <= 42) {
+                    bioYL42 += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][0];
+                    apnd(t, bioYL42, p.pc[t][0], i, 0, w);
+                  } else {
+                    bioYL46 += kk[t][c][s]; qtx += kk[t][c][s]; pcx += kk[t][c][s] * p.pc[t][1];
+                    apnd(t, bioYL46, p.pc[t][1], i, 1, w);
+                  }
                 }
               });
             });
@@ -814,6 +821,7 @@
       Shorts: ['100% cotton Loopknit Premium Shorts'],
       Hood430: ['Non Zipper Hoodie 430gsm, S-XL', 'Non Zipper Hoodie 430gsm, XXL'], Hood2: ['Non Zipper Special color Hoodie, S-XL', 'Non Zipper Special color Hoodie, XXL'],
       O240S: ['Drop-shoulder R-neck 240gsm, S-XXL'],
+      BioYL: ['Bio YL R-neck, 36"-42"', 'Bio YL R-neck, 44"-46"'],
       c: []
     }
 

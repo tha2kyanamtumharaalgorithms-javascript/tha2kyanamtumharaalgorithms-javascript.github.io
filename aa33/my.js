@@ -138,12 +138,12 @@ ods1.Hood430 = { Black: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 } };
 //Baby Pink, Army Green, Off-white, Maroon
 ods1.Hood2 = { "Baby Pink": { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 }, "Army Green": { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 }, "Off-white": { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 }, "Maroon": { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 } };
 
-ods1.O240S = { Black: { XS: 0,S: 0, M: 0, L: 0, XL: 0, XXL: 0 }, White: { XS: 0,S: 0, M: 0, L: 0, XL: 0, XXL: 0 }, Maroon: { XS: 0,S: 0, M: 0, L: 0, XL: 0, XXL: 0 } };
-
+ods1.O240S = { Black: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 }, White: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 }, Maroon: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 } };
+ods1.BioYL = { Black: { 36: 0, 38: 0, 40: 0, 42: 0, 44: 0, 46: 0 }, White: { 36: 0, 38: 0, 40: 0, 42: 0, 44: 0, 46: 0 }, Navy: { 36: 0, 38: 0, 40: 0, 42: 0, 44: 0, 46: 0 }, Red: { 36: 0, 38: 0, 40: 0, 42: 0, 44: 0, 46: 0 } }
 var pki = {
   "types": [{ "type": "Bio", "color": ["Black", "White", "Maroon", "Navy", "Mustard Yellow", "Red", "Bottle Green", "Beige", "Royal Blue", "Lavender", "Sky", "Grey", "Bhagwa", "Army Green"], "size": [36, 38, 40, 42, 44, 46], "price": 155 }, { "type": "NBio", "color": ["Black", "White", "Navy", "Grey", "Charcol"], "size": [36, 38, 40, 42, 44, 46], "price": 105 }, { "type": "Polo", "color": ["Black", "White", "Navy", "Grey", "Maroon", "Anthra", "Red", "Charcol", "Royal", "Orange", "Sky Blue", "Flag Green", "Reliance Green", "Golden Yellow"], "size": [36, 38, 40, 42, 44, 46], "price": 190 }, { "type": "OS210", "color": ["Black", "White", "Lavender", "Beige", "Red", "Sage Green", "Brown", "Off-white", "Orange", "Navy"], "size": ["XS", "S", "M", "L", "XL", "XXL"], "price": 190 }, { "type": "Varsity", "color": ["Black"], "size": ["XS", "S", "M", "L", "XL", "XXL"], "price": 190 },
   { "type": "OS180", "color": ["Black", "White", "Brown", "Sage Green", "Lavender", "Red"], "size": ["XS", "S", "M", "L", "XL", "XXL"], "price": 190 }, { "type": "Hood", "color": ["Black", "White", "Navy", "Grey"], "size": ["XS", "S", "M", "L", "XL", "XXL"], "price": 190 }, { "type": "Sweat", "color": ["Black", "White", "Navy", "Grey"], "size": ["XS", "S", "M", "L", "XL", "XXL"], "price": 190 }, { "type": "Kids", "color": ["Black", "White", "Baby Pink", "Red"], "size": ["20", "22", "24", "26", "28", "30", "32", "34"], "price": 190 }, { "type": "Vest", "color": ["Black", "White", "Navy", "Yellow"], "size": [36, 38, 40, 42, 44, 46], "price": 155 }, { "type": "PrePolo", "color": ["Black", "White", "Navy", "Maroon"], "size": [36, 38, 40, 42, 44, 46], "price": 155 }, { "type": "Shorts", "color": ["Black", "Off-white", "Lavender", "Biege", "Sage Green"], "size": ["XS", "S", "M", "L", "XL", "XXL"], "price": 190 },
-  { "type": "Pant", "color": ["Black"], "size": ["XS", "S", "M", "L", "XL", "XXL"], "price": 190 }, { "type": "Hood430", "color": ["Black"], "size": ["XS", "S", "M", "L", "XL", "XXL"], "price": 190 }, { "type": "Hood2", "color": ["Baby Pink", "Army Green", "Off-white", "Maroon"], "size": ["XS", "S", "M", "L", "XL", "XXL"], "price": 190 }, { "type": "O240S", "color": ["Black", "White", "Maroon"], "size": ["XS","S", "M", "L", "XL", "XXL"], "price": 190 }]
+  { "type": "Pant", "color": ["Black"], "size": ["XS", "S", "M", "L", "XL", "XXL"], "price": 190 }, { "type": "Hood430", "color": ["Black"], "size": ["XS", "S", "M", "L", "XL", "XXL"], "price": 190 }, { "type": "Hood2", "color": ["Baby Pink", "Army Green", "Off-white", "Maroon"], "size": ["XS", "S", "M", "L", "XL", "XXL"], "price": 190 }, { "type": "O240S", "color": ["Black", "White", "Maroon"], "size": ["XS", "S", "M", "L", "XL", "XXL"], "price": 190 }, { "type": "BioYL", "color": ["Black", "White", "Navy", "Red"], "size": [36, 38, 40, 42, 44, 46] }]
 };
 // console.log(pki.types[0]); console.log(pki.types[0].type); console.log(pki.types[0].color[0]); console.log(pki.types[0].size[0]);
 let intp;
@@ -153,10 +153,10 @@ if ((navigator.platform) === 'iPhone') {
 //console.log('intp:',intp);
 
 // change type name
-const typep7 = { "Bio": "RN Bio", "NBio": "RN Non Bio", "Polo": "Polo", "OS210": "Oversize 210", "Varsity": "Varsity", "OS180": "Oversize 180", "Hood": "Hoodie", "Sweat": "Sweatshirt", "Kids": "Kids RN", "Vest": "Vest", "PrePolo": "Premium Polo", "Shorts": "Shorts", "Pant": "Pant", "Hood430": "Hood430", "Hood2": "Hood2", "O240S": "Oversize 240gsm" };
+const typep7 = { "Bio": "RN Bio", "NBio": "RN Non Bio", "Polo": "Polo", "OS210": "Oversize 210", "Varsity": "Varsity", "OS180": "Oversize 180", "Hood": "Hoodie", "Sweat": "Sweatshirt", "Kids": "Kids RN", "Vest": "Vest", "PrePolo": "Premium Polo", "Shorts": "Shorts", "Pant": "Pant", "Hood430": "Hood430", "Hood2": "Hood2", "O240S": "Oversize 240gsm", "BioYL": "Bio YL" };
 
 // for image bill
-const typep77 = { "Bio": "Bio-RN", "NBio": "Cotton-RN", "Polo": "Polo", "OS210": "Dropshoulder 210gsm", "Varsity": "Varsity Jacket", "OS180": "Dropshoulder 180gsm", "Hood": "Hoodie", "Sweat": "Sweatshirt", "Kids": "Kids-RN", "Vest": "Vest", "PrePolo": "Premium Polo", "Shorts": "Shorts", "Pant": "Pant", "Hood430": "Hood430", "Hood2": "Hood2", "O240S": "Oversize 240gsm" };
+const typep77 = { "Bio": "Bio-RN", "NBio": "Cotton-RN", "Polo": "Polo", "OS210": "Dropshoulder 210gsm", "Varsity": "Varsity Jacket", "OS180": "Dropshoulder 180gsm", "Hood": "Hoodie", "Sweat": "Sweatshirt", "Kids": "Kids-RN", "Vest": "Vest", "PrePolo": "Premium Polo", "Shorts": "Shorts", "Pant": "Pant", "Hood430": "Hood430", "Hood2": "Hood2", "O240S": "Oversize 240gsm", "BioYL": "Bio YL" };
 // typep7[variable] //console.log(typep7["Bio"]);
 
 //gen. table start
@@ -517,7 +517,7 @@ async function omprint() {
 
       Object.keys(jk).forEach(function (t) {
         //  type loop
-        if ((t === 'Bio') || (t === 'NBio') || (t === 'Polo') || (t === 'Vest') || (t === 'PrePolo')) {
+        if ((t === 'Bio') || (t === 'BioYL') || (t === 'NBio') || (t === 'Polo') || (t === 'Vest') || (t === 'PrePolo')) {
           sd1.innerHTML += "<tbody id='" + t.replace(/\s+/, "") + "' style=''><tr> <th>" + typep7[t] + "</th> <th>36</th> <th>38</th> <th>40</th> <th>42</th> <th>44</th> <th>46</th> </tr></tbody><table><tr><td style='border: none; background: white'><br></td></tr></table>";
         } else if ((t === 'Kids')) {
           sd1.innerHTML += "<tbody id='" + t.replace(/\s+/, "") + "'><tr> <th>" + typep7[t] + "</th> <th>20</th> <th>22</th> <th>24</th> <th>26</th> <th>28</th> <th>30</th> <th>32</th> <th>34</th> </tr></tbody><table><tr><td style='border: none; background: white'><br></td></tr></table>";
@@ -712,7 +712,7 @@ function odtbl(jk, b, c2) {
   var sd1 = document.getElementById(b);
   Object.keys(jk).forEach(function (t) {
     //  type loop
-    if ((t === 'Bio') || (t === 'NBio')) {
+    if ((t === 'Bio') || (t === 'NBio') || (t === 'BioYL')) {
       sd1.innerHTML += "<tbody id='" + t.replace(/\s+/, "") + "'><tr> <th>" + t + "</th> <th>36</th> <th>38</th> <th>40</th> <th>42</th> <th>44</th> <th>46</th> </tr></tbody>";
     } else if ((t === 'Kids')) {
       sd1.innerHTML += "<tbody id='" + t.replace(/\s+/, "") + "'><tr> <th>" + t + "</th> <th>20</th> <th>22</th> <th>24</th> <th>26</th> <th>28</th> <th>30</th> <th>32</th> <th>34</th> </tr></tbody>";

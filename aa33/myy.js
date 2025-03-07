@@ -435,7 +435,7 @@ function pc(v, vx, a, b, c, d, e) { // v(type) a(36-42), b(44), c(46), d(32), e(
 
   // console.log('whawhb',vx);
   let pj1 = 0;
-  if ((v == 'Bio' || v == 'Vest')) { //console.log('BN')
+  if ((v == 'Bio' || v == 'Vest' || v == 'BioYL')) { //console.log('BN')
     let pj1 = (a * prc.pc[v][0] + (b + c) * prc.pc[v][1]); odprice[v] = prc.pc[v];
     pctt += pj1; pcwt += (a + b + c) * Number(prc.wt[v]);
     return "<td colspan='2'><b>" + (a + b + c) + ' ' + vx + "</b><b class='sa2'>" + sva + svpls1 + svbc + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
@@ -466,7 +466,7 @@ function pc(v, vx, a, b, c, d, e) { // v(type) a(36-42), b(44), c(46), d(32), e(
       let wht1 = "<td colspan='2'><b>" + (a + b + c - wha - whb) + ' ' + vx + "</b><b class='sa2'>" + (((a - wha) != 0) ? sva = (a - wha) + '×' + prc.pc[v][0] : sva = '') + ((((a - wha) != 0) && ((b + c - whb) != 0)) ? svpls1 = '+' : svpls1 = '') + (((b + c - whb) != 0) ? svbc = (b + c - whb) + '×' + prc.pc[v][1] : svbc = '') + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
       return (((a + b + c - wha - whb) || '') && ('<tr>' + wht1 + '<tr/><tr>')) + (((wha + whb) || '') && ('<tr>' + wht0 + '<tr/>'))
     } else { }
-  } else if (v == 'OS210' || v == 'OS180' || v == 'Varsity' || v == 'Shorts' || v == 'Pant'|| v == 'O240S') {
+  } else if (v == 'OS210' || v == 'OS180' || v == 'Varsity' || v == 'Shorts' || v == 'Pant' || v == 'O240S') {
     pj1 = ((a + b + c + d + e) * prc.pc[v][0]); odprice[v] = prc.pc[v];
     pctt += pj1; pcwt += (a + b + c + d + e) * Number(prc.wt[v]);
     return "<td colspan='2'><b>" + (a + b + c + d + e) + ' ' + vx + "</b><b class='sa2'>" + (a + b + c + d + e) + '×' + prc.pc[v][0] + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
