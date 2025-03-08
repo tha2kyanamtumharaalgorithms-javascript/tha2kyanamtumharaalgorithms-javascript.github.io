@@ -508,7 +508,7 @@
       let htmlli = ''; let vb = '';
       for (let i in j) {
         let pf = i.slice(2, 6);
-        console.log(pf, i);
+        // console.log(pf, i);
         if (vb != pf) {
           vb = pf;
           await mthdb(pf);
@@ -585,13 +585,12 @@ async function getcd(b) {
       console.log(x);
       let ods=x[0];let pt=x[1];
       let doc=document.querySelector('#tembill');
-      let gst=pt?.gst||'';let gstz;let stgst;
+      let gst=pt?.gst||'';let gstz='';let stgst='';
       if(gst){
       gst=gst.toUpperCase().trim();
       stgst = gst.slice(0, 2) + '-' + gststate[gst.slice(0, 2)];
       gstz = (gst.length > 3)?true:'';
       }
-
       
       let add=`${pt.add && ('<br/>' + pt.add + (pt.pin && (', ' + pt.pin)))}`;
       doc.querySelector("#ptd").innerHTML = `<b style='font-size: 16px;'>${ods.cn}</b>${add}${pt.mn1 && ('<br/>Contact No.: ' + pt.mn1)}${gstz && ('<br/>GSTIN Number: ' + gst)}${gst && ('<br/>State: ' + stgst)}`;
@@ -702,6 +701,11 @@ async function getcd(b) {
       }
     
       amt+=gstamt;
+      let roff = Math.ceil(amt) - amt;
+      if (roff) {
+        ht+=ttr('Round off',roff);amt=Math.ceil(amt);
+      }
+
       ht+=`<tr class="final"><td>Total</td><td>₹${amt.toFixed(2).toLocaleString('en-IN')}</td></tr>`;
       document.querySelector('#tblf').innerHTML=ht;
 

@@ -1,68 +1,36 @@
-//alert('hi')
-function resetd() {
-  let from = Number(localStorage.fromod); let crrodno = Number(zxc);
-  let odcount = 1 + crrodno - from; let oldm1 = localStorage.lastreset.split(','); // '304,34' 
-  let oldmc = '';
-  if (oldm1[0] != date1) { oldmc = '\nAnd old month(' + oldm1[0] + ') from ' + oldm1[1]; }
-  if (odcount) {
-    let per1 = prompt("Please enter 'ok' to download\nthis month from " + from + " to " + zxc + oldmc);
-    if (per1 === "ok") {
-      // {p:0,g:'odt',od:{}};
-      let lastr = date1 + ',' + (1 + crrodno);
-      const shod2 = { "p": "2", "g": selg, "od": { 'Stock Not Updated from Order No': lastr } };
-      couttot(from, selg).then(async () => {
-        await sendd(urli, shod2, 'reset');
-      }).then(() => {
-        setTimeout(function () {
-          tabletcsv('testTable', odcount + '(' + from + '-' + zxc + ')');
-          localStorage.setItem('fromod', 1 + crrodno);
-          localStorage.setItem('lastreset', lastr);
-          //document.getElementById('tre6').innerHTML='';
-          //document.getElementById('p781').click();
-          //stockm();
-        }, 1000)
-      })
-    }
-  } else { alert("No data to download ") }
-}
-
 async function delod() {
-  let an5 = {}; let shod11 = {}; let ptc;
-  let latsel = Object.keys(selod5);
-  if (latsel.length) {
-    let r = latsel.pop();
-    let odno = r.slice(3);
-    let text = document.querySelector('#oderli ' + '#' + r).nextElementSibling.innerText + "\nWant to delete?";
-    console.log('hdhjd', selg);
-    if (confirm(text) == true) {
-      await mthdb(selg.slice(-1) + odno.slice(0, 3));
-      await oddb.od.get(Number(odno)).then((doc) => {
-        // od=doc.it;//let odno=selg.slice(-1)+doc.id;
-        an5 = doc; an5.tot = 0; an5.od = {}; an5.tch = 0; an5.och = 0; an5.dis = 0; an5.c = []; an5.pc = {}; an5.inv = [], an5.bulk = 0;
-        shod11 = { "p": "1", "g": selg, "od": { ...an5 } };
-        sendd(urli, shod11, 'del order');
-        // console.log(an5);
-      }).then(async () => {
-        //console.log('hhhhh',shod11.od)
-        await db.pt.get(shod11.od.pt).then((v) => {
-          let yu = v.ods.indexOf(selg.slice(-1) + odno);
-          if (yu > (-1)) { v.ods.splice(yu, 1); }
-          ptc = v;
-          console.log(ptc, yu);
-        })
-        await db.pt.put(ptc, Number(shod11.od.pt));
-        await bulkdb.bk.delete(shod11.od.id);
-        await oddb.od.put(shod11.od, Number(odno)).then(response => {
-          selod5 = {};
-          document.querySelector('[name=' + selg + ']').click();
-        })
-          .catch(error => {
-            alert('error in del update fn-', error);
-            console.log('error in del update fn-', error);
-          });
-      })
-    } else { for (let u in selod5) { document.getElementById(u).checked = false; } selod5 = {}; }
-  } else { alert('Bhaii, Pahle order select ker le !!') }
+  const latsel = Object.keys(selod5);
+  if (!latsel.length) {
+    alert('Bhaii, Pahle order select ker le !!');
+    return;
+  }
+
+  const r = latsel.pop();
+  const odno = r.slice(3);
+  const text = `${document.querySelector(`#oderli #${r}`).nextElementSibling.innerText}\nWant to delete?`;
+
+  if (!confirm(text)) {
+    for (const u in selod5) {
+      document.getElementById(u).checked = false;
+    }
+    selod5 = {};
+    return;
+  }
+
+  try {
+    await mthdb(selg.slice(-1) + odno.slice(0, 3));
+    const an5 = await oddb.od.get(Number(odno));
+    an5.tot = 0;an5.od = {};an5.xch = [];an5.pc = {};an5.inv = [];an5.bulk = 0;
+    const shod11 = { p: "1", g: selg, od: { ...an5 } };
+    sendd(urli, shod11, 'del order');
+    
+    await oddb.od.put(shod11.od, Number(odno));
+    selod5 = {};
+    document.querySelector(`[name=${selg}]`).click();//await bulkdb.bk.delete(shod11.od.id);
+  } catch (error) {
+    alert('Error in del update fn:', error);
+    console.error('Error in del update fn:', error);
+  }
 }
 
 var pk8; var oldod;
@@ -276,9 +244,6 @@ async function updateod(myz) {
     zsr.od = od;
     zsr.inv = billinv;
     zsr.xch = [...othch,tbl[6].gst];
-    // zsr.tch = othch[0];
-    // zsr.och = othch[1];
-    // zsr.dis = othch[2];
     let jkl = document.querySelectorAll('#ctm9 tr');
     if (jkl.length) {
       let cods = [];
@@ -317,11 +282,11 @@ async function updateod(myz) {
       for (let u in selod5) { document.getElementById(u).checked = false; };
       selod5 = {}; selod5[pk8] = pk8; unpin(1); selod5 = {}; // order id pk8=od34
       //document.querySelector("#oderli #"+pk8).parentElement.remove();
-      shod1 = { "p": "4", "g": selg, "gl": gsel, "od": { ...zsr, "pc": { ...pcb } } };
+      shod1 = { "p": "4", "g": selg, "gl": gsel, "od": { ...zsr, "pc": { ...pcb } }, ptd };
       await moveod(selg, gsel, 'ods' + pk8);
     }
     // alert('g normal')
-    shod1 = { "p": "1", "g": gsel, "od": { ...zsr, "pc": { ...pcb } } };
+    shod1 = { "p": "1", "g": gsel, "od": { ...zsr, "pc": { ...pcb } }, ptd };
     // let st = new Localbase('st');
     // st.collection(selg).doc('od'+pk8).set(shod1.od)
     await mthdb(selg.slice(-1) + String(pk8).slice(0, 3));
@@ -430,91 +395,6 @@ function expt(v) {
     tabletcsv('testTable', new Date().toLocaleString("en-GB"));
   }, 3000)
 }
-// price calculator
-// function pc(v, vx, a, b, c, d, e) {
-//   // write price calculator for od object
-//   // v=type, a=36-42, b=44, c=46, d=32, e=34
-//   console.log(v, vx, a, b, c, d, e);
-
-
-
-// }
-// function pc(v, vx, a, b, c, d, e) { // v(type) a(36-42), b(44), c(46), d(32), e(34)
-//   //odprice
-//   console.log(v, vx, a, b, c, d, e);
-//   let svc = '', sva = '', svbc = '', svab = '', svpls1 = '', svpls2 = '';
-//   svbc = ((b + c) != 0) ? svbc = (b + c) + '×' + prc.pc[v][1] : svbc = '';
-//   svab = ((a + b) != 0) ? svab = (a + b) + '×' + prc.pc[v][0] : svab = '';
-//   svc = (c != 0) ? svc = c + '×' + prc.pc[v][1] : svc = '';
-//   sva = (a != 0) ? sva = a + '×' + prc.pc[v][0] : sva = '';
-
-//   svpls1 = ((a != 0) && ((b + c) != 0)) ? svpls1 = '+' : svpls1 = '';
-//   svpls2 = ((c != 0) && ((a + b) != 0)) ? svpls2 = '+' : svpls2 = '';
-
-//   let svbcde = (b + c + d + e) ? (b + c + d + e) + '×' + prc.pc[v][1] : ''; // updated code
-//   let svpls3 = (a && (b + c + d + e)) ? '+' : ''; // updated code
-
-//   // console.log('whawhb',vx);
-//   let pj1 = 0;
-//   if ((v == 'Bio' || v == 'Vest')) { //console.log('BN')
-//     let pj1 = (a * prc.pc[v][0] + (b + c) * prc.pc[v][1]); odprice[v] = prc.pc[v];
-//     pctt += pj1; pcwt += (a + b + c) * Number(prc.wt[v]);
-//     return "<td colspan='2'><b>" + (a + b + c) + ' ' + vx + "</b><b class='sa2'>" + sva + svpls1 + svbc + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
-//   } else if ((v == 'NBio')) {
-//     if (document.querySelector('#NBio #White.oj')) {
-//       let wh11 = document.querySelectorAll('#NBio #White.oj td input');
-//       let wha = 0, whb = 0;
-//       for (let h = 0; h < wh11.length; h++) {
-//         let njh = Number(wh11[h].value);
-//         if (h <= 3) {
-//           wha += njh;
-//         } else {
-//           whb += njh;
-//         }
-//         // console.log('whawhb',vx);
-//       }
-//       let whpc = prc.pc[v][2]; let whva = '', whvpls1 = '', whvbc = '';
-//       let pj10 = (wha * (prc.pc[v][0] + whpc) + (whb) * (prc.pc[v][1] + whpc)); odprice[v] = prc.pc[v];
-//       pctt += pj10; pcwt += (wha + whb) * Number(prc.wt[v]);
-//       whva = (wha != 0) ? whva = wha + '×' + (prc.pc[v][0] + whpc) : whva = '';
-//       whvpls1 = ((wha != 0) && ((whb) != 0)) ? whvpls1 = '+' : whvpls1 = '';
-//       whvbc = ((whb) != 0) ? whvbc = (whb) + '×' + (prc.pc[v][1] + whpc) : whvbc = '';
-
-//       let pj1 = ((a - wha) * prc.pc[v][0] + (b + c - whb) * prc.pc[v][1]);
-//       pctt += pj1; pcwt += (a + b + c - wha - whb) * Number(prc.wt[v]);
-
-//       let wht0 = "<td colspan='2'><b>" + (wha + whb) + ' ' + vx + ' White' + "</b><b class='sa2'>" + whva + whvpls1 + whvbc + " = </b></td><td class='sb3'><b>" + pj10 + '₹</b></td>';
-//       let wht1 = "<td colspan='2'><b>" + (a + b + c - wha - whb) + ' ' + vx + "</b><b class='sa2'>" + (((a - wha) != 0) ? sva = (a - wha) + '×' + prc.pc[v][0] : sva = '') + ((((a - wha) != 0) && ((b + c - whb) != 0)) ? svpls1 = '+' : svpls1 = '') + (((b + c - whb) != 0) ? svbc = (b + c - whb) + '×' + prc.pc[v][1] : svbc = '') + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
-//       return (((a + b + c - wha - whb) || '') && ('<tr>' + wht1 + '<tr/><tr>')) + (((wha + whb) || '') && ('<tr>' + wht0 + '<tr/>'))
-//     } else { }
-//   } else if (v == 'OS210' || v == 'OS180' || v == 'Varsity' || v == 'Shorts' || v == 'Pant'|| v == 'O240S') {
-//     pj1 = ((a + b + c + d + e) * prc.pc[v][0]); odprice[v] = prc.pc[v];
-//     pctt += pj1; pcwt += (a + b + c + d + e) * Number(prc.wt[v]);
-//     return "<td colspan='2'><b>" + (a + b + c + d + e) + ' ' + vx + "</b><b class='sa2'>" + (a + b + c + d + e) + '×' + prc.pc[v][0] + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
-//   } else if (v == 'Kids') {
-//     pj1 = (a * prc.pc[v][0]) + ((b + c + d + e) * prc.pc[v][1]); odprice[v] = prc.pc[v];
-//     pctt += pj1; pcwt += (a + b + c + d + e) * Number(prc.wt[v]);
-//     return "<td colspan='2'><b>" + (a + b + c + d + e) + ' ' + vx + "</b><b class='sa2'>" + sva + svpls3 + svbcde + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
-//   } else if ((v == 'Polo') || (v == 'Hood') || (v == 'Sweat') || (v == 'PrePolo') || (v == 'Hood430') || (v == 'Hood2')) { //console.log('PHS')
-//     pj1 = ((a + b) * prc.pc[v][0] + c * prc.pc[v][1]); odprice[v] = prc.pc[v];
-//     pctt += pj1; pcwt += (a + b + c) * Number(prc.wt[v]);
-//     return "<td colspan='2'><b>" + (a + b + c) + ' ' + vx + "</b><b class='sa2'>" + svab + svpls2 + svc + " = </b></td><td class='sb3'><b>" + pj1 + '₹</b></td>'
-//   } else { }
-// }
-
-
-// favicon set emoji
-// if (localStorage.gr5) {
-//   let cfa = document.createElement("canvas");
-//   cfa.height = 64; cfa.width = 64;
-//   let ctx = cfa.getContext("2d");
-//   ctx.font = "64px serif";
-//   //ctx.fillText("👕", 0, 64); 
-//   ctx.fillText("🇮🇳", 0, 64);
-//   //ctx.fillText("❤️", 0, 64);
-//   //document.querySelector('link[rel="icon"]').href= cfa.toDataURL();
-//   document.querySelector('link[rel="shortcut icon"]').href = cfa.toDataURL();
-// }
 
 // on paste mobile no.
 document.getElementById('ptm').addEventListener('paste', (v) => { pastemn(v) })
@@ -645,8 +525,6 @@ function address(v) {
 function searchp(vv) {
   let p = document.getElementById('plist');
   p.classList.add("w3-show");
-  //((vv=='')) ? p.classList.toggle("w3-show") :  ' ';
-  // genrate party search list in id-plist.  <li id="212">czxcjk fd 9554255495</li>
   (async () => { // save party details
     let reg = new RegExp(vv, 'i'); let lihtml = "";
     await db.pt.filter(pk => reg.test(pk.cn)).limit(10).each(pv => { //console.log('n',pv);
@@ -654,21 +532,44 @@ function searchp(vv) {
     });
     p.innerHTML = lihtml;
     console.log('End');
-    // .toArray(); 
-    // match.forEach((cv,ci) => {console.log('n',cv,ci);
-    //   lihtml+="<li id='"+cv.id+"'>"+cv.cn+' '+cv.mn1+"</li>";
-    //   p.innerHTML=lihtml;
-    // });
-
-    // .each(pv => { console.log('n',pv);
-    //   lihtml+="<li id='"+pv.id+"'>"+pv.cn+' '+pv.mn1+"</li>";
-    //   p.innerHTML=lihtml;
-    // }); 
-    //console.log('jjjj',lihtml);
   })();
-
-  //  if(!match) {p.innerHTML=""}; // if (!match) {p.innerHTML="";}else{return match}
 }
+
+// Debounce function
+// function debounce(func, delay) {
+//     let timeoutId;
+//     return function(...args) {
+//         clearTimeout(timeoutId);
+//         timeoutId = setTimeout(() => {
+//             func.apply(this, args);
+//         }, delay);
+//     };
+// }
+
+// // Your search function
+// function searchp(vv) {
+//     let p = document.getElementById('plist');
+//     p.classList.add("w3-show");
+
+//     (async () => {
+//         let reg = new RegExp(vv, 'i');
+//         let lihtml = "";
+
+//         // Use Dexie.js to filter and limit results
+//         await db.pt
+//             .filter(pk => reg.test(pk.cn))
+//             .limit(10)
+//             .each(pv => {
+//                 lihtml += `<li id='${pv.id}'>${pv.cn}, ${pv.mn1}, ${pv.mn2}</li>`;
+//             });
+
+//         p.innerHTML = lihtml;
+//         console.log('End');
+//     })();
+// }
+
+// const debouncedSearch = debounce(searchp, 200);
+
 // onclick // get party details by id from indexed db for name  
 document.getElementById('plist').addEventListener('click', (e) => {
   getptd(e);
@@ -717,7 +618,8 @@ function getptd(e) {
       (k2.value) ? k2.dispatchEvent(new Event('input')) : document.getElementById('ptplace').innerText = 'State, District';
 
       document.getElementById('pta').value = v.add ?? '';
-      ptods = v.ods; ptid = v.id;
+      // ptods = v.ods;
+      ptid = v.id;
 
     });
   })();
@@ -730,7 +632,7 @@ function getptd(e) {
 var ptd = {}; let cid = '';
 function sptd(v) {
   // prc=JSON.parse(localStorage.pc);
-  ptd = { id: ptid, cn: '', mn1: '', gst: '', add: '', ods: ptods };
+  ptd = { id: ptid, cn: '', mn1: '', gst: '', add: '' };//, ods: ptods
   let cn = document.getElementById('incn').value;
   let mn1 = document.getElementById('ptm').value;
   let mn2 = document.getElementById('ptm1').value;
@@ -1092,16 +994,12 @@ async function addch() {
   }
   let d = [p + "index.html",
   p + "rop.html",
-  p + "pc.html",
-  p + "exgst.html",
   p + "allcache.html",
   p + "my.js",
   p + "myy.js",
   p + "om.js",
   p + "w3.js",
   p + "dexie.min.js",
-  p + "exgst.js",
-  p + "vue.js",
   p + "sw.js",
   p + "my.css",
   p + "om.css",
