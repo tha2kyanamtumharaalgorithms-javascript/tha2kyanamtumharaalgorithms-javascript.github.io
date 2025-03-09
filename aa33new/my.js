@@ -247,8 +247,9 @@ function viewtotal() {
 }
 
 function unavail() {alert('Stock Refilling Soon!!')}
-var pctt; var pcwt; let total; var odprice; let billinv = []; let othch;
-let odtot, odwt, odqt, odpc, odpcf, oddata;
+// var pctt; var pcwt; let total; var odprice;
+
+let odtot, odwt, odqt, odpc, odpcf, oddata, billinv = [], othch;
 function tot() {
   return new Promise(rez => {
   let tchx = document.getElementById('tch').valueAsNumber || 0;

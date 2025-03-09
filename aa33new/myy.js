@@ -20,10 +20,10 @@ async function delod() {
   try {
     await mthdb(selg.slice(-1) + odno.slice(0, 3));
     const an5 = await oddb.od.get(Number(odno));
-    an5.tot = 0;an5.od = {};an5.xch = [];an5.pc = {};an5.inv = [];an5.bulk = 0;
+    an5.tot = 0; an5.od = {}; an5.xch = []; an5.pc = {}; an5.inv = []; an5.bulk = 0;
     const shod11 = { p: "1", g: selg, od: { ...an5 } };
     sendd(urli, shod11, 'del order');
-    
+
     await oddb.od.put(shod11.od, Number(odno));
     selod5 = {};
     document.querySelector(`[name=${selg}]`).click();//await bulkdb.bk.delete(shod11.od.id);
@@ -80,7 +80,7 @@ async function editod(tp) {
     // if(doc.bulk){document.getElementById('bulkc').checked=true;bulks();}else{document.getElementById('bulkc').checked=false;bulks();}
     // if (doc.bulk) { document.getElementById('bulkc').checked = true; } else { document.getElementById('bulkc').checked = false; }
     document.getElementById('bulkc').checked = doc.bulk;
-    
+
     if (selg == 'inst') {
       document.getElementById("gsel").value = instg[ht.trim()];
     } else {
@@ -95,26 +95,26 @@ async function editod(tp) {
     // console.log(doc.it)
   })
 
-  console.log("oldod",oldod)
+  console.log("oldod", oldod)
 
-  let d=oldod.od;
-  let d1=Object.keys(d);
+  let d = oldod.od;
+  let d1 = Object.keys(d);
   // let m={};
-  d1.forEach(t=>{// m[t]=0;
-    Object.keys(d[t]).forEach(c=>{
-      Object.keys(d[t][c]).forEach(s=>{ // console.log( t,c,s, d[t][c][s]); 
-      let tin = document.querySelector(`.city [title='${t}'] tr[title='${c}'] [name='${s}']`);
-      tin.value = d[t][c][s];triggerInput(tin);//m[t]+=1;
+  d1.forEach(t => {// m[t]=0;
+    Object.keys(d[t]).forEach(c => {
+      Object.keys(d[t][c]).forEach(s => { // console.log( t,c,s, d[t][c][s]); 
+        let tin = document.querySelector(`.city [title='${t}'] tr[title='${c}'] [name='${s}']`);
+        tin.value = d[t][c][s]; triggerInput(tin);//m[t]+=1;
       });
     });
   });
-  
+
   document.getElementById('id01').style.display = '';
   document.querySelector("div.bar button.tablink").click();
   document.getElementById('btn_convert').style.display = 'none';
   document.getElementById('upd5').style.display = '';
   function triggerInput(v) {
-    let event = new Event('input', { 'bubbles': true, 'cancelable': true });v.dispatchEvent(event);
+    let event = new Event('input', { 'bubbles': true, 'cancelable': true }); v.dispatchEvent(event);
   }
 }
 
@@ -144,9 +144,9 @@ function creatod() {
       zsr.od = od;
       zsr.inv = billinv;
       // zsr.tch = othch[0];
-      zsr.xch = [...othch,tbl[6].gst];
+      zsr.xch = [...othch, tbl[6].gst];
       // zsr.dis = othch[2];
-      
+
       let jkl = document.querySelectorAll('#ctm9 tr');
       if (jkl.length) {
         let cods = [];
@@ -183,11 +183,11 @@ function creatod() {
         await db.pt.update(oldid, ptd);
       }
       zsr.pt = ptd.id;
-      let pcb={};
-      if(odqt>tbl[3].moq){
-        Object.keys(od).forEach(v=>pcb[v]=pc[v]);
-      }else{
-        Object.keys(od).forEach(v=>pcb[v]=tbl[2][v]);
+      let pcb = {};
+      if (odqt > tbl[3].moq) {
+        Object.keys(od).forEach(v => pcb[v] = pc[v]);
+      } else {
+        Object.keys(od).forEach(v => pcb[v] = tbl[2][v]);
       }
       shod0 = { "p": "0", "g": gd, "od": { ...zsr, "pc": { ...pcb } }, ptd };
 
@@ -230,11 +230,11 @@ function creatod() {
 async function updateod(myz) {
   return new Promise(async (rez) => {
     await viewtotal();
-    let pcb={};
-    if(odqt>tbl[3].moq){
-      Object.keys(od).forEach(v=>pcb[v]=pc[v]);
-    }else{
-      Object.keys(od).forEach(v=>pcb[v]=tbl[2][v]);
+    let pcb = {};
+    if (odqt > tbl[3].moq) {
+      Object.keys(od).forEach(v => pcb[v] = pc[v]);
+    } else {
+      Object.keys(od).forEach(v => pcb[v] = tbl[2][v]);
     }
     zsr.id = pk8;
     zsr.cn = document.getElementById('u13').innerText.replace(/\s+/g, ' ').trim();
@@ -243,7 +243,7 @@ async function updateod(myz) {
     zsr.dt = oldod.dt;
     zsr.od = od;
     zsr.inv = billinv;
-    zsr.xch = [...othch,tbl[6].gst];
+    zsr.xch = [...othch, tbl[6].gst];
     let jkl = document.querySelectorAll('#ctm9 tr');
     if (jkl.length) {
       let cods = [];
@@ -267,13 +267,13 @@ async function updateod(myz) {
     //   ptd.ods.push(selg.slice(-1) + pk8);
     //   let uniq = [...new Set(ptd.ods)];
     //   ptd.ods = uniq;
-      // await bulkdb.bk.put({ ...zsr, "pt": ptd }, zsr.id);
+    // await bulkdb.bk.put({ ...zsr, "pt": ptd }, zsr.id);
     // } else {
-      // let yu=ptd.ods.indexOf(selg.slice(-1)+id55);
-      // if (yu > (-1)) {
-      //   ptd.ods.splice(yu, 1);
-      //   await bulkdb.bk.put({ ...zsr, "pt": ptd }, zsr.id);
-      // }
+    // let yu=ptd.ods.indexOf(selg.slice(-1)+id55);
+    // if (yu > (-1)) {
+    //   ptd.ods.splice(yu, 1);
+    //   await bulkdb.bk.put({ ...zsr, "pt": ptd }, zsr.id);
+    // }
     // }
     // await db.pt.update(ptd.id, ptd);
     const gsel = document.getElementById("gsel").value;
@@ -293,7 +293,7 @@ async function updateod(myz) {
     await oddb.od.put(shod1.od, pk8)
       .then(async () => {
         shod1.pcwt = odwt;
-        console.log(pctt);
+        // console.log(pctt);
         let html33 = document.getElementById("html33");
         html33.style.width = '455px';
         await html2canvas(html33,
@@ -527,11 +527,11 @@ function searchp(vv) {
   p.classList.add("w3-show");
   (async () => { // save party details
     let reg = new RegExp(vv, 'i'); let lihtml = "";
-    await db.pt.filter(pk => reg.test(pk.cn)).limit(10).each(pv => { //console.log('n',pv);
+    await db.pt.filter(pk => reg.test(pk.cn)).limit(15).each(pv => { //console.log('n',pv);
       lihtml += "<li id='" + pv.id + "'>" + pv.cn + ', ' + pv.mn1 + ', ' + pv.mn2 + "</li>";
     });
     p.innerHTML = lihtml;
-    console.log('End');
+    // console.log('End');
   })();
 }
 
@@ -1081,7 +1081,7 @@ async function gosh(obj1, obj2, obj3) {
   const signal = controller.signal;
   await Promise.all([
     new Promise((rez) => {
-      if (pcwt < 5) {
+      if (odwt < 5) {
         let list = ""; let url = "https://apiv2.shiprocket.in/v1/external/courier/serviceability/?";
         fetch(url + new URLSearchParams(obj3), { method: 'GET', headers: { 'Content-Type': 'application/json', 'Authorization': shipr1 } })
           .then(res => res.json())
@@ -1462,3 +1462,4 @@ class Dl0 {
 function book() {
   alert("nnn");
 }
+// var pctt; var pcwt; let total; var odprice;
