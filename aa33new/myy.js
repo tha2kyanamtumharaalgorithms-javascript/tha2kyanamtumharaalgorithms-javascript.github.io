@@ -20,7 +20,7 @@ async function delod() {
   try {
     await mthdb(selg.slice(-1) + odno.slice(0, 3));
     const an5 = await oddb.od.get(Number(odno));
-    an5.tot = 0; an5.od = {}; an5.xch = []; an5.pc = {}; an5.inv = []; an5.bulk = 0;
+    an5.tot = 0; an5.od = {}; an5.xch = []; an5.pc = {}; an5.inv = []; an5.bulk = 0; an5.wt = 0;
     const shod11 = { p: "1", g: selg, od: { ...an5 } };
     sendd(urli, shod11, 'del order');
 
@@ -49,10 +49,10 @@ async function editod(tp) {
   // };
   document.getElementById('cor1').setAttribute("onclick", "getcor('u')");
   pk8 = Number(tp.id.slice(1));// order id b34
-  let cnv = document.getElementById('s' + pk8).tabIndex;
+  // let cnv = document.getElementById('s' + pk8).tabIndex;
 
-  await db.pt.get(cnv).then((v) => { ptd = v });
-  console.log(ptd, pk8, cnv);
+  // await db.pt.get(cnv).then((v) => { ptd = v });
+  // console.log(ptd, pk8, cnv);
   // db.pt.where('cn').equals(cnv).each((v)=>{ptd=v});
   // let st = new Localbase('st');
   // st.collection(selg).doc('od'+pk8).get().then(doc => {
@@ -95,6 +95,8 @@ async function editod(tp) {
     // console.log(doc.it)
   })
 
+
+  await db.pt.get(oldod.pt).then((v) => { ptd = v });
   console.log("oldod", oldod)
 
   let d = oldod.od;
@@ -124,12 +126,30 @@ function addtbl(v, pc, qt, d) {
   <td style="width: 10px;" onclick="this.parentElement.remove()"><b class="w3-block w3-button w3-ripple w3-teal">Del</b></td></tr>`;
 }
 
+function ghd() {
+  return new Promise(async (rez, rej) => {
+    try {
+      let p = await fetch('https://yuxbaqv673vjfzg3d677xrfa740dymxc.lambda-url.ap-south-1.on.aws/nos/?zxc=' + localStorage.gre)
+      p = await p.json();
+      rez(Number(p.v));
+    } catch (error) {
+      alert('Error in get order id fn-');
+      rej("no data");
+    }
+  });
+}
+
 function creatod() {
   return new Promise(async (rez) => {
     let gd = document.getElementById("gsel").value;
     await viewtotal();
-    let ctcn = (Number(localStorage.clickcount) + 1);
-    let odid = Number(date1 + ctcn);
+    let odid = await ghd() //Number(date1 + ctcn);
+    if (odid === "no data") {
+      return alert('Error in get order id fn-');
+    }
+
+    // let ctcn = (Number(localStorage.clickcount) + 1);
+
     let instgh = document.getElementById('instock');
     if (instgh.checked) {
       await saveinst(1); instgh.click(); instgh.checked = 0;
@@ -143,6 +163,7 @@ function creatod() {
       zsr.dt = date.split(' ').join('/');
       zsr.od = od;
       zsr.inv = billinv;
+      zsr.wt = odwt;
       // zsr.tch = othch[0];
       zsr.xch = [...othch, tbl[6].gst];
       // zsr.dis = othch[2];
@@ -164,24 +185,25 @@ function creatod() {
         console.log(cods);
       }
       let shod0 = {};
-      let oldid = ptd.id;
+      // let oldid = ptd.id;
       let odno = gd.slice(-1) + odid; // s30424
-      ptd.id = ptd.id || genid(ptcounter(), 1);
+      // ptd.id = ptd.id || genid(ptcounter(), 1);
       //genlink(genid(ptd.id,3),ptd.cn);
       // if (document.getElementById('bulkc').checked) {
       //   ptd.ods.push(odno);
       //   await bulkdb.bk.add({ ...zsr, "pt": ptd });
       // }
       console.log(ptd);
-      if (!oldid) {
-        // save party details
-        await db.pt.add(ptd);
-      } else {
-        //  in case key is not found, put() would create a new object while update() wont change anything.
-        //  The returned Promise will NOT fail if key was not found but resolve with value 0 instead of 1.
-        // update party details
-        await db.pt.update(oldid, ptd);
-      }
+      await db.pt.put(ptd, ptd.id);
+      // if (!oldid) {
+      //   // save party details
+      //   await db.pt.add(ptd);
+      // } else {
+      //   //  in case key is not found, put() would create a new object while update() wont change anything.
+      //   //  The returned Promise will NOT fail if key was not found but resolve with value 0 instead of 1.
+      //   // update party details
+      //   await db.pt.update(oldid, ptd);
+      // }
       zsr.pt = ptd.id;
       let pcb = {};
       if (odqt > tbl[3].moq) {
@@ -243,6 +265,7 @@ async function updateod(myz) {
     zsr.dt = oldod.dt;
     zsr.od = od;
     zsr.inv = billinv;
+    zsr.wt = odwt;
     zsr.xch = [...othch, tbl[6].gst];
     let jkl = document.querySelectorAll('#ctm9 tr');
     if (jkl.length) {
@@ -597,12 +620,12 @@ function getptd(e) {
     await db.pt.get(pid).then((v) => {
       console.log(v);
       let cop = document.getElementById('cnm5');
-      if (v.ods.length) {
-        cop.style.display = '';
-      } else {
-        cop.style.display = 'none';
-        document.getElementById('cnm4').style.display = 'none';
-      }
+      // if (v.ods.length) {
+      cop.style.display = '';
+      // } else {
+      //   cop.style.display = 'none';
+      document.getElementById('cnm4').style.display = 'none';
+      // }
 
       document.getElementById('incn').value = v.cn.replace(/\s+/g, ' ').trim();
       document.getElementById('ptm').value = v.mn1;
@@ -640,6 +663,7 @@ function sptd(v) {
   let pta = document.getElementById('pta').value;
   let ptg = document.getElementById('ptg').value;
   ptd.cn = cn.replace(/\s+/g, ' ').trim();
+  ptd.id = Number(mn1); ptid = Number(mn1);
   ptd.mn1 = mn1;
   ptd.mn2 = mn2;
   ptd.gst = ptg.replace(/\s+/g, ' ').trim().toUpperCase();
@@ -663,15 +687,17 @@ function sptd(v) {
 
 // save party details and gen. id
 async function svptd() {
-  let oldid = ptd.id;
-  ptd.id = ptid || genid(ptcounter(), 1); console.log('save party details', ptd);
-  if (!oldid) {
-    // save party details
-    await db.pt.add(ptd);
-  } else {
-    // update party details
-    await db.pt.update(oldid, ptd);
-  }
+  // let oldid = ptd.id;
+  ptd.id = ptid //|| genid(ptcounter(), 1); 
+  console.log('save party details', ptd);
+  await db.pt.put(ptd, ptd.id);
+  // if (!oldid) {
+  //   // save party details
+  //   await db.pt.add(ptd);
+  // } else {
+  //   // update party details
+  //   await db.pt.update(oldid, ptd);
+  // }
   console.log(ptd, 'hiiiiiii');
   await sendd(urli, { "p": "10", "g": 'ptds', "od": {}, ptd }, 'Party Details ');
   selg || newocb(); selg && gr();
@@ -725,7 +751,7 @@ function copylink() {
 
 function copylink1(v) {
   let p = document.getElementById(v);
-  let p1 = p.tabIndex;
+  let p1 = p.getAttribute("tabindex");//p.tabIndex;
   let cn = p.querySelector('b').innerText.match(/[^\d+.].+/g)[0].trim();
   // console.log(p1,cn);
   let link = 'https://www.ownknitted.com/bill#' + genid(p1, 3);
@@ -742,10 +768,10 @@ function printadd() {
       (async () => { // get party address
         // let od=selg.slice(-1)+v.slice(2);//'as63'
         let cadd, radd;
-        let cnv = document.getElementById(v).parentElement.tabIndex; console.log(cnv);
+        let cnv = document.getElementById(v).parentElement.getAttribute("tabindex"); console.log(cnv);
         // db.pt.where('cn').equals(b).each((v)=>{
         // await db.pt.where('cn').equals(cnv).toArray((v)=>{
-        await db.pt.get(cnv).then((v) => {
+        await db.pt.get(Number(cnv)).then((v) => {
           console.log(v);
           cadd = '<h1 class="p1"><b>To </b>- ' + v.cn + ', ' + v.mn1 + ', ' + v.mn2 + '<br>' + v.add + ', ' + v.pin + '</span></h1>';
           radd = '<h1><span class="p2"><div><b>Return address if not delivered</b><br></div><span>Own Knitted, 9336695049</span><br><span>F-120, Shutter wali gali, near Gujjar chowk, Khanpur Delhi, 110062</span></span></h1>';

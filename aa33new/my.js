@@ -1,13 +1,13 @@
 var doc = document, zzz = (s, o = doc) => o.querySelectorAll(s), zz = (s, o = doc) => o.querySelector(s), zc = console.log.bind(doc);
 
 function loadScript(url) {
-    const sc = document.createElement('script');
-    sc.src = url;sc.async = true;
-    return new Promise((res, rej) => {
-        sc.onload = () => res(sc);
-        sc.onerror = () => {sc.remove();rej(new Error(`Failed to load: ${url}`));};
-        document.head.appendChild(sc);
-    });
+  const sc = document.createElement('script');
+  sc.src = url; sc.async = true;
+  return new Promise((res, rej) => {
+    sc.onload = () => res(sc);
+    sc.onerror = () => { sc.remove(); rej(new Error(`Failed to load: ${url}`)); };
+    document.head.appendChild(sc);
+  });
 }
 // loadScript('https://example.com/script.js')
 // .then(script => console.log('Loaded:', script)).catch(error => console.error(error));
@@ -131,11 +131,11 @@ async function mthdb(m) {
 
 var urli = localStorage.gr5;
 let gststate = { 01: "JAMMU AND KASHMIR", 02: "HIMACHAL PRADESH", 03: "PUNJAB", 04: "CHANDIGARH", 05: "UTTARAKHAND", 06: "HARYANA", 07: "DELHI", 08: "RAJASTHAN", 09: "UTTAR PRADESH", 10: "BIHAR", 11: "SIKKIM", 12: "ARUNACHAL PRADESH", 13: "NAGALAND", 14: "MANIPUR", 15: "MIZORAM", 16: "TRIPURA", 17: "MEGHALAYA", 18: "ASSAM", 19: "WEST BENGAL", 20: "JHARKHAND", 21: "ODISHA", 22: "CHATTISGARH", 23: "MADHYA PRADESH", 24: "GUJARAT", 26: "DADRA AND NAGAR HAVELI AND DAMAN AND DIU (NEWLY MERGED UT)", 27: "MAHARASHTRA", 28: "ANDHRA PRADESH(BEFORE DIVISION)", 29: "KARNATAKA", 30: "GOA", 31: "LAKSHADWEEP", 32: "KERALA", 33: "TAMIL NADU", 34: "PUDUCHERRY", 35: "ANDAMAN AND NICOBAR ISLANDS", 36: "TELANGANA", 37: "ANDHRA PRADESH", 38: "LADAKH", 97: "OTHER TERRITORY", 99: "CENTRE JURISDICTION" };
-let intp=(navigator.platform === 'iPhone') ? "pattern='[0-9]*' type='text'" : "type='number'";
+let intp = (navigator.platform === 'iPhone') ? "pattern='[0-9]*' type='text'" : "type='number'";
 let intp2 = "type='button'";
 let intp4 = "onclick='unavail()'";
 
-let pc={};
+let pc = {};
 function gentbl(f) {
   let m = '';
   let tbldiv = document.getElementById('tbldiv');
@@ -177,13 +177,13 @@ function gentbl(f) {
   // opentbl('t0'); // Open default table (e.g., Biowash)
 }
 
-(async()=>{
- await loadScript('https://d2fzc2z1ecgedb.cloudfront.net/pc.js?t='+Date.now());
+(async () => {
+  await loadScript('https://d2fzc2z1ecgedb.cloudfront.net/pc.js?t=' + Date.now());
   gentbl(tbl[0]);
 })()
 
 document.getElementById('pdbtn').addEventListener('click', function (evt) {
-  let tg=evt.target;
+  let tg = evt.target;
   if (tg.classList.contains('tablink')) {
     tg.parentElement.childNodes.forEach(btn => btn.classList.remove("w3-red"));
     tg.classList.add("w3-red");
@@ -246,69 +246,70 @@ function viewtotal() {
   })
 }
 
-function unavail() {alert('Stock Refilling Soon!!')}
+function unavail() { alert('Stock Refilling Soon!!') }
 // var pctt; var pcwt; let total; var odprice;
 
 let odtot, odwt, odqt, odpc, odpcf, oddata, billinv = [], othch;
 function tot() {
   return new Promise(rez => {
-  let tchx = document.getElementById('tch').valueAsNumber || 0;
-  let ochx = document.getElementById('och').valueAsNumber || 0;
-  let disx = document.getElementById('dis').valueAsNumber || 0;
-  othch = [tchx, ochx, disx];
-  document.getElementById('u13').innerText = document.getElementById('frt').innerText;
-  let dtt = date.slice(0, 6) + ', ' + new Date().toLocaleTimeString('en', { hour: "2-digit", minute: "2-digit", hour12: true }).replace(' ', '');;
+    let tchx = document.getElementById('tch').valueAsNumber || 0;
+    let ochx = document.getElementById('och').valueAsNumber || 0;
+    let disx = document.getElementById('dis').valueAsNumber || 0;
+    othch = [tchx, ochx, disx];
+    document.getElementById('u13').innerText = document.getElementById('frt').innerText;
+    let dtt = date.slice(0, 6) + ', ' + new Date().toLocaleTimeString('en', { hour: "2-digit", minute: "2-digit", hour12: true }).replace(' ', '');;
 
-  document.getElementById('tot').style.display = '';
-  odtot = {}, odwt = 0, odqt = 0, odpc = 0, odpcf = 0, oddata = {};// type:{pc:qty,pc:qty},type:type:{pc:qty,pc:qty} // type qty*pc+qty*pc=odpc
-  let sum = totqt.reduce((p, a) => p + a, 0); let odt = (sum > tbl[3].moq);
-  Object.keys(od).forEach((t) => { //  type loop
-    odtot[t] = {};
-    Object.keys(od[t]).forEach((c) => {// color loop
-      // console.log(t,c,od[t][c]); // Bio White {38: 7}
-      Object.keys(od[t][c]).forEach((s) => { // size loop
-        let v = od[t][c][s];
-        // console.log(t, c, s, v); // Bio Black 40 8
-        let pc = odt ? tbl[0][t][c][s] : tbl[2][t]; // sample/bulk
-        (odtot[t][pc]) ? odtot[t][pc] += v : odtot[t][pc] = v;
-        odwt += tbl[4][t] * v;
+    document.getElementById('tot').style.display = '';
+    odtot = {}, odwt = 0, odqt = 0, odpc = 0, odpcf = 0, oddata = {};// type:{pc:qty,pc:qty},type:type:{pc:qty,pc:qty} // type qty*pc+qty*pc=odpc
+    let sum = totqt.reduce((p, a) => p + a, 0); let odt = (sum > tbl[3].moq);
+    Object.keys(od).forEach((t) => { //  type loop
+      odtot[t] = {};
+      Object.keys(od[t]).forEach((c) => {// color loop
+        // console.log(t,c,od[t][c]); // Bio White {38: 7}
+        Object.keys(od[t][c]).forEach((s) => { // size loop
+          let v = od[t][c][s];
+          // console.log(t, c, s, v); // Bio Black 40 8
+          let pc = odt ? tbl[0][t][c][s] : tbl[2][t]; // sample/bulk
+          (odtot[t][pc]) ? odtot[t][pc] += v : odtot[t][pc] = v;
+          odwt += tbl[4][t] * v;
+        });
+
       });
-
     });
-  });
-  // console.log(odtot, odwt); 
-  let ht = '';
-  for (const t in odtot) {
-    let cal = ''; let qtt = 0; let tpc = 0;
-    for (const p in odtot[t]) {
-      let qt = odtot[t][p];
-      qtt += qt; tpc += qt * Number(p);
-      let plus = cal ? ' + ' : '';
-      cal += `${plus}${qt}×${p}`;
-      // console.log(t, p, qt);
-    }
+    // console.log(odtot, odwt); 
+    let ht = '';
+    for (const t in odtot) {
+      let cal = ''; let qtt = 0; let tpc = 0;
+      for (const p in odtot[t]) {
+        let qt = odtot[t][p];
+        qtt += qt; tpc += qt * Number(p);
+        let plus = cal ? ' + ' : '';
+        cal += `${plus}${qt}×${p}`;
+        // console.log(t, p, qt);
+      }
 
-    ht += `<tr><td><b class='fw'>${qtt} ${t}</b><b class='sa2'>${cal} = </b></td><td>${tpc.toLocaleString('en-IN')}₹</td></tr>`;
-    odqt += qtt;
-    odpc += tpc;
-    console.log(odwt);
-  }
-  let tch = tchx ? `<tr><td><b class='sa2'>Transport Charge -</b></td><td>${tchx}₹</td></tr>` : '';
-  let och = ochx ? `<tr><td><b class='sa2'>Other Charges -</b></td><td>${ochx}₹</td></tr>` : '';
-  let dis = disx ? `<tr><td><b class='sa2'>Discount -</b></td><td>${disx}₹</td></tr>` : '';
-  odwt = dec2(odwt);
-  odpc = dec2(odpc + tchx + ochx - disx);
-  let t = tbl[6].gst;
-  let tm = dec2(odpc * (t / 100));
-  let tax = `<tr><td><b class='sa2'>${t}% GST -</b></td><td>${tm}₹</td></tr>`;
-  ht += `${tch + och + dis}<tr><td><b class='sa2'>Taxable Value - </b></td><td>${(odpc.toLocaleString('en-IN'))}₹</td></tr>`;
-  odpcf = dec2(odpc + tm);
-  billinv = [odpc, odpcf];
-  ht += `${tax}<tr><td><b class='sc1'>${odqt} PCS Total</b><b class='sc1' style='margin-left: 2px;background: #2e2effd6'>${Math.ceil(odwt)}kg</b><b class='sa2 fw'>Total Amount -</b></td><td id='ttpc'><b class='sc1'>${Math.ceil(odpcf).toLocaleString('en-IN')}₹</b></td></tr>`;
-  // document.getElementById('odhh').innerHTML = `<input class="my-check" type="checkbox" ${odt ? '' : 'checked="checked"'}><label>Sample Order(<${tbl[3].moq}pcs)</label>, <input class="my-check" type="checkbox" ${odt ? 'checked="checked"' : ''}><label>Bulk Order(>${tbl[3].moq}pcs)</label>`;
-  document.querySelector('#tot table tbody').innerHTML = ht;
-  
-  rez();})
+      ht += `<tr><td><b class='fw'>${qtt} ${t}</b><b class='sa2'>${cal} = </b></td><td>${tpc.toLocaleString('en-IN')}₹</td></tr>`;
+      odqt += qtt;
+      odpc += tpc;
+      console.log(odwt);
+    }
+    let tch = tchx ? `<tr><td><b class='sa2'>Transport Charge -</b></td><td>${tchx}₹</td></tr>` : '';
+    let och = ochx ? `<tr><td><b class='sa2'>Other Charges -</b></td><td>${ochx}₹</td></tr>` : '';
+    let dis = disx ? `<tr><td><b class='sa2'>Discount -</b></td><td>${disx}₹</td></tr>` : '';
+    odwt = dec2(odwt);
+    odpc = dec2(odpc + tchx + ochx - disx);
+    let t = tbl[6].gst;
+    let tm = dec2(odpc * (t / 100));
+    let tax = `<tr><td><b class='sa2'>${t}% GST -</b></td><td>${tm}₹</td></tr>`;
+    ht += `${tch + och + dis}<tr><td><b class='sa2'>Taxable Value - </b></td><td>${(odpc.toLocaleString('en-IN'))}₹</td></tr>`;
+    odpcf = dec2(odpc + tm);
+    billinv = [odpc, odpcf];
+    ht += `${tax}<tr><td><b class='sc1'>${odqt} PCS Total</b><b class='sc1' style='margin-left: 2px;background: #2e2effd6'>${Math.ceil(odwt)}kg</b><b class='sa2 fw'>Total Amount -</b></td><td id='ttpc'><b class='sc1'>${Math.ceil(odpcf).toLocaleString('en-IN')}₹</b></td></tr>`;
+    // document.getElementById('odhh').innerHTML = `<input class="my-check" type="checkbox" ${odt ? '' : 'checked="checked"'}><label>Sample Order(<${tbl[3].moq}pcs)</label>, <input class="my-check" type="checkbox" ${odt ? 'checked="checked"' : ''}><label>Bulk Order(>${tbl[3].moq}pcs)</label>`;
+    document.querySelector('#tot table tbody').innerHTML = ht;
+
+    rez();
+  })
 }
 
 function dec2(v) { return Number((v).toFixed(2)); }
@@ -386,6 +387,10 @@ async function newc1() {
 
 // onload model get Customer Name and gst
 function gonext() {
+  if (!ptid&&(ptid.length!=10)) {
+    return alert('Enter Mobile No.')
+  }
+  console.log(ptid);
   // alert(document.getElementById('instock').checked);
   if (document.getElementById('instock').checked) {
     let mypnm = document.getElementById('pnm');
@@ -410,55 +415,55 @@ function gonext() {
 }
 
 async function omprint() {
-    if (Object.keys(selod5).length) {
-      let myW= window.open("", "_blank"); let winbody = myW.document.body;
-      winbody.setAttribute('onclick', 'print()');
-      let pd= "<style>body{margin: 5px 5px 0 5px}div.bd {padding: 10px 10px 0 10px;margin-bottom: 4px;overflow: auto;font-size: 18px;font-family: sans-serif;font-weight: 600;border-style: dashed;border-width: 0.5px;}table, th, td {border: 1px solid black;border-collapse: collapse;text-align: center;font-weight: 600;}#tblom1 {width: 100%;border: none;margin: 10px 0;}#tblom1  tbody tr:first-child{color:blue;background: #ffdfdd;}</style><div id='my56'></div>";
-      winbody.addEventListener("click", () => myW.close());
+  if (Object.keys(selod5).length) {
+    let myW = window.open("", "_blank"); let winbody = myW.document.body;
+    winbody.setAttribute('onclick', 'print()');
+    let pd = "<style>body{margin: 5px 5px 0 5px}div.bd {padding: 10px 10px 0 10px;margin-bottom: 4px;overflow: auto;font-size: 18px;font-family: sans-serif;font-weight: 600;border-style: dashed;border-width: 0.5px;}table, th, td {border: 1px solid black;border-collapse: collapse;text-align: center;font-weight: 600;}#tblom1 {width: 100%;border: none;margin: 10px 0;}#tblom1  tbody tr:first-child{color:blue;background: #ffdfdd;}</style><div id='my56'></div>";
+    winbody.addEventListener("click", () => myW.close());
 
-      for (const p in selod5) {
-        console.log(p)
-        // let d=ods[p]; //;
-        
-       let d=await oddb.od.get(Number(p.slice(3)));
-        let detailx=`<div><span style='float: left'>Bill To: ${d.cn}<br/>Total: ${d.tot+', Offline'}</span><span style='float: right'>Invoice No.: ${d.id}<br/>Date: ${d.dt}</span></div><div style='break-after:page;'><table><tbody></tbody></table>`;
-        pd += '<div class="bd">'+detailx+gentblhtml(d.od)+'</div></div>';
-        document.querySelector('#'+p).checked = false;
-        delete selod5[p];
-      }
-      selod5 = {}; secid = '';
-      winbody.innerHTML='<div>'+pd+'</div>';
-       
-}
+    for (const p in selod5) {
+      console.log(p)
+      // let d=ods[p]; //;
+
+      let d = await oddb.od.get(Number(p.slice(3)));
+      let detailx = `<div><span style='float: left'>Bill To: ${d.cn}<br/>Total: ${d.tot + ', Offline'}</span><span style='float: right'>Invoice No.: ${d.id}<br/>Date: ${d.dt}</span></div><div style='break-after:page;'><table><tbody></tbody></table>`;
+      pd += '<div class="bd">' + detailx + gentblhtml(d.od) + '</div></div>';
+      document.querySelector('#' + p).checked = false;
+      delete selod5[p];
+    }
+    selod5 = {}; secid = '';
+    winbody.innerHTML = '<div>' + pd + '</div>';
+
+  }
 }
 
 function gentblhtml(f) {
-let x;
- let type = `<table id='tblom1'>`;
-    Object.keys(f).forEach(t=> { // type loop
-        let size = `<tbody><tr><th>${t}</th>`;
-        let color = '';let sizes=[];
-        let cv=Object.keys(f[t]);cv=Object.keys(f[t][cv[0]])[0];
-        // console.log(cv);
-        if(x1.hasOwnProperty(cv)){x=x1;sizes=x10;}
-        else if(x2.hasOwnProperty(cv)){x=x2;sizes=x20;}
-        else if(x3.hasOwnProperty(cv)){x=x3;sizes=x30;}
-        
-        sizes.forEach(s =>size += `<th>${s}</th>`);
-        size += `</tr>`;
+  let x;
+  let type = `<table id='tblom1'>`;
+  Object.keys(f).forEach(t => { // type loop
+    let size = `<tbody><tr><th>${t}</th>`;
+    let color = ''; let sizes = [];
+    let cv = Object.keys(f[t]); cv = Object.keys(f[t][cv[0]])[0];
+    // console.log(cv);
+    if (x1.hasOwnProperty(cv)) { x = x1; sizes = x10; }
+    else if (x2.hasOwnProperty(cv)) { x = x2; sizes = x20; }
+    else if (x3.hasOwnProperty(cv)) { x = x3; sizes = x30; }
 
-        Object.keys(f[t]).forEach(c => { // color loop
-            let indx=[];
-            sizes.forEach(s => { // size loop
-                indx[x[s]]=`<td>${f[t][c][s] || ''}</td>`;
-            });
-            color += `<tr><th>${c}</th>${indx.join('')}</tr>`;
-        });
+    sizes.forEach(s => size += `<th>${s}</th>`);
+    size += `</tr>`;
 
-        type += `${size}${color}</tbody><tbody><tr><td style="border: none; background: white"><br></td></tr></tbody>`;
-        // m += type;
+    Object.keys(f[t]).forEach(c => { // color loop
+      let indx = [];
+      sizes.forEach(s => { // size loop
+        indx[x[s]] = `<td>${f[t][c][s] || ''}</td>`;
+      });
+      color += `<tr><th>${c}</th>${indx.join('')}</tr>`;
     });
-    return type+`</table>`;
+
+    type += `${size}${color}</tbody><tbody><tr><td style="border: none; background: white"><br></td></tr></tbody>`;
+    // m += type;
+  });
+  return type + `</table>`;
 }
 
 // onclick New
@@ -475,7 +480,7 @@ function newocb() {
 document.getElementById('tbldiv').addEventListener('input', function (event) {
   let tg = event.target;
   if (tg.tagName !== 'INPUT' || tg.type !== 'number') return;
-  const v = tg.valueAsNumber||0;
+  const v = tg.valueAsNumber || 0;
   const s = tg.name;
   const c = tg.closest('tr').getAttribute('title');
   const t = tg.closest('table').getAttribute('title');
@@ -522,7 +527,7 @@ async function indb(d) {
   console.log(selg)
   await getods(selg).then(() => {
     // selod5=JSON.parse(pinloc);//console.log(selg,pinloc)
-    setTimeout(() => { pint(); }, 100);
+    setTimeout(() => { pint(); }, 30);
   })
 
 }
@@ -615,8 +620,7 @@ function omak(n, i, a) {
       if (n.id != 'lastimgc') {
         document.getElementById('i88').innerHTML = "<style>" + idrr + "#" + n.id + "{color: #fff!important; background-color: #000!important;}</style>";
       }
-    }
-    else {
+    } else {
       dfg6++;
       n.setAttribute('id', 'ghy' + dfg6)
       document.getElementById('i88').innerHTML = "<style>#ghy" + dfg6 + "{color: #fff!important; background-color: #000!important;}</style>";
@@ -700,7 +704,7 @@ async function pint(v) {
     let pxn = document.getElementById(t).parentNode;
     pxn.querySelector('#vtag [name=' + t + ']').innerText = j[t];
     // console.log(t,pj);
-    let pj = pxn.tabIndex;
+    let pj = Number(pxn.getAttribute("tabindex"));
     if (pj > 0) {
       await db.pt.get(pj).then((v) => {
         if (v) {
@@ -818,8 +822,7 @@ async function makeblob(dataURL) {
 
 async function snackbar(txt, time) {
   let x = document.getElementById("snackbar");
-  x.style.display = '';
-  x.innerHTML = txt;
+  x.style.display = ''; x.innerHTML = txt;
   setTimeout(() => { x.style.display = 'none'; }, time);
 }
 
