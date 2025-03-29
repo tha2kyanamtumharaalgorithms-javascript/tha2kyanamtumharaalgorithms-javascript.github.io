@@ -18,7 +18,7 @@ async function getods(gd) {
     let j = JSON.parse(pinloc); let vb = '';
     let hmtl0 = '';
     for (let k in j) {
-      let pf = k.slice(2, 6); let id = Number(k.slice(3));
+      let pf = k.slice(2, 9); let id = Number(k.slice(3));
       // console.log(pf,k);
       let book = await dldb.dl.get(id).then(i => {
         if (i == undefined) {
@@ -537,7 +537,7 @@ async function opodli(b) {
   console.log(b.parentElement.tabIndex, qwe5);
   if (selg != 'inst') {
     // console.log(selg.slice(-1)+qwe5.slice(0,3));
-    await mthdb(selg.slice(-1) + qwe5.slice(0, 3));
+    await mthdb(selg.slice(-1) + qwe5.slice(0, 6));
     await oddb.od.get(Number(qwe5)).then((doc) => { clickonod(b, qwe5, doc); });
   } else {
     await instdb.inst.get(Number(qwe5)).then((doc) => { clickonod(b, qwe5, doc); });

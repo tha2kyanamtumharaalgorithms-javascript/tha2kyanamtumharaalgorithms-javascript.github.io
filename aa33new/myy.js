@@ -18,7 +18,7 @@ async function delod() {
   }
 
   try {
-    await mthdb(selg.slice(-1) + odno.slice(0, 3));
+    await mthdb(selg.slice(-1) + odno.slice(0, 6));
     const an5 = await oddb.od.get(Number(odno));
     an5.tot = 0; an5.od = {}; an5.xch = []; an5.pc = {}; an5.inv = []; an5.bulk = 0; an5.wt = 0;
     const shod11 = { p: "1", g: selg, od: { ...an5 } };
@@ -56,7 +56,7 @@ async function editod(tp) {
   // db.pt.where('cn').equals(cnv).each((v)=>{ptd=v});
   // let st = new Localbase('st');
   // st.collection(selg).doc('od'+pk8).get().then(doc => {
-  await mthdb(selg.slice(-1) + String(pk8).slice(0, 3));
+  await mthdb(selg.slice(-1) + String(pk8).slice(0, 6));
   await oddb.od.get(pk8).then((doc) => {
     let ht = doc.cn;
     oldod = doc;
@@ -129,7 +129,7 @@ function addtbl(v, pc, qt, d) {
 function ghd() {
   return new Promise(async (rez, rej) => {
     try {
-      let p = await fetch('https://yuxbaqv673vjfzg3d677xrfa740dymxc.lambda-url.ap-south-1.on.aws/nos/?zxc=' + localStorage.gre)
+      let p = await fetch('https://e8xi8frl24.execute-api.ap-south-1.amazonaws.com/v1/nos/?zxc=' + localStorage.gre)
       p = await p.json();
       rez(Number(p.v));
     } catch (error) {
@@ -147,6 +147,7 @@ function creatod() {
     if (odid === "no data") {
       return alert('Error in get order id fn-');
     }
+
 
     // let ctcn = (Number(localStorage.clickcount) + 1);
 
@@ -213,8 +214,8 @@ function creatod() {
       }
       shod0 = { "p": "0", "g": gd, "od": { ...zsr, "pc": { ...pcb } }, ptd };
 
-      await mthdb(gd.slice(-1) + date1);
-      await oddb.od.add(shod0.od, ctcn).then((res) => {
+      await mthdb(gd.slice(-1) + "242503");
+      await oddb.od.add(shod0.od, odid).then((res) => {
         console.log(res, 'added');
         selgo(gd);//  pinloc
         let paz = JSON.parse(pinloc);
@@ -227,7 +228,7 @@ function creatod() {
       });
 
       let html33 = document.getElementById("html33");
-      localStorage.clickcount = ctcn; zxc = ctcn;
+      // localStorage.clickcount = ctcn; zxc = ctcn;
       html33.style.width = '455px';
       await html2canvas(html33,
         {
@@ -312,7 +313,7 @@ async function updateod(myz) {
     shod1 = { "p": "1", "g": gsel, "od": { ...zsr, "pc": { ...pcb } }, ptd };
     // let st = new Localbase('st');
     // st.collection(selg).doc('od'+pk8).set(shod1.od)
-    await mthdb(selg.slice(-1) + String(pk8).slice(0, 3));
+    await mthdb(selg.slice(-1) + String(pk8).slice(0, 6));
     await oddb.od.put(shod1.od, pk8)
       .then(async () => {
         shod1.pcwt = odwt;
