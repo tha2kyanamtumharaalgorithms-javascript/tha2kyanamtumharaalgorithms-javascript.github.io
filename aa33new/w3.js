@@ -25,18 +25,12 @@ async function sendd(urld, d9, b, q) {
 
         break;
     }
-    await fetch(urld, {
-      method: 'POST',
-      mode: 'no-cors',
-      cache: 'no-cache',
-      headers: { 'Content-Type': 'application/json' },
-      redirect: 'follow',
-      body: JSON.stringify(d9)
+
+    let fmd = new FormData(); fmd.append("myd", JSON.stringify(d9)); console.log(fmd);
+    await fetch(urld, { method: 'POST', body: fmd }).then((res) => {
+      console.log(b + ' data send successfully ', d9);
+      rez();//cuuid[1].push(da);
     })
-      .then((res) => {
-        console.log(b + ' data send successfully ', d9);
-        rez();//cuuid[1].push(da);
-      })
       .catch(async (error) => {
         if (q !== 'z') {
           await erdb.err.put(da);
