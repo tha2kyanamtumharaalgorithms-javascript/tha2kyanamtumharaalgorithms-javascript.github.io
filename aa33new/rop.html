@@ -533,7 +533,7 @@
       let od = selg.slice(-1) + jkl0;
       console.log(jkl0, od, b);
       try {
-        await mthdb(b.slice(2, 6));
+        await mthdb(b.slice(2, 9));
         d[0] = await oddb.od.get(Number(jkl0));
         d[1] = await db.pt.get(d[0].pt);
       } catch (error) {
