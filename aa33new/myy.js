@@ -214,7 +214,7 @@ function creatod() {
       }
       shod0 = { "p": "0", "g": gd, "od": { ...zsr, "pc": { ...pcb } }, ptd };
 
-      await mthdb(gd.slice(-1) + "242503");
+      await mthdb(gd.slice(-1) + odid.slice(0, 6));
       await oddb.od.add(shod0.od, odid).then((res) => {
         console.log(res, 'added');
         selgo(gd);//  pinloc
