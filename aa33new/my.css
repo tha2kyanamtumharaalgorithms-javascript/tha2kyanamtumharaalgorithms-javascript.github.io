@@ -284,6 +284,7 @@ ul#m1list {
   background: #fff;
   border: 1px solid #858181e8;
   z-index: 1;
+  width: 85%;
 }
 
 
@@ -489,4 +490,16 @@ ul#m1list li {
 .w3-button:hover {
   color: #fff !important;
   background-color: #f56 !important;
+}
+
+.delete-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  margin-right: -30px;
+  padding: 2px 12px;
+}
+
+ul#plist li {
+  position: relative;
 }

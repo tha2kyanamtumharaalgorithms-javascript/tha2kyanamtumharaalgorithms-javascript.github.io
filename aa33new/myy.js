@@ -548,53 +548,80 @@ function address(v) {
 (() => { const x = localStorage.getItem('xcv'), d = document.createElement('script'); if (x) { d.textContent = x; document.head.appendChild(d); } })();
 
 // search party
-function searchp(vv) {
+// function searchp(vv) {
+//   let p = document.getElementById('plist');
+//   p.classList.add("w3-show");
+//   (async () => { // save party details
+//     let reg = new RegExp(vv, 'i'); let lihtml = "";
+//     await db.pt.filter(pk => reg.test(pk.cn)).limit(15).each(pv => { //console.log('n',pv);
+//       lihtml += "<li id='" + pv.id + "'>" + pv.cn + ', ' + pv.mn1 + ', ' + pv.mn2 + "</li>";
+//     });
+//     p.innerHTML = lihtml;
+//     // console.log('End');
+//   })();
+// }
+
+// Debounce function
+function debounce(func, delay) {
+  let timeoutId;
+  return function (...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      func.apply(this, args);
+    }, delay);
+  };
+}
+
+// Your search function
+function searchp1(vv) {
   let p = document.getElementById('plist');
   p.classList.add("w3-show");
-  (async () => { // save party details
-    let reg = new RegExp(vv, 'i'); let lihtml = "";
-    await db.pt.filter(pk => reg.test(pk.cn)).limit(15).each(pv => { //console.log('n',pv);
-      lihtml += "<li id='" + pv.id + "'>" + pv.cn + ', ' + pv.mn1 + ', ' + pv.mn2 + "</li>";
+
+  (async () => {
+    let reg = new RegExp(vv, 'i');
+    let lihtml = "";
+    await db.pt.filter(pk => reg.test(pk.cn)).limit(15).each(pv => {
+      lihtml += `<li id='${pv.id}'>${pv.cn}, ${pv.mn1}, ${pv.mn2}<button class="delete-btn">DEL</button></li>`;
     });
+
     p.innerHTML = lihtml;
-    // console.log('End');
+    console.log('End');
   })();
 }
 
-// Debounce function
-// function debounce(func, delay) {
-//     let timeoutId;
-//     return function(...args) {
-//         clearTimeout(timeoutId);
-//         timeoutId = setTimeout(() => {
-//             func.apply(this, args);
-//         }, delay);
-//     };
-// }
+const searchp = debounce(searchp1, 250);
 
-// // Your search function
-// function searchp(vv) {
-//     let p = document.getElementById('plist');
-//     p.classList.add("w3-show");
 
-//     (async () => {
-//         let reg = new RegExp(vv, 'i');
-//         let lihtml = "";
+document.getElementById('plist').addEventListener('click', function (e) {
+  let t = e.target;
+  // console.log('Event path:', e.composedPath());
+  if (t.classList.contains('delete-btn')) {
+    let p=t.parentElement;
+    e.stopImmediatePropagation();//e.stopPropagation();
 
-//         // Use Dexie.js to filter and limit results
-//         await db.pt
-//             .filter(pk => reg.test(pk.cn))
-//             .limit(10)
-//             .each(pv => {
-//                 lihtml += `<li id='${pv.id}'>${pv.cn}, ${pv.mn1}, ${pv.mn2}</li>`;
-//             });
+    (async()=>{
+      let ptdx=await db.pt.get(Number(p.id));
+        if (confirm(p.innerText.slice(0,-3)+'\nGST: '+ptdx.gst+'\nAdd: '+ptdx.add+', '+ptdx.pin+'\n\n Party Deleting?')) {
+      console.log(p.innerText+' deleted')
+      deleteItem(Number(p.id));
+      const listItem = t.closest('li');
+      if (listItem) {
+        listItem.style.background='#cbbcbc';
+      }
+    } else {
+      console.log('canceled del \n'+p.innerText)
+    }
+    })();
+  }
+});
 
-//         p.innerHTML = lihtml;
-//         console.log('End');
-//     })();
-// }
-
-// const debouncedSearch = debounce(searchp, 200);
+async function deleteItem(id) {
+  try {
+    await db.pt.delete(id);
+  } catch (error) {
+    console.error('Error deleting item:', error);
+  }
+}
 
 // onclick // get party details by id from indexed db for name  
 document.getElementById('plist').addEventListener('click', (e) => {
@@ -747,6 +774,16 @@ function copylink1(v) {
   navigator.clipboard.writeText(url1);
   snackbar(cn + ' copied', 500);
 }
+
+// function ptddel() {
+//   let cn = document.getElementById('incn').value;
+//   console.log(cn, ptid);
+//   if (confirm('')) {
+
+//   } else {
+
+//   }
+// }
 
 // print address
 function printadd() {
