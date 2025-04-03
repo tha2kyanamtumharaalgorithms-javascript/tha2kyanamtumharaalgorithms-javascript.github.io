@@ -47,8 +47,8 @@ async function editod(tp) {
   //   Sweat: ['Sweatshirt, S-XL', 'Sweatshirt, XXL'],
   //   Kids: ['Kids R-neck, 20"-26"', 'Kids R-neck, 28"-34"']
   // };
-  document.getElementById('cor1').setAttribute("onclick", "getcor('u')");
-  pk8 = Number(tp.id.slice(1));// order id b34
+  // document.getElementById('cor1').setAttribute("onclick", "getcor('u')");
+  // order id b34
   // let cnv = document.getElementById('s' + pk8).tabIndex;
 
   // await db.pt.get(cnv).then((v) => { ptd = v });
@@ -56,6 +56,8 @@ async function editod(tp) {
   // db.pt.where('cn').equals(cnv).each((v)=>{ptd=v});
   // let st = new Localbase('st');
   // st.collection(selg).doc('od'+pk8).get().then(doc => {
+
+  pk8 = Number(tp.id.slice(1));
   await mthdb(selg.slice(-1) + String(pk8).slice(0, 6));
   await oddb.od.get(pk8).then((doc) => {
     let ht = doc.cn;
@@ -66,8 +68,8 @@ async function editod(tp) {
     if (oldod.c) {
       oldod.c.forEach((v) => {
         // addtbl(v,pc,qt,d);
-        let p9 = v[0].slice(1).slice(0, -1);
-        addtbl(p9, v[1], v[2], v[0]);
+        // let p9 = v[0].slice(1).slice(0, -1);
+        addtbl(v[0], v[1], v[2]);
         // if (Number(v[0][0])) {
         //   addtbl(nm[p9][Number(v[0].slice(-1))], v[1], v[2], v[0]);
         // } else {
@@ -75,7 +77,7 @@ async function editod(tp) {
         // }
       })
     }
-
+// vc
     document.getElementById('frt').innerHTML = "<strong>" + ht + "</strong>";
     // if(doc.bulk){document.getElementById('bulkc').checked=true;bulks();}else{document.getElementById('bulkc').checked=false;bulks();}
     // if (doc.bulk) { document.getElementById('bulkc').checked = true; } else { document.getElementById('bulkc').checked = false; }
@@ -97,7 +99,7 @@ async function editod(tp) {
 
 
   await db.pt.get(oldod.pt).then((v) => { ptd = v });
-  console.log("oldod", oldod)
+  console.log("oldod", oldod);
 
   let d = oldod.od;
   let d1 = Object.keys(d);
@@ -121,22 +123,32 @@ async function editod(tp) {
 }
 
 
-function addtbl(v, pc, qt, d) {
-  document.getElementById('ctm9').innerHTML += `<tr data-p="${d}"><td>${v}</td><th>${pc}</th><th>${qt}</th>
+function addtbl(v, pc, qt) {
+  document.getElementById('ctm9').innerHTML += `<tr><th>${v}</th><th>${pc}</th><th>${qt}</th>
   <td style="width: 10px;" onclick="this.parentElement.remove()"><b class="w3-block w3-button w3-ripple w3-teal">Del</b></td></tr>`;
 }
 
 function ghd() {
   return new Promise(async (rez, rej) => {
+    if (localStorage.gre === '555') {
+      let id = orderx();
+      rez(Number(id));
+    }
     try {
       let p = await fetch('https://e8xi8frl24.execute-api.ap-south-1.amazonaws.com/v1/nos/?zxc=' + localStorage.gre)
       p = await p.json();
       rez(Number(p.v));
     } catch (error) {
-      alert('Error in get order id fn-');
+      alert('Error in ghd() fn-');
       rej("no data");
     }
   });
+}
+
+const orderx = (d = new Date()) => {
+  const mth = d.getMonth(), y = d.getFullYear(), y1 = ("" + d.getFullYear()).slice(2);
+  let th = String(mth + 1).padStart(2, 0), dtt = String(d.getTime()).slice(5, -1);
+  return ((mth < 3) ? ((y - 1) + "" + y1).slice(2) : y1 + ("" + (y + 1)).slice(2)) + th + dtt;
 }
 
 function creatod() {
@@ -144,11 +156,10 @@ function creatod() {
     let gd = document.getElementById("gsel").value;
     await viewtotal();
     let odid = await ghd() //Number(date1 + ctcn);
+    document.querySelector('#tot table thead span').innerText = '#' + Number(String(odid).slice(-7));
     if (odid === "no data") {
       return alert('Error in get order id fn-');
     }
-
-
     // let ctcn = (Number(localStorage.clickcount) + 1);
 
     let instgh = document.getElementById('instock');
@@ -175,14 +186,15 @@ function creatod() {
         jkl.forEach((v) => {
           let pi = (v.innerText).split('\t'); let pz1 = Number(pi[1].trim()); let pz2 = Number(pi[2].trim());
           if (pz2) {
-            cods.push([v.dataset.p, pz1, pz2]);
+            cods.push([pi[0].trim(), pz1, pz2]);
             zsr.inv[0] += (pz1 * pz2);
-            zsr.inv[1] += (pz1 * pz2) + ((pz1 * pz2) * 0.05); zsr.tot += pz2;
-            zsr.bulk = 1; document.getElementById('bulkc').checked = 1;
+            zsr.inv[1] += (pz1 * pz2) + ((pz1 * pz2) * (tbl[6].gst/100)); zsr.tot += pz2;
           }
           v.remove();
         });
+        odqt=zsr.tot;
         zsr.c = cods;
+        zsr.bulk = 1; document.getElementById('bulkc').checked = 1;
         console.log(cods);
       }
       let shod0 = {};
@@ -253,6 +265,7 @@ function creatod() {
 async function updateod(myz) {
   return new Promise(async (rez) => {
     await viewtotal();
+    document.querySelector('#tot table thead span').innerText = '#' + Number(String(pk8).slice(-7));
     let pcb = {};
     if (odqt > tbl[3].moq) {
       Object.keys(od).forEach(v => pcb[v] = pc[v]);
@@ -275,13 +288,14 @@ async function updateod(myz) {
         let pi = (v.innerText).split('\t');
         let pz1 = Number(pi[1].trim()); let pz2 = Number(pi[2].trim());
         if (pz2) {
-          cods.push([v.dataset.p, pz1, pz2]);
+          cods.push([pi[0].trim(), pz1, pz2]);
           zsr.inv[0] += (pz1 * pz2);
-          zsr.inv[1] += (pz1 * pz2) + ((pz1 * pz2) * 0.05); zsr.tot += pz2;
-          zsr.bulk = 1; document.getElementById('bulkc').checked = 1;
+          zsr.inv[1] += (pz1 * pz2) + ((pz1 * pz2) * (tbl[6].gst/100)); zsr.tot += pz2;
         }
         v.remove();
       });
+      odqt=zsr.tot;
+      zsr.bulk = 1; document.getElementById('bulkc').checked = 1;
       zsr.c = cods;
       console.log(cods);
     }
@@ -346,8 +360,8 @@ async function updateod(myz) {
         rez(shod1);
       })
       .catch(error => {
-        console.log('error in update od1 fn- ', error); rez(shod1);
-        alert('error in update od1 fn- ', error);
+        console.log('error in update od1 fn- ', error); 
+        alert('error in update od1 fn- ', error);rez(shod1);
       })
   });
 }
@@ -596,21 +610,21 @@ document.getElementById('plist').addEventListener('click', function (e) {
   let t = e.target;
   // console.log('Event path:', e.composedPath());
   if (t.classList.contains('delete-btn')) {
-    let p=t.parentElement;
+    let p = t.parentElement;
     e.stopImmediatePropagation();//e.stopPropagation();
 
-    (async()=>{
-      let ptdx=await db.pt.get(Number(p.id));
-        if (confirm(p.innerText.slice(0,-3)+'\nGST: '+ptdx.gst+'\nAdd: '+ptdx.add+', '+ptdx.pin+'\n\n Party Deleting?')) {
-      console.log(p.innerText+' deleted')
-      deleteItem(Number(p.id));
-      const listItem = t.closest('li');
-      if (listItem) {
-        listItem.style.background='#cbbcbc';
+    (async () => {
+      let ptdx = await db.pt.get(Number(p.id));
+      if (confirm(p.innerText.slice(0, -3) + '\nGST: ' + ptdx.gst + '\nAdd: ' + ptdx.add + ', ' + ptdx.pin + '\n\n Party Deleting?')) {
+        console.log(p.innerText + ' deleted')
+        deleteItem(Number(p.id));
+        const listItem = t.closest('li');
+        if (listItem) {
+          listItem.style.background = '#cbbcbc';
+        }
+      } else {
+        console.log('canceled del \n' + p.innerText)
       }
-    } else {
-      console.log('canceled del \n'+p.innerText)
-    }
     })();
   }
 });
@@ -775,16 +789,6 @@ function copylink1(v) {
   snackbar(cn + ' copied', 500);
 }
 
-// function ptddel() {
-//   let cn = document.getElementById('incn').value;
-//   console.log(cn, ptid);
-//   if (confirm('')) {
-
-//   } else {
-
-//   }
-// }
-
 // print address
 function printadd() {
   if (Object.keys(selod5).length) {
@@ -891,11 +895,17 @@ document.querySelector('#addtbl0').addEventListener('click', (e) => {
     addtbl(t.innerText, 0, 0, t.dataset.p);
   }
   if (t.id === 'addtbl1') {
-    document.querySelector('#addtbl').classList.toggle('w3-show');
+    let ul = document.querySelector('#addtbl');
+    if (!ul.children.length) {
+      let li = '';
+      Object.keys(tbl[2]).forEach((v) => { li += `<li>${v}</li>`; });
+      ul.innerHTML = li + `<li><input type="text"></li>`;
+    }
+    ul.classList.toggle('w3-show');
     let pol = document.querySelector('#addtbl li:last-child input');
     let p0 = pol.value;
     if (p0) {
-      addtbl(p0, 0, 0, ('0' + '' + p0 + '' + '0'));
+      addtbl(p0, 0, 0, '');
       pol.value = '';
     }
   }

@@ -597,7 +597,7 @@
 
       doc.querySelector("#inno").innerHTML = `<p style='font-weight: 500;'>${gst && ('Place of Supply: ' + stgst)}</p><p>Invoice No.: ${ods.id}</p><p>Date: ${ods.dt}</p>`;
       let od1 = Object.keys(ods.od); let samplebulk = typeof ods.pc[Object.keys(ods.pc)[0]] == 'number';
-      if ((od1.length !== 0)) {
+      if ((od1.length || ods.c.length)) {
         let type = {};// qt
         let upc = {}; // unit price
         // let upc1={}; 
@@ -667,6 +667,18 @@
               </tr>`;
           })
         });
+
+        if (ods.c.length) {
+          ods.c.forEach(v => {
+            let amt1 = v[1] * v[2];
+            ct += 1; amt += amt1; qt += v[2];
+            row += `<tr>
+                <td>${ct}</td><td>${v[0]}</td><td>6109</td>
+                <td>${v[2]}</td><td>₹${v[1]}</td><td class="theme10BorderColor">₹${amt1}.00</td>
+              </tr>`;
+          })
+        }
+
         document.querySelector("#tbody").innerHTML = row;
         document.querySelector("#ttqt").innerHTML = qt;
         document.querySelector("#ttpc").innerHTML = `₹${amt}.00`;
