@@ -77,7 +77,7 @@ async function editod(tp) {
         // }
       })
     }
-// vc
+    // vc
     document.getElementById('frt').innerHTML = "<strong>" + ht + "</strong>";
     // if(doc.bulk){document.getElementById('bulkc').checked=true;bulks();}else{document.getElementById('bulkc').checked=false;bulks();}
     // if (doc.bulk) { document.getElementById('bulkc').checked = true; } else { document.getElementById('bulkc').checked = false; }
@@ -188,11 +188,11 @@ function creatod() {
           if (pz2) {
             cods.push([pi[0].trim(), pz1, pz2]);
             zsr.inv[0] += (pz1 * pz2);
-            zsr.inv[1] += (pz1 * pz2) + ((pz1 * pz2) * (tbl[6].gst/100)); zsr.tot += pz2;
+            zsr.inv[1] += (pz1 * pz2) + ((pz1 * pz2) * (tbl[6].gst / 100)); zsr.tot += pz2;
           }
           v.remove();
         });
-        odqt=zsr.tot;
+        odqt = zsr.tot;
         zsr.c = cods;
         zsr.bulk = 1; document.getElementById('bulkc').checked = 1;
         console.log(cods);
@@ -290,11 +290,11 @@ async function updateod(myz) {
         if (pz2) {
           cods.push([pi[0].trim(), pz1, pz2]);
           zsr.inv[0] += (pz1 * pz2);
-          zsr.inv[1] += (pz1 * pz2) + ((pz1 * pz2) * (tbl[6].gst/100)); zsr.tot += pz2;
+          zsr.inv[1] += (pz1 * pz2) + ((pz1 * pz2) * (tbl[6].gst / 100)); zsr.tot += pz2;
         }
         v.remove();
       });
-      odqt=zsr.tot;
+      odqt = zsr.tot;
       zsr.bulk = 1; document.getElementById('bulkc').checked = 1;
       zsr.c = cods;
       console.log(cods);
@@ -360,8 +360,8 @@ async function updateod(myz) {
         rez(shod1);
       })
       .catch(error => {
-        console.log('error in update od1 fn- ', error); 
-        alert('error in update od1 fn- ', error);rez(shod1);
+        console.log('error in update od1 fn- ', error);
+        alert('error in update od1 fn- ', error); rez(shod1);
       })
   });
 }
@@ -435,7 +435,10 @@ function expt(v) {
 }
 
 // on paste mobile no.
-document.getElementById('ptm').addEventListener('paste', (v) => { pastemn(v) })
+document.getElementById('ptm').addEventListener('paste', (v) => {
+  document.getElementById('cnm1').disabled = true;
+  pastemn(v);
+})
 document.getElementById('ptm1').addEventListener('paste', (v) => { pastemn(v); })
 
 function pastemn(v) {
@@ -463,30 +466,33 @@ function inmn(v) {
   let p1 = document.getElementById('m1list');
   p1.classList.add("w3-show");
   (async () => {
-    let lihtml = "";
-    await db.pt.where('mn1').startsWith(v).limit(10).each(pv => {
-      console.log('n', pv);
-      lihtml += "<li id='" + pv.id + "'>" + pv.cn + ', ' + pv.mn1 + ', ' + pv.mn2 + "</li>";
-    });
-    p1.innerHTML = lihtml;
-    console.log('End');
+    let lihtml = ""; let p;
+    if (v.length == 10) {
+      p = await db.pt.get(Number(v));
+      document.getElementById('cnm1').disabled = p?.id ? true : false;
+    }
+      await db.pt.where('mn1').startsWith(v).limit(10).each(pv => {
+        // console.log('n', pv);
+        lihtml += "<li id='" + pv.id + "'>" + pv.cn + ', ' + pv.mn1 + ', ' + pv.mn2 + "</li>";
+      });
+     p1.innerHTML = lihtml;// console.log('End');
   })();
   console.log('oninput');
   mnvalid(v);
 }
 
 function mnvalid(v) {
-  let p = v.length;
+  let p = v.length,c=document.getElementById('ptmn');
   if (v == ' ') {
-    document.getElementById('ptmn').innerHTML = " ";
+    c.innerHTML = " ";
   } else if (p == 0) {
-    document.getElementById('ptmn').innerHTML = " ";
+    c.innerHTML = " ";
   } else if (p < 10) {
-    document.getElementById('ptmn').innerHTML = "<b style='color:blue'>" + p + " Digits only!</b>";
+    c.innerHTML = "<b style='color:blue'>" + p + " Digits only!</b>";
   } else if (p == 10) {
-    document.getElementById('ptmn').innerHTML = "<b id='p001' style='color:red'>10 Digits <b></b></b>";
+    c.innerHTML = "<b id='p001' style='color:red'>10 Digits <b></b></b>";
   } else if (p > 10) {
-    document.getElementById('ptmn').innerHTML = "<b style='color:blue'>" + p + " Digits!</b>";
+    c.innerHTML = "<b style='color:blue'>" + p + " Digits!</b>";
   }
 }
 
@@ -510,10 +516,10 @@ function pincode(v) {
 
 // start GST state code and Verify
 function gststc(v) { //let text = "07BBNPG0866";g.match(/^([0][1-9]|[1-2][0-9]|[3][0-7])([a-zA-Z]{5}[0-9]{4}[a-zA-Z]{1}[1-9a-zA-Z]{1}[zZ]{1}[0-9a-zA-Z]{1})+$/g)
-  let g = v.value.replace(/ /g, '').trim().toUpperCase();
+  let g = v.value.replace(/ /g, '').trim().toUpperCase(),c=document.getElementById('ptst');
   // console.log(`hi ${g}`);
   if ((g.length == 15) && (checksum(g))) {
-    document.getElementById('ptst').innerHTML = "<b id='q000' style='color:#008001'>" + g.substr(0, 2) + '-' + gststate[Number(g.substr(0, 2))] + " <b></b>" + "</b>";
+    c.innerHTML = "<b id='q000' style='color:#008001'>" + g.substr(0, 2) + '-' + gststate[Number(g.substr(0, 2))] + " <b></b>" + "</b>";
     // fetch('https://services.gst.gov.in/services/api/search/goodservice?gstin='+g)
     // .then((r) => r.json())
     // .then((data) => {
@@ -521,13 +527,13 @@ function gststc(v) { //let text = "07BBNPG0866";g.match(/^([0][1-9]|[1-2][0-9]|[
     // if(data['errorCode']){document.getElementById('ptst').innerHTML="<b style='color:red'>Error!</b>";}
     // })
   } else if ((g.length == 2)) {
-    document.getElementById('ptst').innerHTML = "<b style='color:blue'>" + gststate[Number(g.substr(0, 2))] + "</b>";
+    c.innerHTML = "<b style='color:blue'>" + gststate[Number(g.substr(0, 2))] + "</b>";
   } else if ((g.length < 15)) {
-    document.getElementById('ptst').innerHTML = "<b style='color:blue'>Error! less than 15 character</b>";
+    c.innerHTML = "<b style='color:blue'>Error! less than 15 character</b>";
   } else if ((g.length > 15)) {
-    document.getElementById('ptst').innerHTML = "<b style='color:blue'>Error! more than 15 character</b>";
+    c.innerHTML = "<b style='color:blue'>Error! more than 15 character</b>";
   } else {
-    document.getElementById('ptst').innerHTML = "<b style='color:blue'>Ohhh! Something Wrong</b>";
+    c.innerHTML = "<b style='color:blue'>Ohhh! Something Wrong</b>";
   }
 }
 
@@ -645,6 +651,7 @@ document.getElementById('plist').addEventListener('click', (e) => {
 // onclick // get party details by id from indexed db for mobile no. 
 document.getElementById('m1list').addEventListener('click', (e) => {
   getptd(e);
+  document.getElementById('cnm1').disabled = false;
   document.getElementById('ptmn').innerHTML = '';
 })
 
