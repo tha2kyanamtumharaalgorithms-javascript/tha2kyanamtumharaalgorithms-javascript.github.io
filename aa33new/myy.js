@@ -471,18 +471,18 @@ function inmn(v) {
       p = await db.pt.get(Number(v));
       document.getElementById('cnm1').disabled = p?.id ? true : false;
     }
-      await db.pt.where('mn1').startsWith(v).limit(10).each(pv => {
-        // console.log('n', pv);
-        lihtml += "<li id='" + pv.id + "'>" + pv.cn + ', ' + pv.mn1 + ', ' + pv.mn2 + "</li>";
-      });
-     p1.innerHTML = lihtml;// console.log('End');
+    await db.pt.where('mn1').startsWith(v).limit(10).each(pv => {
+      // console.log('n', pv);
+      lihtml += "<li id='" + pv.id + "'>" + pv.cn + ', ' + pv.mn1 + ', ' + pv.mn2 + "</li>";
+    });
+    p1.innerHTML = lihtml;// console.log('End');
   })();
   console.log('oninput');
   mnvalid(v);
 }
 
 function mnvalid(v) {
-  let p = v.length,c=document.getElementById('ptmn');
+  let p = v.length, c = document.getElementById('ptmn');
   if (v == ' ') {
     c.innerHTML = " ";
   } else if (p == 0) {
@@ -516,7 +516,7 @@ function pincode(v) {
 
 // start GST state code and Verify
 function gststc(v) { //let text = "07BBNPG0866";g.match(/^([0][1-9]|[1-2][0-9]|[3][0-7])([a-zA-Z]{5}[0-9]{4}[a-zA-Z]{1}[1-9a-zA-Z]{1}[zZ]{1}[0-9a-zA-Z]{1})+$/g)
-  let g = v.value.replace(/ /g, '').trim().toUpperCase(),c=document.getElementById('ptst');
+  let g = v.value.replace(/ /g, '').trim().toUpperCase(), c = document.getElementById('ptst');
   // console.log(`hi ${g}`);
   if ((g.length == 15) && (checksum(g))) {
     c.innerHTML = "<b id='q000' style='color:#008001'>" + g.substr(0, 2) + '-' + gststate[Number(g.substr(0, 2))] + " <b></b>" + "</b>";
@@ -1008,17 +1008,13 @@ async function syncdata1() {
   })
 }
 
-// scroll
 function dismth() {
   window.indexedDB.databases().then((e) => {
     let b = [];
     e.forEach((v, i) => {
-      if (String(v.name).match(/\w\d{3}/g)) {
-        let x = (2 + v.name.slice(1)); let moth = Number(x[2] + x[3]) - 1;
-        let mth = new Date('20' + x[0] + x[1], moth).toLocaleDateString('en-GB', {
-          month: 'short',
-          year: 'numeric'
-        });
+      if (String(v.name).match(/\w\d{6}/g)) {
+        let x = v.name.slice(1); let y = x.slice(0, 2); let m = Number(x.slice(4, 6))-1;
+        let mth = new Date('20' + y, m).toLocaleDateString('en-GB', {month: 'short',year: 'numeric'});
         b[i] = `<ul id="${v.name}" class="w3-border w3-ul"><li onclick="getmth('${v.name}','${mth}')" class="w3-block w3-blue-gray w3-button">${mth}</li></ul>`;
       }
     });
@@ -1427,7 +1423,7 @@ async function dlfn(v, id) {
       x = await creatod();
     }
     console.log(x);
-    let myd;
+    let myd;dlid.id=x.od.id;
     if (id == 'shp') {
       dlid.book = new shbook(x.od.id, dlid.c, dlid.s, x.od.tot, x.od.inv[1], x.pcwt, x.ptd.cn, x.ptd.add.replace(/\s+/g, ' ').trim(), x.ptd.pin, x.ptd.mn1, x.ptd.mn2);
       dlurl += '/shp/' + dlid.coid;

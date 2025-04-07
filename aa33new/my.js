@@ -36,7 +36,7 @@ async function getods(gd) {
         let gstr = "<span style='padding: 0 1.55em'></span>";
         let inp = "<input onclick='selod(this)' id='ods" + i.id + "' class='w3-check' type='checkbox'>";
         let vtag = "<span id='vtag' ><span name=" + 'ods' + i.id + ">" + "</span></span>" + book[1];
-        hmtl0 = "<li " + book[0] + " id=s" + i.id + " " + "tabindex=" + i.pt + " " + ifz + ">" + inp + ' ' + "<b onclick='goadd(" + i.pt + ',' + i.id + ")'>" + i.id + '. ' + i.cn + '</b>' + vtag + "<span onclick='opodli(this)'>" + i.tot + ' ' + gstr + ' ' + i.dt.slice(0, 6) + "</span></li>" + hmtl0;
+        hmtl0 = "<li " + book[0] + " id=s" + i.id + " " + "tabindex=" + i.pt + " " + ifz + ">" + inp + ' ' + "<b onclick='goadd(" + i.pt + ',' + i.id + ")'>" + Number(i.id.toString().slice(6)) + '. ' + i.cn + '</b>' + vtag + "<span onclick='opodli(this)'>" + i.tot + ' ' + gstr + ' ' + i.dt.slice(0, 6) + "</span></li>" + hmtl0;
       });
     }
     document.getElementById('oderli').innerHTML = hmtl0;
@@ -130,7 +130,7 @@ async function mthdb(m) {
 }
 
 var urli = localStorage.gr5;
-let gststate = { 01: "JAMMU AND KASHMIR", 02: "HIMACHAL PRADESH", 03: "PUNJAB", 04: "CHANDIGARH", 05: "UTTARAKHAND", 06: "HARYANA", 07: "DELHI", 08: "RAJASTHAN", 09: "UTTAR PRADESH", 10: "BIHAR", 11: "SIKKIM", 12: "ARUNACHAL PRADESH", 13: "NAGALAND", 14: "MANIPUR", 15: "MIZORAM", 16: "TRIPURA", 17: "MEGHALAYA", 18: "ASSAM", 19: "WEST BENGAL", 20: "JHARKHAND", 21: "ODISHA", 22: "CHATTISGARH", 23: "MADHYA PRADESH", 24: "GUJARAT", 26: "DADRA AND NAGAR HAVELI AND DAMAN AND DIU (NEWLY MERGED UT)", 27: "MAHARASHTRA", 28: "ANDHRA PRADESH(BEFORE DIVISION)", 29: "KARNATAKA", 30: "GOA", 31: "LAKSHADWEEP", 32: "KERALA", 33: "TAMIL NADU", 34: "PUDUCHERRY", 35: "ANDAMAN AND NICOBAR ISLANDS", 36: "TELANGANA", 37: "ANDHRA PRADESH", 38: "LADAKH", 97: "OTHER TERRITORY", 99: "CENTRE JURISDICTION" };
+let gststate = { "01": "Jammu And Kashmir", "02": "Himachal Pradesh", "03": "Punjab", "04": "Chandigarh", "05": "Uttarakhand", "06": "Haryana", "07": "Delhi", "08": "Rajasthan", "09": "Uttar Pradesh", "10": "Bihar", "11": "Sikkim", "12": "Arunachal Pradesh", "13": "Nagaland", "14": "Manipur", "15": "Mizoram", "16": "Tripura", "17": "Meghalaya", "18": "Assam", "19": "West Bengal", "20": "Jharkhand", "21": "Odisha", "22": "Chattisgarh", "23": "Madhya Pradesh", "24": "Gujarat", "26": "Dadra And Nagar Haveli And Daman And Diu", "27": "Maharashtra", "28": "Andhra Pradesh(old)", "29": "Karnataka", "30": "Goa", "31": "Lakshadweep", "32": "Kerala", "33": "Tamil Nadu", "34": "Puducherry", "35": "Andaman And Nicobar Islands", "36": "Telangana", "37": "Andhra Pradesh", "38": "Ladakh", "97": "Other Territory", "99": "Centre Jurisdiction" };
 let intp = (navigator.platform === 'iPhone') ? "pattern='[0-9]*' type='text'" : "type='number'";
 let intp2 = "type='button'";
 let intp4 = "onclick='unavail()'";
@@ -213,14 +213,13 @@ function viewtotal() {
   return new Promise(async (rez) => {
     let sum = totqt.reduce((p, a) => p + a, 0);
     console.log(sum);
-    if ((sum > tbl[3].moq)) {
-      // prc = bulkpc; 
-      document.getElementById('bulkc').checked = 1;
-      // zc(sum,bulkpc.sqt,'t0hiiiiiii');
+    let check = document.getElementById('bulkc');
+    if (check.checked) {
+      // check.checked = 1;
+    } else if ((sum > tbl[3].moq)) {
+      check.checked = 1;
     } else {
-      // prc = sampc;
-      document.getElementById('bulkc').checked = 0;
-      // zc(sum,bulkpc.sqt,'f0hiiiiiii');
+      check.checked = 0;
     }
 
     document.querySelector(".tablink.w3-red")?.classList.remove("w3-red");
@@ -261,7 +260,10 @@ function tot() {
 
     document.getElementById('tot').style.display = '';
     odtot = {}, odwt = 0, odqt = 0, odpc = 0, odpcf = 0, oddata = {};// type:{pc:qty,pc:qty},type:type:{pc:qty,pc:qty} // type qty*pc+qty*pc=odpc
-    let sum = totqt.reduce((p, a) => p + a, 0); let odt = (sum > tbl[3].moq);
+    let sum = totqt.reduce((p, a) => p + a, 0);
+
+    let odt = (sum > tbl[3].moq);
+    if (document.getElementById('bulkc').checked) { odt = true; }
     Object.keys(od).forEach((t) => { //  type loop
       odtot[t] = {};
       Object.keys(od[t]).forEach((c) => {// color loop
@@ -387,7 +389,7 @@ async function newc1() {
 
 // onload model get Customer Name and gst
 function gonext() {
-  if (!ptid&&(ptid.length!=10)) {
+  if (!ptid && (ptid.length != 10)) {
     return alert('Enter Mobile No.')
   }
   console.log(ptid);
