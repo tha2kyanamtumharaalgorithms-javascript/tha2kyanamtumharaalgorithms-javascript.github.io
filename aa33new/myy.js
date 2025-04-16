@@ -20,7 +20,7 @@ async function delod() {
   try {
     await mthdb(selg.slice(-1) + odno.slice(0, 6));
     const an5 = await oddb.od.get(Number(odno));
-    an5.tot = 0; an5.od = {}; an5.xch = []; an5.pc = {}; an5.inv = []; an5.bulk = 0; an5.wt = 0; zsr.gst = ''; delete an5.c;
+    an5.tot = 0; an5.od = {}; an5.xch = [0, 0, 0, 5]; an5.pc = {}; an5.inv = [0, 0]; an5.bulk = 0; an5.wt = 0; zsr.gst = ''; delete an5.c;
     const shod11 = { p: "1", g: selg, od: { ...an5 } };
     sendd(urli, shod11, 'del order');
 
