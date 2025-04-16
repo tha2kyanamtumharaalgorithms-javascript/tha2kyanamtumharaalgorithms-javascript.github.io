@@ -20,7 +20,7 @@ async function delod() {
   try {
     await mthdb(selg.slice(-1) + odno.slice(0, 6));
     const an5 = await oddb.od.get(Number(odno));
-    an5.tot = 0; an5.od = {}; an5.xch = []; an5.pc = {}; an5.inv = []; an5.bulk = 0; an5.wt = 0;
+    an5.tot = 0; an5.od = {}; an5.xch = []; an5.pc = {}; an5.inv = []; an5.bulk = 0; an5.wt = 0; zsr.gst = ''; delete an5.c;
     const shod11 = { p: "1", g: selg, od: { ...an5 } };
     sendd(urli, shod11, 'del order');
 
@@ -176,7 +176,7 @@ function creatod() {
       zsr.od = od;
       zsr.inv = billinv;
       zsr.wt = odwt;
-      // zsr.tch = othch[0];
+      // zsr.gst = othch[0];
       zsr.xch = [...othch, tbl[6].gst];
       // zsr.dis = othch[2];
 
@@ -217,7 +217,7 @@ function creatod() {
       //   // update party details
       //   await db.pt.update(oldid, ptd);
       // }
-      zsr.pt = ptd.id;
+      zsr.pt = ptd.id; zsr.gst = ptd.gst;
       let pcb = {};
       if (odqt > tbl[3].moq) {
         Object.keys(od).forEach(v => pcb[v] = pc[v]);
@@ -299,7 +299,7 @@ async function updateod(myz) {
       zsr.c = cods;
       console.log(cods);
     }
-    zsr.pt = ptd.id; console.log(ptd.id);
+    zsr.pt = ptd.id; zsr.gst = ptd.gst; console.log(ptd.id);
     // let yu = ptd.ods.indexOf(selg.slice(-1) + pk8);
     // if (document.getElementById('bulkc').checked) {
     //   ptd.ods.push(selg.slice(-1) + pk8);
@@ -1013,8 +1013,8 @@ function dismth() {
     let b = [];
     e.forEach((v, i) => {
       if (String(v.name).match(/\w\d{6}/g)) {
-        let x = v.name.slice(1); let y = x.slice(0, 2); let m = Number(x.slice(4, 6))-1;
-        let mth = new Date('20' + y, m).toLocaleDateString('en-GB', {month: 'short',year: 'numeric'});
+        let x = v.name.slice(1); let y = x.slice(0, 2); let m = Number(x.slice(4, 6)) - 1;
+        let mth = new Date('20' + y, m).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
         b[i] = `<ul id="${v.name}" class="w3-border w3-ul"><li onclick="getmth('${v.name}','${mth}')" class="w3-block w3-blue-gray w3-button">${mth}</li></ul>`;
       }
     });
@@ -1423,7 +1423,7 @@ async function dlfn(v, id) {
       x = await creatod();
     }
     console.log(x);
-    let myd;dlid.id=x.od.id;
+    let myd; dlid.id = x.od.id;
     if (id == 'shp') {
       dlid.book = new shbook(x.od.id, dlid.c, dlid.s, x.od.tot, x.od.inv[1], x.pcwt, x.ptd.cn, x.ptd.add.replace(/\s+/g, ' ').trim(), x.ptd.pin, x.ptd.mn1, x.ptd.mn2);
       dlurl += '/shp/' + dlid.coid;
