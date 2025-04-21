@@ -266,12 +266,6 @@ async function updateod(myz) {
   return new Promise(async (rez) => {
     await viewtotal();
     document.querySelector('#tot table thead span').innerText = '#' + Number(String(pk8).slice(-7));
-    let pcb = {};
-    if (odqt > tbl[3].moq) {
-      Object.keys(od).forEach(v => pcb[v] = pc[v]);
-    } else {
-      Object.keys(od).forEach(v => pcb[v] = tbl[2][v]);
-    }
     zsr.id = pk8;
     zsr.cn = document.getElementById('u13').innerText.replace(/\s+/g, ' ').trim();
     zsr.tot = odqt;
@@ -314,6 +308,12 @@ async function updateod(myz) {
     // }
     // }
     // await db.pt.update(ptd.id, ptd);
+    let pcb = {};
+    if ((odqt > tbl[3].moq) || zsr.bulk) {
+      Object.keys(od).forEach(v => pcb[v] = pc[v]);
+    } else {
+      Object.keys(od).forEach(v => pcb[v] = tbl[2][v]);
+    }
     const gsel = document.getElementById("gsel").value;
     let shod1 = {};
     if (!(selg == gsel)) {
