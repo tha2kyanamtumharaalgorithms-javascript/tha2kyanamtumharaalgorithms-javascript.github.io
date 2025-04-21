@@ -219,7 +219,7 @@ function creatod() {
       // }
       zsr.pt = ptd.id; zsr.gst = ptd.gst;
       let pcb = {};
-      if (odqt > tbl[3].moq) {
+      if ((odqt > tbl[3].moq) || zsr.bulk) {
         Object.keys(od).forEach(v => pcb[v] = pc[v]);
       } else {
         Object.keys(od).forEach(v => pcb[v] = tbl[2][v]);
