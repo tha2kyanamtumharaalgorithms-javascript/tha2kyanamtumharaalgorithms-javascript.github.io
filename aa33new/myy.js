@@ -147,7 +147,7 @@ function ghd() {
 
 const orderx = (d = new Date()) => {
   const mth = d.getMonth(), y = d.getFullYear(), y1 = ("" + d.getFullYear()).slice(2);
-  let th = String(mth + 1).padStart(2, 0), dtt = String(d.getTime()).slice(5, -1);
+  let th = String(mth + 1).padStart(2, 0), dtt = String(d.getTime()).slice(4, -2);
   return ((mth < 3) ? ((y - 1) + "" + y1).slice(2) : y1 + ("" + (y + 1)).slice(2)) + th + dtt;
 }
 
@@ -1208,13 +1208,13 @@ async function gosh(obj1, obj2, obj3) {
 }
 
 
-function formatDate(date) {
+function formatDate(date, n) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
+  return n ? `${day}/${month}/${year}` : `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
 class shbook {
