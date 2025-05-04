@@ -61,6 +61,9 @@ async function editod(tp) {
   await mthdb(selg.slice(-1) + String(pk8).slice(0, 6));
   await oddb.od.get(pk8).then((doc) => {
     let ht = doc.cn;
+    if (ht === "instock") {
+      document.getElementById('instock1').checked = true; xcxv();
+    }
     oldod = doc;
     document.getElementById('tch').value = oldod.xch[0] || '';
     document.getElementById('och').value = oldod.xch[1] || '';
@@ -128,6 +131,23 @@ function addtbl(v, pc, qt) {
   <td style="width: 10px;" onclick="this.parentElement.remove()"><b class="w3-block w3-button w3-ripple w3-teal">Del</b></td></tr>`;
 }
 
+function ghd() {
+  return new Promise(async (rez, rej) => {
+    if (localStorage.gre === '555') {
+      let id = orderx();
+      rez(Number(id));
+    }
+    try {
+      let p = await fetch('https://e8xi8frl24.execute-api.ap-south-1.amazonaws.com/v1/nos/?zxc=' + localStorage.gre)
+      p = await p.json();
+      rez(Number(p.v));
+    } catch (error) {
+      alert('Error in ghd() fn-');
+      rej("no data");
+    }
+  });
+}
+
 const orderx = (d = new Date()) => {
   const mth = d.getMonth(), y = d.getFullYear(), y1 = ("" + d.getFullYear()).slice(2);
   let th = String(mth + 1).padStart(2, 0), dtt = String(d.getTime()).slice(4, -2);
@@ -138,8 +158,7 @@ function creatod() {
   return new Promise(async (rez) => {
     let gd = document.getElementById("gsel").value;
     await viewtotal();
-    // let inst = document.getElementById('pnm');
-    let odid = Number(orderx());
+    let odid = await ghd() //Number(date1 + ctcn);
     document.querySelector('#tot table thead span').innerText = '#' + Number(String(odid).slice(-7));
     if (odid === "no data") {
       return alert('Error in get order id fn-');
@@ -152,7 +171,6 @@ function creatod() {
     // } else {
     // let ptd={id:'a',cn:'',mn1:'',mn2:'',gst:'',add:'',ods:['as102','as33','ak508']};
     // zc(ptd,'hiii76868iiii');
-
     zsr.id = odid;
     zsr.cn = document.getElementById('u13').innerText;
     zsr.tot = odqt;
@@ -226,6 +244,10 @@ function creatod() {
 
     let html33 = document.getElementById("html33");
     // localStorage.clickcount = ctcn; zxc = ctcn;
+    let instock = document.getElementById('instock1');
+    if (instock.checked) {
+      xcxv(); instock.checked = 0;
+    }
     html33.style.width = '455px';
     await html2canvas(html33,
       {
@@ -316,6 +338,10 @@ async function updateod(myz) {
       .then(async () => {
         shod1.pcwt = odwt;
         // console.log(pctt);
+        let instock = document.getElementById('instock1');
+        if (instock.checked) {
+          xcxv(); instock.checked = 0;
+        }
         let html33 = document.getElementById("html33");
         html33.style.width = '455px';
         await html2canvas(html33,
@@ -370,20 +396,35 @@ async function moveod(gf, gt, idf) {
 // document.getElementById('alltab').onclick=function() {
 //   html2canvas(document.querySelector("#html33")).then(canvas => canvas.toBlob(blob => navigator.clipboard.write([new ClipboardItem({'image/png': blob})])))
 // };
-
+let insxx = [];
 document.getElementById("seldt").valueAsDate = new Date();
 document.getElementById("instock1").onclick = () => {
-  // .classList.toggle("mystyle"); this.parentElement.style.display='none'
+  xcxv(); sptd(1);
+  // document.getElementById("instock1").click();
+}
+
+function xcxv() {
   document.getElementById("seldt").parentElement.classList.toggle("hide");
   let ptd = document.getElementById('ptd'); ptd.classList.toggle("w3-hide");
   document.getElementById('cnm').classList.toggle("w3-show");
   let inp = document.querySelectorAll('#ptd input')
   if (ptd.classList.contains("w3-hide")) {
     inp[0].value = 'instock'; inp[1].value = '9898989898';
+    document.getElementById('pnm').value = '32323';
+    let inx = (navigator.platform === 'iPhone') ? "text" : "number";
+    insxx = document.querySelectorAll('#tbldiv input[type="button"]');
+    insxx.forEach(v => {
+      v.setAttribute('type', inx);
+    });
   } else {
-    inp[0].value = ''; inp[1].value = '';
+    inp[0].value = ''; inp[1].value = ''; document.getElementById('pnm').value = '';
+    insxx.forEach(v => {
+      v.setAttribute('type', 'button');
+    });
+    insxx = [];
   }
 }
+
 // in stock order 
 async function saveinst(v) {
   let pkx = {};
@@ -838,7 +879,7 @@ function gr() {
   document.getElementById('bnm7').classList.toggle("w3-show");  //display block
   document.getElementById('ptd').classList.toggle("w3-modal");
   document.getElementById('ptd').classList.toggle("ptds");
-  document.getElementById('instaa').classList.toggle("hide");
+  document.getElementById('instaa1').classList.toggle("hide");
   document.getElementById('gall').classList.toggle("hide");
   // document.getElementById('tre6').classList.toggle("hide");//display none
   document.getElementById('cnm3').classList.toggle("hide");
