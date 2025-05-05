@@ -131,26 +131,10 @@ function addtbl(v, pc, qt) {
   <td style="width: 10px;" onclick="this.parentElement.remove()"><b class="w3-block w3-button w3-ripple w3-teal">Del</b></td></tr>`;
 }
 
-function ghd() {
-  return new Promise(async (rez, rej) => {
-    if (localStorage.gre === '555') {
-      let id = orderx();
-      rez(Number(id));
-    }
-    try {
-      let p = await fetch('https://e8xi8frl24.execute-api.ap-south-1.amazonaws.com/v1/nos/?zxc=' + localStorage.gre)
-      p = await p.json();
-      rez(Number(p.v));
-    } catch (error) {
-      alert('Error in ghd() fn-');
-      rej("no data");
-    }
-  });
-}
 
 const orderx = (d = new Date()) => {
   const mth = d.getMonth(), y = d.getFullYear(), y1 = ("" + d.getFullYear()).slice(2);
-  let th = String(mth + 1).padStart(2, 0), dtt = String(d.getTime()).slice(4, -2);
+  let th = String(mth + 1).padStart(2, 0), dtt = String(d.getTime()).slice(3, -3);
   return ((mth < 3) ? ((y - 1) + "" + y1).slice(2) : y1 + ("" + (y + 1)).slice(2)) + th + dtt;
 }
 
@@ -158,7 +142,8 @@ function creatod() {
   return new Promise(async (rez) => {
     let gd = document.getElementById("gsel").value;
     await viewtotal();
-    let odid = await ghd() //Number(date1 + ctcn);
+    await delay(1000);
+    let odid = Number(orderx());
     document.querySelector('#tot table thead span').innerText = '#' + Number(String(odid).slice(-7));
     if (odid === "no data") {
       return alert('Error in get order id fn-');

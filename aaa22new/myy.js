@@ -130,7 +130,7 @@ function addtbl(v, pc, qt) {
 
 const orderx = (d = new Date()) => {
   const mth = d.getMonth(), y = d.getFullYear(), y1 = ("" + d.getFullYear()).slice(2);
-  let th = String(mth + 1).padStart(2, 0), dtt = String(d.getTime()).slice(4, -2);
+  let th = String(mth + 1).padStart(2, 0), dtt = String(d.getTime()).slice(3, -3);
   return ((mth < 3) ? ((y - 1) + "" + y1).slice(2) : y1 + ("" + (y + 1)).slice(2)) + th + dtt;
 }
 
@@ -139,6 +139,7 @@ function creatod() {
     let gd = document.getElementById("gsel").value;
     await viewtotal();
     // let inst = document.getElementById('pnm');
+    await delay(1000);
     let odid = Number(orderx());
     document.querySelector('#tot table thead span').innerText = '#' + Number(String(odid).slice(-7));
     if (odid === "no data") {

@@ -515,8 +515,8 @@ async function indb(d) {
   selg = d.name;
   document.getElementById('gstall').style.display = 'block';
   // selgo(selg);
+  document.getElementById('gstall').innerHTML = "<div class='w3-blue-gray' style='display:flex;position: sticky;top: -50px;z-index: 6;'><div class='w3-bar-item w3-button w3-border-right' onclick='delod()'>Del</div><button class='w3-button w3-bar-item w3-border-right' onclick='omprint()'>Print</button>" + "<div id='st91' class='w3-dropdown-hover'> <button class='w3-button w3-border-right'>Status</button><div id='st92' class='w3-hide w3-bar-block w3-border'><a href='#' onclick='unpingen()' class='w3-bar-item w3-button'>NoneGenerate</a> <a href='#' onclick='unpin()' class='w3-bar-item w3-button'>None</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Payment Pending</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Under Production</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Printing</a><a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Part Quantity</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Pending</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>In Transit</a><a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>COD</a> <input onchange='chnot(1,this)' id='inp5' name='od84' class='w3-border w3-bar-item' type='text' style='padding:5px;display:none' placeholder='Write other...'></div></div>" + "<button onclick='printadd()' class='w3-button'>DTDC</button>" + "</div>" + "<div id='tre6'><ul id='oderli' class='w3-ul'></ul></div>";
 
-  document.getElementById('gstall').innerHTML = "<div class='w3-blue-gray' style='display:flex;position: sticky;top: -50px;z-index: 6;'><div class='w3-bar-item w3-button w3-border-right' onclick='delod()'>Del</div><button class='w3-button w3-bar-item w3-border-right' onclick='omprint()'>Print</button>" + "<div id='st91' class='w3-dropdown-hover'> <button class='w3-button w3-border-right'>Status</button><div id='st92' class='w3-hide w3-bar-block w3-border'> <a href='#' onclick='unpin()' class='w3-bar-item w3-button'>None</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Payment Pending</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Under Production</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Printing</a><a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Part Quantity</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Pending</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>In Transit</a><a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>COD</a> <input onchange='chnot(1,this)' id='inp5' name='od84' class='w3-border w3-bar-item' type='text' style='padding:5px;display:none' placeholder='Write other...'></div></div>" + "<button onclick='printadd()' class='w3-button'>DTDC</button>" + "</div>" + "<div id='tre6'><ul id='oderli' class='w3-ul'></ul></div>";
   // status toggle
   document.getElementById('st91').addEventListener('click', (v) => {
     document.getElementById('st92').classList.toggle('w3-show');
@@ -749,6 +749,50 @@ function unpin() {
     snackbar('Unpined', 500);
     sendd(urli, vkz6, 'unpin');
   } else { alert('Select order first.') }
+}
+
+const getnmm = () => {
+  return new Promise(async (rez, rej) => {
+    try {
+      let p = await fetch('https://e8xi8frl24.execute-api.ap-south-1.amazonaws.com/v1/nos/?zxc=' + localStorage.gre)
+      p = await p.json();
+      rez(Number(p.v));
+    } catch (error) {
+      alert('Error in ghd() fn-');
+      rej("no data");
+    }
+  })
+}
+
+function unpingen() {
+  new Promise(async (rez, rej) => {
+    let sel = Object.keys(selod5);
+    if (sel.length) {
+      selgo(selg);
+      let mk5 = JSON.parse(pinloc);
+      let t = sel.pop();
+      let px1 = document.getElementById(t);
+      px1.parentNode.style.background = 'purple!important'; //px1.checked = false;
+      document.querySelector('#vtag [name=' + t + ']').innerText = '';
+      delete mk5[t];
+      selpin(selg);
+      localStorage.setItem(pinz, JSON.stringify(mk5));
+      for (let u in selod5) { document.getElementById(u).checked = false; } selod5 = {};
+      let d = t.slice(3);
+      await mthdb(selg.slice(-1) + d.slice(0, 6));
+      let ord = await oddb.od.get(Number(d));
+      let pt = await db.pt.get(ord.pt);
+
+      if (localStorage.gre === '555') { } else {
+        let m = await getnmm();
+        ord.eid = m; await oddb.od.put(ord, ord.id);
+      }
+
+      let vkz6 = { p: "31", "g": selg, "od": ord, "pt": pt, pin: { ...mk5 } };
+      await sendd(urli, vkz6, 'unpin');
+      snackbar('Unpined and Generated', 500);
+    } else { alert('Select order first.') }
+  })
 }
 
 var pinloc = '{}';
