@@ -131,7 +131,7 @@ function addtbl(v, pc, qt) {
   <td style="width: 10px;" onclick="this.parentElement.remove()"><b class="w3-block w3-button w3-ripple w3-teal">Del</b></td></tr>`;
 }
 
-
+const delay = t => new Promise(r => setTimeout(r, t));
 const orderx = (d = new Date()) => {
   const mth = d.getMonth(), y = d.getFullYear(), y1 = ("" + d.getFullYear()).slice(2);
   let th = String(mth + 1).padStart(2, 0), dtt = String(d.getTime()).slice(3, -3);

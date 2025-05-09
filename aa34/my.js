@@ -368,7 +368,7 @@ async function newc() {
 }
 
 async function newc2() {
-  document.querySelector('#gall input').checked;
+  // document.querySelector('#gall input').checked;
   let ty3 = document.querySelectorAll("#ptd input");
   for (let t of ty3) {
     if (t.value) { t.value = '' }
@@ -382,7 +382,7 @@ async function newc2() {
 }
 
 async function newc1() {
-  for (let u in selod5) { document.getElementById(u).checked = false; }
+  for (let u in selod5) { let mx = document.getElementById(u); if (mx) { mx.checked = false; } }
   totqt = []; od = {}; zsr = {};
   ptd = {}; pk8 = 0; ptods = []; ptid = 0; selod5 = {};
 }
@@ -406,10 +406,8 @@ function gonext() {
     // if (document.getElementById('q000')) {
     //   document.getElementById('gst').checked=true;
     // }
-
     let val5 = document.querySelector('#gall input[type="radio"]:checked').value;
     document.getElementById("gsel").options[val5].selected = true;
-
     document.getElementById('id01').style.display = 'none';
     // let ge5 = document.getElementById("gsel");
     // let ovalue=ge5.options[ge5.selectedIndex].value;
@@ -780,14 +778,13 @@ function unpingen() {
       for (let u in selod5) { document.getElementById(u).checked = false; } selod5 = {};
       let d = t.slice(3);
       await mthdb(selg.slice(-1) + d.slice(0, 6));
-      let ord = await oddb.od.get(Number(d));
-      let pt = await db.pt.get(ord.pt);
-
-      if (localStorage.gre === '555') { } else {
-        let m = await getnmm();
-        ord.eid = m; await oddb.od.put(ord, ord.id);
+      let ord = await oddb.od.get(Number(d)); let pt = await db.pt.get(ord.pt);
+      if (ord.tot) {
+        if (localStorage.gre === '555') { } else {
+          let m = await getnmm();
+          ord.eid = m; await oddb.od.put(ord, ord.id);
+        }
       }
-
       let vkz6 = { p: "31", "g": selg, "od": ord, "pt": pt, pin: { ...mk5 } };
       await sendd(urli, vkz6, 'unpin');
       snackbar('Unpined and Generated', 500);
