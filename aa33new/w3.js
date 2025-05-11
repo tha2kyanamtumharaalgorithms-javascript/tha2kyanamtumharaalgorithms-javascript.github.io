@@ -80,7 +80,7 @@ async function expStock() {
     });
   });
   // console.log(csv);
-  let csvString = csv.join('\n');
+  let csvString = ' ,\r\n' + csv.join('\r\n');
   let blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
   let url = URL.createObjectURL(blob);
   let a = document.createElement('a');
