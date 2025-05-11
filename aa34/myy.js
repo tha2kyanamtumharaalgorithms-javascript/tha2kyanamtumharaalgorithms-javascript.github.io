@@ -1238,7 +1238,7 @@ class shbook {
     this.order_id = id;
     this.order_date = formatDate(new Date());
     let cv = document.querySelector('#pinclick input[type="radio"]:checked').value;
-    this.pickup_location = (cv == '110062') ? "ownknitted.com" : "T ownknitted.com";
+    this.pickup_location = (cv == '110062') ? "BulkPlai" : "T ownknitted.com";
     this.billing_customer_name = cn;
     this.billing_last_name = "";
     this.billing_address = add;
@@ -1252,7 +1252,7 @@ class shbook {
     this.shipping_is_billing = true;
     this.order_items = [{
       "name": "Clothes",
-      "sku": "OwnKnitted.com",
+      "sku": "BulkPlainTshirt.com",
       "units": u,
       "selling_price": (pc / u).toFixed(2)
     }];
