@@ -36,7 +36,9 @@ async function getods(gd) {
         let gstr = "<span style='padding: 0 1.55em'></span>";
         let inp = "<input onclick='selod(this)' id='ods" + i.id + "' class='w3-check' type='checkbox'>";
         let vtag = "<span id='vtag' ><span name=" + 'ods' + i.id + ">" + "</span></span>" + book[1];
-        hmtl0 = "<li " + book[0] + " id=s" + i.id + " " + "tabindex=" + i.pt + " " + ifz + ">" + inp + ' ' + "<b onclick='goadd(" + i.pt + ',' + i.id + ")'>" + Number(i.id.toString().slice(6)) + '. ' + i.cn + '</b>' + vtag + "<span onclick='opodli(this)'>" + i.tot + ' ' + gstr + ' ' + i.dt.slice(0, 6) + "</span></li>" + hmtl0;
+        let nub = i.id.toString();
+        nub = nub.slice(4, 6) + Number(nub.slice(-7));
+        hmtl0 = "<li " + book[0] + " id=s" + i.id + " " + "tabindex=" + i.pt + " " + ifz + ">" + inp + ' ' + "<b onclick='goadd(" + i.pt + ',' + i.id + ")'>" + nub + '. ' + i.cn + '</b>' + vtag + "<span onclick='opodli(this)'>" + i.tot + ' ' + gstr + ' ' + i.dt.slice(0, 6) + "</span></li>" + hmtl0;
       });
     }
     document.getElementById('oderli').innerHTML = hmtl0;
@@ -91,8 +93,9 @@ let instdb = new Dexie("inst"); instdb.version(1).stores({ inst: "++id" });
 let dldb = new Dexie("dldb"); dldb.version(1).stores({ dl: "id,st" });
 var selod5 = {}; var zsr = {}; let selg; let odimgbob;
 //var om=document.getElementById("tb").innerHTML;
-var od = {}; var zxc = 0;
-if (localStorage.clickcount) { zxc = localStorage.clickcount; };
+var od = {};
+// var zxc = 0;
+// if (localStorage.clickcount) { zxc = localStorage.clickcount; };
 
 // shp
 if (((Date.now() > (Number(localStorage.shpdt) + 40000000)) || (!localStorage.shpdt))) {
@@ -117,12 +120,13 @@ function todaydate() {
     month: '2-digit',
     year: '2-digit'
   }).split('-').join('').slice(-3);
-  if (localStorage.m != (d.getMonth() + 1)) {
-    localStorage.clickcount = 0; zxc = 0; localStorage.m = (d.getMonth() + 1);
-    localStorage.fromod = 0;
-  }
+  // if (localStorage.m != (d.getMonth() + 1)) {
+  //   localStorage.clickcount = 0; localStorage.m = (d.getMonth() + 1);
+  //   // localStorage.fromod = 0; zxc = 0;
+  // }
 }
 todaydate();
+
 let oddb;
 async function mthdb(m) {
   oddb = new Dexie(m);
@@ -690,10 +694,9 @@ async function chnot(b, v) {
     if (secid.match(/\w\d{3}/g)) {
       await indb({ name: selg }).then(() => document.getElementById('st92').classList.toggle('w3-show'));
     }
-    snackbar('Status changed to ' + v.innerText, 500);
-    await sendd(urli, vkz5, 'pin');
-
     selod5 = {}; secid = '';
+    await sendd(urli, vkz5, 'pin');
+    snackbar('Status changed to ' + v.innerText, 500);
   } else { alert('Select order first.') }
 }
 

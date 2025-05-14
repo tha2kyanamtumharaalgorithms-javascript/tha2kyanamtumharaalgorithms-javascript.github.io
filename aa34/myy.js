@@ -132,18 +132,28 @@ function addtbl(v, pc, qt) {
 }
 
 const delay = t => new Promise(r => setTimeout(r, t));
-const orderx = (d = new Date()) => {
-  const mth = d.getMonth(), y = d.getFullYear(), y1 = ("" + d.getFullYear()).slice(2);
-  let th = String(mth + 1).padStart(2, 0), dtt = String(d.getTime()).slice(3, -3);
-  return ((mth < 3) ? ((y - 1) + "" + y1).slice(2) : y1 + ("" + (y + 1)).slice(2)) + th + dtt;
+// const orderx = (d = new Date()) => {
+//   const mth = d.getMonth(), y = d.getFullYear(), y1 = ("" + d.getFullYear()).slice(2);
+//   let th = String(mth + 1).padStart(2, 0), dtt = String(d.getTime()).slice(3, -3);
+//   return ((mth < 3) ? ((y - 1) + "" + y1).slice(2) : y1 + ("" + (y + 1)).slice(2)) + th + dtt;
+// }
+
+function odcount() { // numb.slice(4, 6) + Number(numb.slice(-7));
+  let d = new Date(); let st = localStorage;
+  const mth = (d.getMonth() + 1), y = d.getFullYear(), y1 = ("" + d.getFullYear()).slice(2);
+  if (st.m != mth) { st.m = mth; st.clickcount = 0; }
+  let th = String(mth).padStart(2, 0);
+  let idf = Number(st.clickcount) + 1;
+  st.clickcount = idf;
+  return ((mth < 4) ? ((y - 1) + "" + y1).slice(2) : y1 + ("" + (y + 1)).slice(2)) + th + String(idf).padStart(7, 0);
 }
 
 function creatod() {
   return new Promise(async (rez) => {
     let gd = document.getElementById("gsel").value;
     await viewtotal();
-    await delay(1000);
-    let odid = Number(orderx());
+    // await delay(1000);
+    let odid = Number(odcount());
     document.querySelector('#tot table thead span').innerText = '#' + Number(String(odid).slice(-7));
     if (odid === "no data") {
       return alert('Error in get order id fn-');
@@ -1446,7 +1456,7 @@ async function dlfn(v, id) {
       myd = JSON.stringify(dlid.book);
       console.log(dlurl);
     } else if (id == 'rkb') {
-      // let myl = "https://kcqawrffldi2xw.s3.ap-south-1.amazonaws.com/zcoyad/files/" + mhj + ".png"; dlid.durl = myl;
+      // let myl = "https://kcqawrffldi2xw.s3.ap-south-1.amazonaws.com/zcoyad1111111/files/" + mhj + ".png"; dlid.durl = myl;
       // // if (!dlid.st) {
       // await uplodimg(v9, ptd, myl); // upload always so book later
       // // }
