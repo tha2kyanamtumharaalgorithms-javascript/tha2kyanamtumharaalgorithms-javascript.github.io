@@ -4,7 +4,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="om.css">
 <script src="dexie.min.js"></script>
-<script src="w3.js?v=16"></script>
 
 <style>
   .content {
@@ -493,7 +492,7 @@
       oddb.version(1).stores({ od: "id,dt,bulk" });
     }
     let selg = 'ods';
-
+    var urli = localStorage.gr5;
     let selod5 = {};
     function selod(h) {
       let er5 = h.id;
@@ -659,7 +658,8 @@
           })
         }
         let myWindow = window.open(ods.pdf, "_blank");
-        myWindow.onload = function () { myWindow.print(); }
+        myWindow.body.setAttribute('onclick', 'print()');
+        // myWindow.onload = function () { myWindow.print(); }
       }
 
       let doc = document.querySelector('#tembill');
