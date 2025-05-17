@@ -558,20 +558,20 @@
         // console.log(c, i, m);
         sel.forEach(v => { document.getElementById(v).checked = false; delete selod5[v]; })
         selod5 = {};
-        bill(m, lastsel);
-        // }
-        let temp1 = zz('#tembillx #tembill').cloneNode(true); pk.body.append(temp1);
-        setTimeout(() => {
-          if ((navigator.platform) === 'iPhone') {
-            let myWindow = window.open("", "_blank"); let body1 = myWindow.document.body;
-            body1.setAttribute('onclick', 'print()'); body1.style.margin = '0';
-            let tep0 = zz('#tembillx style').cloneNode(true);
-            let tep = pk.body.cloneNode(true); body1.append(tep0, tep);
-            myWindow.print(); myWindow.close();
-          } else { window.frames[0].print(); }
-        }, 50)
-
-
+        let res = bill(m, lastsel);
+        // console.log('res', res);
+        if (res != 2) {
+          let temp1 = zz('#tembillx #tembill').cloneNode(true); pk.body.append(temp1);
+          setTimeout(() => {
+            if ((navigator.platform) === 'iPhone') {
+              let myWindow = window.open("", "_blank"); let body1 = myWindow.document.body;
+              body1.setAttribute('onclick', 'print()'); body1.style.margin = '0';
+              let tep0 = zz('#tembillx style').cloneNode(true);
+              let tep = pk.body.cloneNode(true); body1.append(tep0, tep);
+              myWindow.print(); myWindow.close();
+            } else { window.frames[0].print(); }
+          }, 50)
+        }
       } else { alert('Select order first!!') }
     }
 
@@ -658,149 +658,151 @@
           })
         }
         let myWindow = window.open('https://my.gstzen.in' + ods.pdf, "_blank");
-        myWindow.body.setAttribute('onclick', 'print()');
-        // myWindow.onload = function () { myWindow.print(); }
-      }
+        return 2;
+        // myWindow.onload = function () { myWindow.print(); };
+      } else {
+        let doc = document.querySelector('#tembill');
+        let gst = pt?.gst || ''; let gstz = ''; let stgst = '';
+        if (gst) {
+          gst = gst.toUpperCase().trim();
+          stgst = gst.slice(0, 2) + '-' + gststate[gst.slice(0, 2)];
+          gstz = (gst.length > 3) ? true : '';
+        }
 
-      let doc = document.querySelector('#tembill');
-      let gst = pt?.gst || ''; let gstz = ''; let stgst = '';
-      if (gst) {
-        gst = gst.toUpperCase().trim();
-        stgst = gst.slice(0, 2) + '-' + gststate[gst.slice(0, 2)];
-        gstz = (gst.length > 3) ? true : '';
-      }
+        let add = `${pt.add && ('<br/>' + pt.add + (pt.pin && (', ' + pt.pin)))}`;
+        doc.querySelector("#ptd").innerHTML = `<b style='font-size: 16px;'>${ods.cn}</b>${add}${pt.mn1 && ('<br/>Contact No.: ' + pt.mn1)}${gstz && ('<br/>GSTIN Number: ' + gst)}${gst && ('<br/>State: ' + stgst)}`;
 
-      let add = `${pt.add && ('<br/>' + pt.add + (pt.pin && (', ' + pt.pin)))}`;
-      doc.querySelector("#ptd").innerHTML = `<b style='font-size: 16px;'>${ods.cn}</b>${add}${pt.mn1 && ('<br/>Contact No.: ' + pt.mn1)}${gstz && ('<br/>GSTIN Number: ' + gst)}${gst && ('<br/>State: ' + stgst)}`;
-
-      doc.querySelector("#inno").innerHTML = `<p style='font-weight: 500;'>${gst && ('Place of Supply: ' + stgst)}</p><p>Invoice No.: ${ods.id}</p><p>Date: ${ods.dt}</p>`;
-      let od1 = Object.keys(ods.od); let samplebulk = typeof ods.pc[Object.keys(ods.pc)[0]] == 'number';
-      if ((od1.length || ods?.c?.length)) {
-        let type = {};// qt
-        let upc = {}; // unit price
-        // let upc1={}; 
-        od1.forEach(t => {
-          let pc1, pczc, pc;
-          if (samplebulk) {
-            pc = ods.pc[t];
-          } else {
-            pc1 = Object.entries(ods.pc[t]);
-            // console.log(pc1);
-            pczc = pc1.length > 1;
-          }
-
-          type[t] = {};
-
-          Object.keys(ods.od[t]).forEach(c => {
-            let ks = Object.keys(ods.od[t][c]);
-            ks.forEach(s => {
-              // console.log(t,c,s,od[t][c][s]);
+        doc.querySelector("#inno").innerHTML = `<p style='font-weight: 500;'>${gst && ('Place of Supply: ' + stgst)}</p><p>Invoice No.: ${ods.id}</p><p>Date: ${ods.dt}</p>`;
+        let od1 = Object.keys(ods.od); let samplebulk = typeof ods.pc[Object.keys(ods.pc)[0]] == 'number';
+        if ((od1.length || ods?.c?.length)) {
+          let type = {};// qt
+          let upc = {}; // unit price
+          // let upc1={}; 
+          od1.forEach(t => {
+            let pc1, pczc, pc;
+            if (samplebulk) {
+              pc = ods.pc[t];
+            } else {
+              pc1 = Object.entries(ods.pc[t]);
               // console.log(pc1);
-              let v3;
-              if (samplebulk) {
-                // if(x1.hasOwnProperty(s)){v3=x10}
-                // else if(x2.hasOwnProperty(s)){v3=x20}
-                // else if(x3.hasOwnProperty(s)){v3=x30}
-                v3 = '';
-                // console.log(v3);
-              } else {
-                let p1 = pc1[0];
-                if (pczc) {
-                  if (p1[1].includes(s)) {
+              pczc = pc1.length > 1;
+            }
+
+            type[t] = {};
+
+            Object.keys(ods.od[t]).forEach(c => {
+              let ks = Object.keys(ods.od[t][c]);
+              ks.forEach(s => {
+                // console.log(t,c,s,od[t][c][s]);
+                // console.log(pc1);
+                let v3;
+                if (samplebulk) {
+                  // if(x1.hasOwnProperty(s)){v3=x10}
+                  // else if(x2.hasOwnProperty(s)){v3=x20}
+                  // else if(x3.hasOwnProperty(s)){v3=x30}
+                  v3 = '';
+                  // console.log(v3);
+                } else {
+                  let p1 = pc1[0];
+                  if (pczc) {
+                    if (p1[1].includes(s)) {
+                      pc = Number(p1[0]);
+                      v3 = p1[1]
+                    } else {
+                      pc = Number(pc1[1][0]);
+                      v3 = pc1[1][1]
+                    }
+
+                  } else {
                     pc = Number(p1[0]);
                     v3 = p1[1]
-                  } else {
-                    pc = Number(pc1[1][0]);
-                    v3 = pc1[1][1]
                   }
-
-                } else {
-                  pc = Number(p1[0]);
-                  v3 = p1[1]
                 }
-              }
 
-              v3 = (v3.length > 2) ? `${v3[0]} to ${v3[v3.length - 1]}` : `${v3.toString()}`;
+                v3 = (v3.length > 2) ? `${v3[0]} to ${v3[v3.length - 1]}` : `${v3.toString()}`;
 
-              if (type[t].hasOwnProperty(v3)) {
-                type[t][v3][1] += ods.od[t][c][s];
-              } else {
-                type[t][v3] = [pc, ods.od[t][c][s]];
-              }
+                if (type[t].hasOwnProperty(v3)) {
+                  type[t][v3][1] += ods.od[t][c][s];
+                } else {
+                  type[t][v3] = [pc, ods.od[t][c][s]];
+                }
 
+              })
             })
-          })
-        });
-        console.log(type, upc);
-        let row = '';
-        let ct = 0; qt = 0; amt = 0;
-        Object.keys(type).forEach(t1 => {
-          Object.keys(type[t1]).forEach(v => {
-            // console.log(t1,v,type[t1][v]);
-            let pcqt = type[t1][v]; let amt1 = pcqt[0] * pcqt[1]
-            ct += 1; amt += amt1; qt += pcqt[1];
-            row += `<tr>
+          });
+          console.log(type, upc);
+          let row = '';
+          let ct = 0; qt = 0; amt = 0;
+          Object.keys(type).forEach(t1 => {
+            Object.keys(type[t1]).forEach(v => {
+              // console.log(t1,v,type[t1][v]);
+              let pcqt = type[t1][v]; let amt1 = pcqt[0] * pcqt[1]
+              ct += 1; amt += amt1; qt += pcqt[1];
+              row += `<tr>
                 <td>${ct}</td><td>${t1 + (v ? ' - ' + v : '')}</td><td>6109</td>
                 <td>${pcqt[1]}</td><td>₹${pcqt[0]}</td><td class="theme10BorderColor">₹${amt1}.00</td>
               </tr>`;
-          })
-        });
+            })
+          });
 
-        if (ods?.c?.length) {
-          ods.c.forEach(v => {
-            let amt1 = v[1] * v[2];
-            ct += 1; amt += amt1; qt += v[2];
-            row += `<tr>
+          if (ods?.c?.length) {
+            ods.c.forEach(v => {
+              let amt1 = v[1] * v[2];
+              ct += 1; amt += amt1; qt += v[2];
+              row += `<tr>
                 <td>${ct}</td><td>${v[0]}</td><td>6109</td>
                 <td>${v[2]}</td><td>₹${v[1]}</td><td class="theme10BorderColor">₹${amt1}.00</td>
               </tr>`;
-          })
+            })
+          }
+
+          document.querySelector("#tbody").innerHTML = row;
+          document.querySelector("#ttqt").innerHTML = qt;
+          document.querySelector("#ttpc").innerHTML = `₹${amt}.00`;
         }
 
-        document.querySelector("#tbody").innerHTML = row;
-        document.querySelector("#ttqt").innerHTML = qt;
-        document.querySelector("#ttpc").innerHTML = `₹${amt}.00`;
-      }
+        let ht = '';
 
-      let ht = '';
+        let [tch, och, dis, gstp] = ods.xch;
+        if (tch) {
+          amt += tch;
+          ht += ttr('Transport charge', tch);
+        }
 
-      let [tch, och, dis, gstp] = ods.xch;
-      if (tch) {
-        amt += tch;
-        ht += ttr('Transport charge', tch);
-      }
+        if (och) {
+          amt += och;
+          ht += ttr('Other charge', och);
+        }
 
-      if (och) {
-        amt += och;
-        ht += ttr('Other charge', och);
-      }
+        if (dis) {
+          amt -= dis;
+          ht += ttr('Discount', dis);
+        }
 
-      if (dis) {
-        amt -= dis;
-        ht += ttr('Discount', dis);
-      }
+        ht += ttr('Sub total', amt);
 
-      ht += ttr('Sub total', amt);
+        let gstamt = (gstp / 100) * amt;
+        if (gst.slice(0, 2) == '07') {
+          ht += ttr(`SCST@${gstp / 2}%`, (gstamt / 2));
+          ht += ttr(`CGST@${gstp / 2}%`, (gstamt / 2));
+        } else {
+          ht += ttr(`IGST@${gstp}%`, gstamt);
+        }
 
-      let gstamt = (gstp / 100) * amt;
-      if (gst.slice(0, 2) == '07') {
-        ht += ttr(`SCST@${gstp / 2}%`, (gstamt / 2));
-        ht += ttr(`CGST@${gstp / 2}%`, (gstamt / 2));
-      } else {
-        ht += ttr(`IGST@${gstp}%`, gstamt);
-      }
+        amt += gstamt;
+        let roff = Math.ceil(amt) - amt;
+        if (roff) {
+          ht += ttr('Round off', roff); amt = Math.ceil(amt);
+        }
 
-      amt += gstamt;
-      let roff = Math.ceil(amt) - amt;
-      if (roff) {
-        ht += ttr('Round off', roff); amt = Math.ceil(amt);
-      }
+        ht += `<tr class="final"><td>Total</td><td>₹${amt.toFixed(2).toLocaleString('en-IN')}</td></tr>`;
+        document.querySelector('#tblf').innerHTML = ht;
 
-      ht += `<tr class="final"><td>Total</td><td>₹${amt.toFixed(2).toLocaleString('en-IN')}</td></tr>`;
-      document.querySelector('#tblf').innerHTML = ht;
+        function ttr(n, v) { return `<tr><td>${n}</td><td>₹${v.toFixed(2)}</td></tr>` }
+      };
+    }
 
-      function ttr(n, v) { return `<tr><td>${n}</td><td>₹${v.toFixed(2)}</td></tr>` }
-    };
+
 
 
 
