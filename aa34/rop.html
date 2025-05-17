@@ -4,6 +4,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="om.css">
 <script src="dexie.min.js"></script>
+<script src="w3.js?v=16"></script>
+
 <style>
   .content {
     max-width: 500px;
@@ -574,12 +576,91 @@
       } else { alert('Select order first!!') }
     }
 
+    const getnmm = () => {
+      return new Promise(async (rez, rej) => {
+        try {
+          let p = await fetch('https://e8xi8frl24.execute-api.ap-south-1.amazonaws.com/v1/nos/?zxc=' + localStorage.gre)
+          p = await p.json();
+          rez(Number(p.v));
+        } catch (error) {
+          alert('Error in ghd() fn-');
+          rej("no data");
+        }
+      })
+    }
+
+    function unpingen() {
+      new Promise(async (rez, rej) => {
+        let sel = Object.keys(selod5);
+        if (sel.length) {
+          // selgo(selg);
+          let mk5 = JSON.parse(localStorage.pin);
+          let t = sel.pop();
+          // let px1 = document.getElementById(t);
+          // px1.parentNode.style.background = 'purple!important'; //px1.checked = false;
+          // document.querySelector('#vtag [name=' + t + ']').innerText = '';
+          delete mk5[t];
+          // selpin(selg);
+          localStorage.setItem('pin', JSON.stringify(mk5));
+          for (let u in selod5) { document.getElementById(u).checked = false; } selod5 = {};
+          let d = t.slice(3);
+          await mthdb(selg.slice(-1) + d.slice(0, 6));
+          let ord = await oddb.od.get(Number(d)); let pt = await db.pt.get(ord.pt);
+          if (ord.tot && !ord?.eid) {
+            if (localStorage.gre === '555') { } else {
+              let m = await getnmm();
+              ord.eid = String(m); await oddb.od.put(ord, ord.id);
+            }
+          }
+          let vkz6 = { p: "311", "g": selg, "od": ord, "pt": pt, pin: { ...mk5 } };
+          let res = await sendd(urli, vkz6, 'unpin');
+          if (res && res?.pdf) {
+            ord.pdf = res.pdf; res = res.pdf;
+            await oddb.od.put(ord, ord.id); //(Number(d));
+          }
+          rez(res);
+        } else { alert('Select order first.') }
+      })
+    }
+
+    function sendd(urld, d9) {
+      return new Promise(async (rez) => {
+        let fmd = new FormData(); fmd.append("myd", JSON.stringify(d9)); console.log(fmd);
+        await fetch(urld, { method: 'POST', body: fmd }).then(async (res) => {
+          const data = await res.json();
+          console.log(' data send successfully ', d9);
+          rez(data); // Return the parsed JSON data
+        })
+          .catch((error) => {
+            console.log(' sendd failed ' + error);
+            alert('sendd failed ' + error);
+            console.log(d9);
+            rez();
+            // alert(b+' sendd failed '+JSON.stringify(d9)); 
+          });
+      })
+    }
+
     let bdoc = window.frames[0].document;
     bdoc.body.style.margin = '0'; bdoc.body.setAttribute('onclick', 'print()');
     bdoc.head.innerHTML = '<meta name="format-detection" content="telephone=no, email=no, address=no" />';
     let temp0 = zz('#tembillx style').cloneNode(true); bdoc.head.append(temp0);
 
     function bill(x) {
+      console.log(x);
+      if (x.tot && x.gst) {
+        if (!x?.pdf) {
+          unpingen().then((res) => {
+            if (res) {
+              x.pdf = res; console.log('res', res);
+            } else { alert('Error in unpingen') }
+          })
+        }
+        let myWindow = window.open(x.pdf, "_blank");
+        myWindow.onload = function () { myWindow.print(); }
+      }
+
+
       let qt = 0; let amt = 0;
       // let x=window.aaa;
       console.log(x);
