@@ -27,9 +27,10 @@ async function sendd(urld, d9, b, q) {
     }
 
     let fmd = new FormData(); fmd.append("myd", JSON.stringify(d9)); console.log(fmd);
-    await fetch(urld, { method: 'POST', body: fmd }).then((res) => {
+    await fetch(urld, { method: 'POST', body: fmd }).then(async (res) => {
+      const data = await res.json();
       console.log(b + ' data send successfully ', d9);
-      rez(res.json());//cuuid[1].push(da);
+      rez(data); // Return the parsed JSON data
     })
       .catch(async (error) => {
         if (q !== 'z') {
