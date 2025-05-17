@@ -1,5 +1,5 @@
-async function sendd(urld, d9, b, q) {
-  await new Promise(async (rez) => {
+function sendd(urld, d9, b, q) {
+  return new Promise(async (rez) => {
     let da = { "id": 0, "type": b, "p": d9.p, "data": d9 };
     switch (d9.p) {
       case '0':
@@ -22,7 +22,6 @@ async function sendd(urld, d9, b, q) {
         break;
 
       default:
-
         break;
     }
 
