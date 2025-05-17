@@ -782,15 +782,20 @@ function unpingen() {
       let d = t.slice(3);
       await mthdb(selg.slice(-1) + d.slice(0, 6));
       let ord = await oddb.od.get(Number(d)); let pt = await db.pt.get(ord.pt);
-      if (ord.tot) {
+      if (ord.tot && !ord?.eid) {
         if (localStorage.gre === '555') { } else {
           let m = await getnmm();
-          ord.eid = m; await oddb.od.put(ord, ord.id);
+          ord.eid = String(m); await oddb.od.put(ord, ord.id);
         }
       }
       let vkz6 = { p: "31", "g": selg, "od": ord, "pt": pt, pin: { ...mk5 } };
-      await sendd(urli, vkz6, 'unpin');
-      snackbar('Unpined and Generated', 500);
+      let res = await sendd(urli, vkz6, 'unpin');
+      if (res.pdf) {
+        ord.pdf = res.pdf;
+        await oddb.od.put(ord, ord.id); //(Number(d));
+      }
+      snackbar('Unpined and E-invoice Generated', 1300);
+      rez();
     } else { alert('Select order first.') }
   })
 }
