@@ -559,7 +559,7 @@
         // console.log(c, i, m);
         sel.forEach(v => { document.getElementById(v).checked = false; delete selod5[v]; })
         selod5 = {};
-        bill(m);
+        bill(m, lastsel);
         // }
         let temp1 = zz('#tembillx #tembill').cloneNode(true); pk.body.append(temp1);
         setTimeout(() => {
@@ -589,21 +589,20 @@
       })
     }
 
-    function unpingen() {
+    function unpingen(y) {
       new Promise(async (rez, rej) => {
-        let sel = Object.keys(selod5);
-        if (sel.length) {
+        // let sel = y;// Object.keys(selod5);
+        if (y) {
           // selgo(selg);
           let mk5 = JSON.parse(localStorage.pin);
-          let t = sel.pop();
+          // let t = y//.pop();
           // let px1 = document.getElementById(t);
           // px1.parentNode.style.background = 'purple!important'; //px1.checked = false;
           // document.querySelector('#vtag [name=' + t + ']').innerText = '';
-          delete mk5[t];
+          delete mk5[y];
           // selpin(selg);
           localStorage.setItem('pin', JSON.stringify(mk5));
-          for (let u in selod5) { document.getElementById(u).checked = false; } selod5 = {};
-          let d = t.slice(3);
+          let d = y.slice(3);
           await mthdb(selg.slice(-1) + d.slice(0, 6));
           let ord = await oddb.od.get(Number(d)); let pt = await db.pt.get(ord.pt);
           if (ord.tot && !ord?.eid) {
@@ -646,14 +645,14 @@
     bdoc.head.innerHTML = '<meta name="format-detection" content="telephone=no, email=no, address=no" />';
     let temp0 = zz('#tembillx style').cloneNode(true); bdoc.head.append(temp0);
 
-    function bill(x) {
+    function bill(x, y) {
       let qt = 0; let amt = 0;
       console.log(x);
       let ods = x[0]; let pt = x[1];
 
       if (ods.tot && ods.gst) {
         if (!ods?.pdf) {
-          unpingen().then((res) => {
+          unpingen(y).then((res) => {
             if (res) {
               ods.pdf = res; console.log('res', res);
             } else { alert('Error in unpingen') }
