@@ -647,24 +647,22 @@
     let temp0 = zz('#tembillx style').cloneNode(true); bdoc.head.append(temp0);
 
     function bill(x) {
+      let qt = 0; let amt = 0;
       console.log(x);
-      if (x.tot && x.gst) {
-        if (!x?.pdf) {
+      let ods = x[0]; let pt = x[1];
+
+      if (ods.tot && ods.gst) {
+        if (!ods?.pdf) {
           unpingen().then((res) => {
             if (res) {
-              x.pdf = res; console.log('res', res);
+              ods.pdf = res; console.log('res', res);
             } else { alert('Error in unpingen') }
           })
         }
-        let myWindow = window.open(x.pdf, "_blank");
+        let myWindow = window.open(ods.pdf, "_blank");
         myWindow.onload = function () { myWindow.print(); }
       }
 
-
-      let qt = 0; let amt = 0;
-      // let x=window.aaa;
-      console.log(x);
-      let ods = x[0]; let pt = x[1];
       let doc = document.querySelector('#tembill');
       let gst = pt?.gst || ''; let gstz = ''; let stgst = '';
       if (gst) {
