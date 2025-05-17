@@ -788,9 +788,9 @@ function unpingen() {
           ord.eid = String(m); await oddb.od.put(ord, ord.id);
         }
       }
-      let vkz6 = { p: "31", "g": selg, "od": ord, "pt": pt, pin: { ...mk5 } };
+      let vkz6 = { p: "311", "g": selg, "od": ord, "pt": pt, pin: { ...mk5 } };
       let res = await sendd(urli, vkz6, 'unpin');
-      if (res.pdf) {
+      if (res?.pdf) {
         ord.pdf = res.pdf;
         await oddb.od.put(ord, ord.id); //(Number(d));
       }
