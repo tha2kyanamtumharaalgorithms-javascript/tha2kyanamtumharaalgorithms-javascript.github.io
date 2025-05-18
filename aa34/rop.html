@@ -610,7 +610,7 @@
               ord.eid = String(m); await oddb.od.put(ord, ord.id);
             }
           }
-          let vkz6 = { p: "311", "g": selg, "od": ord, "pt": pt, pin: { ...mk5 } };
+          let vkz6 = { p: "31", "g": selg, "od": ord, "pt": pt, pin: { ...mk5 } };
           let res = await sendd(urli, vkz6, 'unpin');
           if (res && res?.pdf) {
             ord.pdf = res.pdf; res = res.pdf;
@@ -659,7 +659,7 @@
         if (ods?.pdf) {
           let link = document.createElement('a');
           link.href = `https://my.gstzen.in${ods.pdf}`;
-          link.download = `Invoice_${ods.id}.pdf`;
+          link.download = `Invoice_${ods.eid}.pdf`;
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
