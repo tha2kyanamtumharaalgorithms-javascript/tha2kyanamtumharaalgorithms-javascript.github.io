@@ -56,6 +56,7 @@
 
 
   <br><br><iframe height='1000' id='ifm' style='padding: 0;margin: 0;' width='100%'></iframe>
+  <iframe height='1000' id='ifm1' style='padding: 0;margin: 0;' width='100%'></iframe>
   <div id='tembillx' style="display:none">
     <style id="style">
       @page {
@@ -593,14 +594,14 @@
         // let sel = y;// Object.keys(selod5);
         if (y) {
           // selgo(selg);
-          let mk5 = JSON.parse(localStorage.pin);
+          // let mk5 = JSON.parse(localStorage.pin);
           // let t = y//.pop();
           // let px1 = document.getElementById(t);
           // px1.parentNode.style.background = 'purple!important'; //px1.checked = false;
           // document.querySelector('#vtag [name=' + t + ']').innerText = '';
-          delete mk5[y];
+          // delete mk5[y];
           // selpin(selg);
-          localStorage.setItem('pin', JSON.stringify(mk5));
+          // localStorage.setItem('pin', JSON.stringify(mk5));
           let d = y.slice(3);
           await mthdb(selg.slice(-1) + d.slice(0, 6));
           let ord = await oddb.od.get(Number(d)); let pt = await db.pt.get(ord.pt);
@@ -657,7 +658,8 @@
             } else { alert('Error in unpingen') }
           })
         }
-        let myWindow = window.open('https://my.gstzen.in' + ods.pdf, "_blank");
+        // let myWindow = window.open("", "_blank");
+        window.frames[1].location.replace(`https://my.gstzen.in${ods.pdf}`)
         return 2;
         // myWindow.onload = function () { myWindow.print(); };
       } else {
