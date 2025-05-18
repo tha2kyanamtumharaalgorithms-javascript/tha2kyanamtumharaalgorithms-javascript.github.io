@@ -674,6 +674,9 @@
             let m = await getnmm();
             ods.eid = String(m); await oddb.od.put(ods, ods.id);
           }
+          let mk5 = JSON.parse(localStorage.pin);
+          let vkz6 = { p: "31", "g": selg, "od": ods, "pt": pt, pin: { ...mk5 } };
+          let rexx = await sendd(urli, vkz6, 'unpin');
         }
         let doc = document.querySelector('#tembill');
         let gst = pt?.gst || ''; let gstz = ''; let stgst = '';
