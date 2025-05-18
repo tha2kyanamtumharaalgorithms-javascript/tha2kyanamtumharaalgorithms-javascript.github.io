@@ -669,6 +669,12 @@
         return 2;
         // myWindow.onload = function () { myWindow.print(); };
       } else {
+        if (ods.tot && !ods?.eid) {
+          if (localStorage.gre === '555') { } else {
+            let m = await getnmm();
+            ods.eid = String(m); await oddb.od.put(ods, ods.id);
+          }
+        }
         let doc = document.querySelector('#tembill');
         let gst = pt?.gst || ''; let gstz = ''; let stgst = '';
         if (gst) {
