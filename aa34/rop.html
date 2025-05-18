@@ -558,19 +558,19 @@
         // console.log(c, i, m);
         sel.forEach(v => { document.getElementById(v).checked = false; delete selod5[v]; })
         selod5 = {};
-        let res = bill(m, lastsel);
+        let res = await bill(m, lastsel);
         // console.log('res', res);
         if (res != 2) {
           let temp1 = zz('#tembillx #tembill').cloneNode(true); pk.body.append(temp1);
-          setTimeout(() => {
-            if ((navigator.platform) === 'iPhone') {
-              let myWindow = window.open("", "_blank"); let body1 = myWindow.document.body;
-              body1.setAttribute('onclick', 'print()'); body1.style.margin = '0';
-              let tep0 = zz('#tembillx style').cloneNode(true);
-              let tep = pk.body.cloneNode(true); body1.append(tep0, tep);
-              myWindow.print(); myWindow.close();
-            } else { window.frames[0].print(); }
-          }, 50)
+          // setTimeout(() => {
+          if ((navigator.platform) === 'iPhone') {
+            let myWindow = window.open("", "_blank"); let body1 = myWindow.document.body;
+            body1.setAttribute('onclick', 'print()'); body1.style.margin = '0';
+            let tep0 = zz('#tembillx style').cloneNode(true);
+            let tep = pk.body.cloneNode(true); body1.append(tep0, tep);
+            myWindow.print(); myWindow.close();
+          } else { window.frames[0].print(); }
+          // }, 50)
         }
       } else { alert('Select order first!!') }
     }
