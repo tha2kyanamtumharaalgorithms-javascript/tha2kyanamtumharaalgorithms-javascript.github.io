@@ -680,7 +680,7 @@
         let add = `${pt.add && ('<br/>' + pt.add + (pt.pin && (', ' + pt.pin)))}`;
         doc.querySelector("#ptd").innerHTML = `<b style='font-size: 16px;'>${ods.cn}</b>${add}${pt.mn1 && ('<br/>Contact No.: ' + pt.mn1)}${gstz && ('<br/>GSTIN Number: ' + gst)}${gst && ('<br/>State: ' + stgst)}`;
 
-        doc.querySelector("#inno").innerHTML = `<p style='font-weight: 500;'>${gst && ('Place of Supply: ' + stgst)}</p><p>Invoice No.: ${ods.id}</p><p>Date: ${ods.dt}</p>`;
+        doc.querySelector("#inno").innerHTML = `<p style='font-weight: 500;'>${gst && ('Place of Supply: ' + stgst)}</p><p>Invoice No.: ${ods?.eid || ods.id}</p><p>Date: ${ods.dt}</p>`;
         let od1 = Object.keys(ods.od); let samplebulk = typeof ods.pc[Object.keys(ods.pc)[0]] == 'number';
         if ((od1.length || ods?.c?.length)) {
           let type = {};// qt
