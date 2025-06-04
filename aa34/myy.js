@@ -1484,7 +1484,7 @@ async function dlfn(v, id) {
     document.querySelector('.w3-bar.w3-panel').style.display = "";
     if (!dlid.st) {
       console.log(dlid.dl, myd, dlurl);
-      worker.postMessage([dlid, { method: 'POST', body: myd, headers: { 'Content-Type': 'application/json' } }]);
+      // worker.postMessage([dlid, { method: 'POST', body: myd, headers: { 'Content-Type': 'application/json' } }]);
       // document.querySelector("#allcor .loading").remove();
     }
   }
