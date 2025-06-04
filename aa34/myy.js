@@ -1434,20 +1434,28 @@ async function dlfn(v, id) {
       document.getElementById('tch').value = dlid.tch + och;
     }
 
-
-    if (id == 'rkb') {
-      let myl = "https://kcqawrffldi2xw.s3.ap-south-1.amazonaws.com/zcoyad/files/" + mhj + ".png"; dlid.durl = myl;
-      if (!dlid.st) {
-        await uplodimg(v9, ptd, myl); // upload always so book later
-      }
-    }
-
     let x;
     if (pk8) {
       x = await updateod('u');
     } else {
       x = await creatod();
     }
+
+    if (id == 'rkb') {
+      let myl = "https://kcqawrffldi2xw.s3.ap-south-1.amazonaws.com/zcoyad/files/" + mhj + ".png"; dlid.durl = myl;
+      if (!dlid.st) {
+        if (x.od.tot && !x.od?.eid) {
+          if (localStorage.gre === '555') { } else {
+            let m = await getnmm();
+            x.od.eid = String(m);
+            await mthdb(selg.slice(-1) + x.od.eid.slice(0, 6));
+            await oddb.od.put(x.od, x.od.id);
+          }
+        }
+        await uplodimg(x.od.eid || v9, ptd, myl); // upload always so book later
+      }
+    }
+
     console.log(x);
     let myd; dlid.id = x.od.id;
     if (id == 'shp') {
@@ -1461,7 +1469,7 @@ async function dlfn(v, id) {
       // await uplodimg(v9, ptd, myl); // upload always so book later
       // // }
       let pid = pe.title.split(',');
-      dlid.book = [new rkbs(x.ptd, dlid.c1, dlid.s1, dlid.durl, x.pcwt), new rkbf(x.od.id, x.od.inv[1], Number(pid[0]), Number(pid[1]), dlid.durl)];
+      dlid.book = [new rkbs(x.ptd, dlid.c1, dlid.s1, dlid.durl, x.pcwt), new rkbf(x.od.eid || x.od.id, x.od.inv[1], Number(pid[0]), Number(pid[1]), dlid.durl)];
       dlurl = "https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec";
       // dlurl = "https://script.google.com/macros/s/AKfycbxXWJGTlbU8oiXqBJ7a678POQhCC7sdcqlotW4mXKmiQiOBsjMCpOtywWjINo28GGLtDg/exec";
       myd = '';
