@@ -148,7 +148,7 @@ function odcount() { // numb.slice(4, 6) + Number(numb.slice(-7));
   return ((mth < 4) ? ((y - 1) + "" + y1).slice(2) : y1 + ("" + (y + 1)).slice(2)) + th + String(idf).padStart(7, 0);
 }
 
-function creatod() {
+function creatod(eid) {
   return new Promise(async (rez) => {
     let gd = document.getElementById("gsel").value;
     await viewtotal();
@@ -166,7 +166,7 @@ function creatod() {
     // } else {
     // let ptd={id:'a',cn:'',mn1:'',mn2:'',gst:'',add:'',ods:['as102','as33','ak508']};
     // zc(ptd,'hiii76868iiii');
-    zsr.id = odid;
+    zsr.id = odid; if (eid) { zsr.eid = eid; }
     zsr.cn = document.getElementById('u13').innerText;
     zsr.tot = odqt;
     zsr.bulk = Number(document.getElementById('bulkc').checked);
@@ -263,11 +263,11 @@ function creatod() {
   })
 }
 
-async function updateod(myz) {
+async function updateod(myz, eid) {
   return new Promise(async (rez) => {
     await viewtotal();
     document.querySelector('#tot table thead span').innerText = '#' + Number(String(pk8).slice(-7));
-    zsr.id = pk8;
+    zsr.id = pk8; if (eid) { zsr.eid = eid; }
     zsr.cn = document.getElementById('u13').innerText.replace(/\s+/g, ' ').trim();
     zsr.tot = odqt;
     zsr.bulk = Number(document.getElementById('bulkc').checked);
@@ -1434,26 +1434,28 @@ async function dlfn(v, id) {
       document.getElementById('tch').value = dlid.tch + och;
     }
 
-    let x;
-    if (pk8) {
-      x = await updateod('u');
-    } else {
-      x = await creatod();
-    }
 
+    let eid = '';
     if (id == 'rkb') {
       let myl = "https://kcqawrffldi2xw.s3.ap-south-1.amazonaws.com/zcoyad/files/" + mhj + ".png"; dlid.durl = myl;
       if (!dlid.st) {
-        if (x.od.tot && !x.od?.eid) {
+        if (odqt && !oldod?.eid) {
           if (localStorage.gre === '555') { } else {
             let m = await getnmm();
-            x.od.eid = String(m);
-            await mthdb(selg.slice(-1) + x.od.eid.slice(0, 6));
-            await oddb.od.put(x.od, x.od.id);
+            eid = String(m);
           }
+        } else if (oldod?.eid) {
+          eid = oldod.eid;
         }
-        await uplodimg(x.od.eid || v9, ptd, myl); // upload always so book later
+        await uplodimg(eid || v9, ptd, myl); // upload always so book later
       }
+    }
+
+    let x;
+    if (pk8) {
+      x = await updateod('u', eid);
+    } else {
+      x = await creatod(eid);
     }
 
     console.log(x);
@@ -1469,7 +1471,7 @@ async function dlfn(v, id) {
       // await uplodimg(v9, ptd, myl); // upload always so book later
       // // }
       let pid = pe.title.split(',');
-      dlid.book = [new rkbs(x.ptd, dlid.c1, dlid.s1, dlid.durl, x.pcwt), new rkbf(x.od.eid || x.od.id, x.od.inv[1], Number(pid[0]), Number(pid[1]), dlid.durl)];
+      dlid.book = [new rkbs(x.ptd, dlid.c1, dlid.s1, dlid.durl, x.pcwt), new rkbf(eid || x.od.id, x.od.inv[1], Number(pid[0]), Number(pid[1]), dlid.durl)];
       dlurl = "https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec";
       // dlurl = "https://script.google.com/macros/s/AKfycbxXWJGTlbU8oiXqBJ7a678POQhCC7sdcqlotW4mXKmiQiOBsjMCpOtywWjINo28GGLtDg/exec";
       myd = '';
