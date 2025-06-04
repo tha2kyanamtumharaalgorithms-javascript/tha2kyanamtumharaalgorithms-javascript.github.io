@@ -1441,7 +1441,7 @@ async function dlfn(v, id) {
       if (!dlid.st) {
         if (odqt && !oldod?.eid) {
           if (localStorage.gre === '555') { } else {
-            let m = await getnmm();
+            let m = '2526060003706'//'await getnmm();'
             eid = String(m);
           }
         } else if (oldod?.eid) {
