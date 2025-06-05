@@ -33,7 +33,7 @@ async function getods(gd) {
       await oddb.od.get(id).then(i => {
         let ifz = '';
         if (!(i.tot)) { ifz = "class='delt'" };
-        let duev1 = i.inv[1] - Number(lv[i.id]?.[1] || 0);
+        let duev1 = Math.ceil(i.inv[1]) - Number(lv[i.id]?.[1] || 0);
         let due = `<span tabindex='${duev1}'>${duev1}</span>`;//style='padding: 0 1.55em'
         let inp = "<input onclick='selod(this)' id='ods" + i.id + "' class='w3-check' type='checkbox'>";
         let vtag = "<span id='vtag' ><span name=" + 'ods' + i.id + ">" + "</span></span>" + book[1];
