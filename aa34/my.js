@@ -14,7 +14,7 @@ function loadScript(url) {
 
 async function getods(gd) {
   try {
-    selgo(gd);
+    selgo(gd); let lv = JSON.parse(localStorage.getItem('trp'));
     let j = JSON.parse(pinloc); let vb = '';
     let hmtl0 = '';
     for (let k in j) {
@@ -33,12 +33,13 @@ async function getods(gd) {
       await oddb.od.get(id).then(i => {
         let ifz = '';
         if (!(i.tot)) { ifz = "class='delt'" };
-        let gstr = "<span style='padding: 0 1.55em'></span>";
+        let duev1 = i.inv[1] - Number(lv[i.id]?.[1] || 0);
+        let due = `<span tabindex='${duev1}'>${duev1}</span>`;//style='padding: 0 1.55em'
         let inp = "<input onclick='selod(this)' id='ods" + i.id + "' class='w3-check' type='checkbox'>";
         let vtag = "<span id='vtag' ><span name=" + 'ods' + i.id + ">" + "</span></span>" + book[1];
         let nub = i.id.toString();
         nub = nub.slice(4, 6) + Number(nub.slice(-7));
-        hmtl0 = "<li " + book[0] + " id=s" + i.id + " " + "tabindex=" + i.pt + " " + ifz + ">" + inp + ' ' + "<b onclick='goadd(" + i.pt + ',' + i.id + ")'>" + nub + '. ' + i.cn + '</b>' + vtag + "<span onclick='opodli(this)'>" + i.tot + ' ' + gstr + ' ' + i.dt.slice(0, 6) + "</span></li>" + hmtl0;
+        hmtl0 = "<li " + book[0] + " id=s" + i.id + " " + "tabindex=" + i.pt + " " + ifz + ">" + inp + ' ' + "<b onclick='goadd(" + i.pt + ',' + i.id + ")'>" + nub + '. ' + i.cn + '</b>' + vtag + "<span onclick='opodli(this)'>" + i.tot + ' ' + due + ' ' + i.dt.slice(0, 6) + "</span></li>" + hmtl0;
       });
     }
     document.getElementById('oderli').innerHTML = hmtl0;
@@ -553,9 +554,37 @@ function clickonod(b, qwe5, doc) {
   let isOpen = b.parentElement.nextSibling?.id == 'gentblx';
   document.getElementById('gentblx')?.remove();
   if (!isOpen) {
-    b.parentElement.insertAdjacentHTML('afterend', "<div id='gentblx'><div style='font-weight: 600;display: flex;'><div class='w3-small w3-button w3-border-right w3-dark-grey' id='b" + qwe5 + "' onclick='editod(this)'>Edit</div><div onclick='copylink1(" + `"s${qwe5}"` + ")' class='w3-small w3-button w3-border-right w3-dark-grey w3-ripple'>Copy Link</div></div><div id='my55'>Sample Div</div></div>")
+    b.parentElement.insertAdjacentHTML('afterend', "<div id='gentblx'><div style='font-weight: 600;display: flex;'><div class='w3-small w3-button w3-border-right w3-dark-grey' id='b" + qwe5 + "' onclick='editod(this)'>Edit</div><div onclick='copylink1(" + `"s${qwe5}"` + ")' class='w3-small w3-button w3-border-right w3-dark-grey'>Link</div><input id='trid' oninput='pmtdf(0)' type='text' placeholder='Transaction ID' style='width: 140px;'><input id='tram' oninput='pmtdf(1)' type='text' placeholder='Amount' style='width: 60px;'></div><div id='my55'>Sample Div</div></div>")
     odtbl(doc.od, 'tblom1', 'my55');
+    let lv = JSON.parse(localStorage.getItem('trp'));
+    document.getElementById('trid').value = lv[qwe5][0] || '';
+    document.getElementById('tram').value = lv[qwe5][1] || '';
   }
+}
+
+(() => {
+  if (localStorage.trp) {
+    let lv = JSON.parse(localStorage.getItem('trp'));
+    let k = Object.entries(lv);
+    let pin = {};
+    if (k.length > 200) {
+      Object.keys(JSON.parse(localStorage.pin)).forEach((v) => {
+        if (lv[v]) { pin[v] = lv[v] }
+      })
+      k = k.slice(-200);
+      localStorage.setItem('trp', JSON.stringify({ ...Object.fromEntries(k), ...pin }));
+    }
+  } else { localStorage.setItem('trp', '{}'); }
+})();
+
+function pmtdf(d) {
+  let lv = JSON.parse(localStorage.getItem('trp'));
+  let id = document.getElementById('gentblx').previousSibling.id.slice(1);
+  let in1 = document.getElementById('trid').value;
+  let in2 = document.getElementById('tram').value;
+  lv[id] = [in1, in2];
+  console.log(lv);
+  localStorage.setItem('trp', JSON.stringify({ ...lv }));
 }
 
 let x1 = { 'XS': 0, 'S': 1, 'M': 2, 'L': 3, 'XL': 4, 'XXL': 5 };
@@ -713,11 +742,11 @@ async function pint(v) {
       await db.pt.get(pj).then((v) => {
         if (v) {
           !!(v.add) || (pxn.style.color = 'blue'); // if add=='' txt color blue
-          if (v.gst) {
-            let zw = pxn.querySelector('span[onclick] span');
-            zw.innerText = 'GST';
-            zw.style.padding = '';
-          }
+          // if (v.gst) {
+          //   let zw = pxn.querySelector('span[onclick] span');
+          //   zw.innerText = 'GST';
+          //   zw.style.padding = '';
+          // }
         } else {
           (pxn.style.color = 'red'); // if no party found txt color red
         }
@@ -738,10 +767,14 @@ function unpin() {
     let mk5 = JSON.parse(pinloc);
     for (const t in selod5) {
       let px1 = document.getElementById(t);
-      px1.parentNode.style.background = '#fff';
+      let p = px1.parentNode; px1.checked = false;
+      if (p.querySelector('span+span span').tabIndex != 0) {
+        snackbar(px1.nextElementSibling.innerText + ' Payment Pending', 1000)
+        continue;
+      }
+      p.style.background = '#fff';
       document.querySelector('#vtag [name=' + t + ']').innerText = '';
       delete mk5[t];
-      px1.checked = false;
     }
     selpin(selg);
     localStorage.setItem(pinz, JSON.stringify(mk5));
@@ -773,7 +806,9 @@ function unpingen() {
       let mk5 = JSON.parse(pinloc);
       let t = sel.pop();
       let px1 = document.getElementById(t);
-      px1.parentNode.style.background = 'purple!important'; //px1.checked = false;
+      let p = px1.parentNode; px1.checked = false;
+      if (p.querySelector('span+span span').tabIndex != 0) { rez(snackbar('Payment Pending', 1000)); return }
+      p.style.background = 'purple!important'; //px1.checked = false;
       document.querySelector('#vtag [name=' + t + ']').innerText = '';
       delete mk5[t];
       selpin(selg);
