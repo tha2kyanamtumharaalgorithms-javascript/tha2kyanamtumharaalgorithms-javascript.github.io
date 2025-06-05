@@ -764,12 +764,13 @@ function unpin() {
   // });
   if (sel.length) {
     selgo(selg);
-    let mk5 = JSON.parse(pinloc);
+    let mk5 = JSON.parse(pinloc); let paypending = true;
     for (const t in selod5) {
       let px1 = document.getElementById(t);
       let p = px1.parentNode; px1.checked = false;
       if (p.querySelector('span+span span').tabIndex != 0) {
-        snackbar(px1.nextElementSibling.innerText + ' Payment Pending', 1000)
+        paypending = false;
+        snackbar(px1.nextElementSibling.innerText + ' Payment Pending', 1000);
         continue;
       }
       p.style.background = '#fff';
@@ -780,7 +781,9 @@ function unpin() {
     localStorage.setItem(pinz, JSON.stringify(mk5));
     selod5 = {};
     let vkz6 = { p: "3", "g": selg, od: { ...mk5 } };
-    snackbar('Unpined', 500);
+    if (paypending) {
+      snackbar('Unpined', 500);
+    }
     sendd(urli, vkz6, 'unpin');
   } else { alert('Select order first.') }
 }
