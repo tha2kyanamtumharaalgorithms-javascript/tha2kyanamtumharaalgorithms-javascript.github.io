@@ -43,8 +43,9 @@
       <input type="text" class="w3-bar-item w3-input w3-border" style="padding: 8px;float: right;"
         placeholder="Party Name/Bill No.">
     </div>
-    <div class="w3-bar w3-aqua">
-      <button onclick="printbill()" class="w3-bar-item w3-button w3-blue w3-xlarge">Print</button>
+    <div class="w3-aqua">
+      <button onclick="printbill()" class="w3-button w3-blue w3-xlarge">PrintGen</button>
+      <button onclick="printbill('nbill')" class="w3-right w3-button w3-blue w3-xlarge">Print</button>
     </div>
     <ul id="ptdli" class="w3-ul w3-hoverable">
       <li><input class="w3-check" type="checkbox">
@@ -546,7 +547,7 @@
 
     // print selected order
     // let nmold;
-    async function printbill() {
+    async function printbill(sd) {
       let pk = window.frames[0].document;
       pk.body.innerHTML = ''; let sel = Object.keys(selod5);
       if (sel.length != 0) {
@@ -555,6 +556,7 @@
         // c++; nmold = '';
         let lastsel = sel[sel.length - 1]
         let m = await getcd(lastsel);
+        if (sd === 'nbill') { delete m[0].gst }
         // console.log(c, i, m);
         sel.forEach(v => { document.getElementById(v).checked = false; delete selod5[v]; })
         selod5 = {};
