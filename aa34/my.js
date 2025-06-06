@@ -557,8 +557,10 @@ function clickonod(b, qwe5, doc) {
     b.parentElement.insertAdjacentHTML('afterend', "<div id='gentblx'><div style='font-weight: 600;display: flex;'><div class='w3-small w3-button w3-border-right w3-dark-grey' id='b" + qwe5 + "' onclick='editod(this)'>Edit</div><div onclick='copylink1(" + `"s${qwe5}"` + ")' class='w3-small w3-button w3-border-right w3-dark-grey'>Link</div><input id='trid' oninput='pmtdf(0)' type='text' placeholder='Transaction ID' style='width: 140px;'><input id='tram' oninput='pmtdf(1)' type='text' placeholder='Amount' style='width: 60px;'></div><div id='my55'>Sample Div</div></div>")
     odtbl(doc.od, 'tblom1', 'my55');
     let lv = JSON.parse(localStorage.getItem('trp'));
-    document.getElementById('trid').value = lv[qwe5][0] || '';
-    document.getElementById('tram').value = lv[qwe5][1] || '';
+    if (lv[qwe5]) {
+      document.getElementById('trid').value = lv[qwe5][0];
+      document.getElementById('tram').value = lv[qwe5][1];
+    }
   }
 }
 
@@ -638,6 +640,17 @@ function selod(h) {
   } else {
     delete selod5[er5];
     !Object.keys(selod5).length && (secid = '');
+  }
+
+  let cv = document.querySelector('#gentblx #tram')
+  if (cv) {
+    (async () => {
+      let id = er5.slice(3);
+      await mthdb(selg.slice(-1) + id.slice(0, 6));
+      const an = await oddb.od.get(Number(id));
+      let v = Math.ceil(an.inv[1]) - Number(cv.value || 0);
+      document.querySelector('#s' + id + ' span+span span').outerHTML = `<span tabindex='${v}'>${v}</span>`;
+    })();
   }
   console.log(selod5, secid);
 }

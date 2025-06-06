@@ -25,6 +25,7 @@ function sendd(urld, d9, b, q) {
         break;
     }
 
+    if (d9.od.cn.slice(0, 7) === "instock") { return rez(); }
     let fmd = new FormData(); fmd.append("myd", JSON.stringify(d9)); console.log(fmd);
     await fetch(urld, { method: 'POST', body: fmd }).then(async (res) => {
       const data = await res.json();

@@ -61,7 +61,7 @@ async function editod(tp) {
   await mthdb(selg.slice(-1) + String(pk8).slice(0, 6));
   await oddb.od.get(pk8).then((doc) => {
     let ht = doc.cn;
-    if (ht === "instock") {
+    if (ht.slice(0, 7) === "instock") {
       document.getElementById('instock1').checked = true; xcxv();
     }
     oldod = doc;
