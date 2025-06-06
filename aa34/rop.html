@@ -556,7 +556,7 @@
         // c++; nmold = '';
         let lastsel = sel[sel.length - 1]
         let m = await getcd(lastsel);
-        if (sd === 'nbill') { delete m[0].gst }
+        if (sd === 'nbill') { delete m[0].gst; m[0].eid = m[0].id }
         // console.log(c, i, m);
         sel.forEach(v => { document.getElementById(v).checked = false; delete selod5[v]; })
         selod5 = {};
