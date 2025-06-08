@@ -649,7 +649,7 @@ function selod(h) {
       await mthdb(selg.slice(-1) + id.slice(0, 6));
       const an = await oddb.od.get(Number(id));
       let v = Math.ceil(an.inv[1]) - Number(cv.value || 0);
-      document.querySelector('#s' + id + ' span+span span').outerHTML = `<span tabindex='${v}'>${v}</span>`;
+      document.querySelector('#s' + id + ' span[tabindex]').outerHTML = `<span tabindex='${v}'>${v}</span>`;
     })();
   }
   console.log(selod5, secid);
@@ -781,7 +781,7 @@ function unpin() {
     for (const t in selod5) {
       let px1 = document.getElementById(t);
       let p = px1.parentNode; px1.checked = false;
-      if (p.querySelector('span+span span').tabIndex != 0) {
+      if (p.querySelector('span[tabindex]').tabIndex != 0) {
         paypending = false;
         snackbar(px1.nextElementSibling.innerText + ' Payment Pending', 1000);
         continue;
@@ -823,7 +823,7 @@ function unpingen() {
       let t = sel.pop();
       let px1 = document.getElementById(t);
       let p = px1.parentNode; px1.checked = false;
-      if (p.querySelector('span+span span').tabIndex != 0) { rez(snackbar('Payment Pending', 1000)); return }
+      if (p.querySelector('span[tabindex]').tabIndex != 0) { rez(snackbar('Payment Pending', 1000)); return }
       p.style.background = 'purple!important'; //px1.checked = false;
       document.querySelector('#vtag [name=' + t + ']').innerText = '';
       delete mk5[t];
