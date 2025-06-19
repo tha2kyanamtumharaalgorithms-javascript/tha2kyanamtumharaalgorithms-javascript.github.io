@@ -2,7 +2,7 @@
   "name": "BulkPlainTshirt.com",
   "short_name": "BulkPlainTshirt",
   "description": "India's leading bulk t-shirt manufacturer and supplier",
-  "start_url": "/",
+  "start_url": "/aa34/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#007bff",
@@ -13,37 +13,37 @@
   ],
   "icons": [
     {
-      "src": "/icon/128.png",
+      "src": "/aa34/icon/128.png",
       "sizes": "128x128",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon/144.png",
+      "src": "/aa34/icon/144.png",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon/152.png",
+      "src": "/aa34/icon/152.png",
       "sizes": "152x152",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon/192.png",
+      "src": "/aa34/icon/192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon/256.png",
+      "src": "/aa34/icon/256.png",
       "sizes": "256x256",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon/512.png",
+      "src": "/aa34/icon/512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
