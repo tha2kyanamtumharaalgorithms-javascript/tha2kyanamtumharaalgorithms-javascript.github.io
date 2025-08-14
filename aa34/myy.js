@@ -267,7 +267,8 @@ async function updateod(myz, eid) {
   return new Promise(async (rez) => {
     await viewtotal();
     document.querySelector('#tot table thead span').innerText = '#' + Number(String(pk8).slice(-7));
-    zsr.id = pk8; if (eid) { zsr.eid = eid; }
+    zsr.id = pk8; if (eid) { zsr.eid = eid; } else if (oldod.eid) { zsr.eid = oldod.eid; }
+
     zsr.cn = document.getElementById('u13').innerText.replace(/\s+/g, ' ').trim();
     zsr.tot = odqt;
     zsr.bulk = Number(document.getElementById('bulkc').checked);

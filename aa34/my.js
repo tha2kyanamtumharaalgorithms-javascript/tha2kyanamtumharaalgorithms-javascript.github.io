@@ -34,7 +34,8 @@ async function getods(gd) {
         let ifz = '';
         if (!(i.tot)) { ifz = "class='delt'" };
         let duev1 = Math.ceil(i.inv[1]) - Number(lv[i.id]?.[1] || 0);
-        let due = `<span tabindex='${duev1}'>${duev1}</span>`;//style='padding: 0 1.55em'
+        let generated = i.eid ? 'gen' : '';
+        let due = `<span class="${generated}" tabindex='${duev1}'>${duev1}</span>`;//style='padding: 0 1.55em'
         let inp = "<input onclick='selod(this)' id='ods" + i.id + "' class='w3-check' type='checkbox'>";
         let vtag = "<span id='vtag' ><span name=" + 'ods' + i.id + ">" + "</span></span>" + book[1];
         let nub = i.id.toString();
@@ -826,26 +827,29 @@ function unpingen() {
       if (p.querySelector('span[tabindex]').tabIndex != 0) { rez(snackbar('Payment Pending', 1000)); return }
       p.style.background = 'purple!important'; //px1.checked = false;
       document.querySelector('#vtag [name=' + t + ']').innerText = '';
-      delete mk5[t];
-      selpin(selg);
-      localStorage.setItem(pinz, JSON.stringify(mk5));
-      for (let u in selod5) { document.getElementById(u).checked = false; } selod5 = {};
       let d = t.slice(3);
       await mthdb(selg.slice(-1) + d.slice(0, 6));
       let ord = await oddb.od.get(Number(d)); let pt = await db.pt.get(ord.pt);
-      if (ord.tot && !ord?.eid) {
-        if (localStorage.gre === '555') { } else {
-          let m = await getnmm();
-          ord.eid = String(m); await oddb.od.put(ord, ord.id);
+      if (!ord.pdf) {
+        delete mk5[t]; selpin(selg);
+        localStorage.setItem(pinz, JSON.stringify(mk5));
+        for (let u in selod5) { document.getElementById(u).checked = false; } selod5 = {};
+        if (ord.tot && !ord?.eid) {
+          if (localStorage.gre === '555') { } else {
+            let m = await getnmm();
+            ord.eid = String(m); await oddb.od.put(ord, ord.id);
+          }
         }
+        let vkz6 = { p: "31", "g": selg, "od": ord, "pt": pt, pin: { ...mk5 } };
+        let res = await sendd(urli, vkz6, 'unpin');
+        if (res && res?.pdf) {
+          ord.pdf = res.pdf;
+          await oddb.od.put(ord, ord.id); //(Number(d));
+        }
+        snackbar('Unpined and E-invoice Generated', 1300);
+      } else {
+        alert('E-invoice already generated.');
       }
-      let vkz6 = { p: "31", "g": selg, "od": ord, "pt": pt, pin: { ...mk5 } };
-      let res = await sendd(urli, vkz6, 'unpin');
-      if (res && res?.pdf) {
-        ord.pdf = res.pdf;
-        await oddb.od.put(ord, ord.id); //(Number(d));
-      }
-      snackbar('Unpined and E-invoice Generated', 1300);
       rez();
     } else { alert('Select order first.') }
   })

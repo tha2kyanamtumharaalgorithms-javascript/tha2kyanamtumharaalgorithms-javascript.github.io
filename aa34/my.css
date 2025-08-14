@@ -343,6 +343,10 @@ ul#m1list li {
   border-radius: 7px;
 }
 
+#oderli span[onclick="opodli(this)"] span.gen {
+  background-color: #000 !important;
+}
+
 #oderli li b {
   font-weight: inherit;
 }
