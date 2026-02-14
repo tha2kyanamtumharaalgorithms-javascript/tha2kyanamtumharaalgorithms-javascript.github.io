@@ -1464,7 +1464,7 @@ async function dlfn(v, id) {
     // let m = x.od.id + jm; x.od.id = m;
     let myd; dlid.id = x.od.id;
     if (id == 'shp') {
-      dlid.book = new shbook(jm + dlid.id, dlid.c, dlid.s, x.od.tot, x.od.inv[1], x.pcwt, x.ptd.cn, x.ptd.add.replace(/\s+/g, ' ').trim(), x.ptd.pin, x.ptd.mn1, x.ptd.mn2);
+      dlid.book = new shbook(jm + dlid.id, dlid.c, dlid.s, x.od.tot, x.od.inv[1], x.pcwt, x.ptd.cn, x.ptd.add.replace(/\s+/g, ' ').trim(), x.ptd.pin, x.ptd.mn1, '');
       dlurl += '/shp/' + dlid.coid;
       myd = JSON.stringify(dlid.book);
       console.log(dlurl);
