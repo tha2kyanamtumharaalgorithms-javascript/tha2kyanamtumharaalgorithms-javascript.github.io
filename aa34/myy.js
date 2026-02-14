@@ -1460,9 +1460,11 @@ async function dlfn(v, id) {
     }
 
     console.log(x);
+    let jm = (x.ptd?.mn2?.slice(0, 1) === 'D' ? 'D' : '');
+    // let m = x.od.id + jm; x.od.id = m;
     let myd; dlid.id = x.od.id;
     if (id == 'shp') {
-      dlid.book = new shbook(x.od.id, dlid.c, dlid.s, x.od.tot, x.od.inv[1], x.pcwt, x.ptd.cn, x.ptd.add.replace(/\s+/g, ' ').trim(), x.ptd.pin, x.ptd.mn1, x.ptd.mn2);
+      dlid.book = new shbook(jm + dlid.id, dlid.c, dlid.s, x.od.tot, x.od.inv[1], x.pcwt, x.ptd.cn, x.ptd.add.replace(/\s+/g, ' ').trim(), x.ptd.pin, x.ptd.mn1, x.ptd.mn2);
       dlurl += '/shp/' + dlid.coid;
       myd = JSON.stringify(dlid.book);
       console.log(dlurl);
@@ -1472,12 +1474,12 @@ async function dlfn(v, id) {
       // await uplodimg(v9, ptd, myl); // upload always so book later
       // // }
       let pid = pe.title.split(',');
-      dlid.book = [new rkbs(x.ptd, dlid.c1, dlid.s1, dlid.durl, x.pcwt), new rkbf(eid || x.od.id, x.od.inv[1], Number(pid[0]), Number(pid[1]), dlid.durl)];
+      dlid.book = [new rkbs(x.ptd, dlid.c1, dlid.s1, dlid.durl, x.pcwt), new rkbf(jm + (eid || x.od.id), x.od.inv[1], Number(pid[0]), Number(pid[1]), dlid.durl)];
       dlurl = "https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec";
       // dlurl = "https://script.google.com/macros/s/AKfycbxXWJGTlbU8oiXqBJ7a678POQhCC7sdcqlotW4mXKmiQiOBsjMCpOtywWjINo28GGLtDg/exec";
       myd = '';
     } else if ((id == 'dl0') || (id == 'dl1') || (id == 'dl2')) {
-      dlid.book = new Dl0(x);
+      dlid.book = new Dl0(x); dlid.book.order = jm + dlid.book.order;
       dlurl = "https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws/del/" + id;
       myd = 'format=json&data=' + JSON.stringify(dlid.book);
     }
