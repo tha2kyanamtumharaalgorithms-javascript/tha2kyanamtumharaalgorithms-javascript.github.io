@@ -68,6 +68,11 @@
       <div class="w3-bar" style="margin:0;padding:2px 8px;">
         <input id="exportFromOd" type="text" inputmode="numeric" placeholder="From#" style="width:130px;padding:6px;border:1px solid #ccc;vertical-align:middle"><input id="exportToOd" type="text" inputmode="numeric" placeholder="To#" style="width:130px;padding:6px;border:1px solid #ccc;border-left:none;vertical-align:middle"><button class="w3-button w3-green" style="padding:6px 16px;vertical-align:middle" onclick="exportSold()">Export</button>
       </div>
+      <div class="w3-bar" style="margin:0;padding:2px 8px;background:#f1f1f1;border-top:1px solid #ddd;">
+        <input id="liveStartOd" type="text" inputmode="numeric" placeholder="Live From Order#" style="width:160px;padding:6px;border:1px solid #ccc;vertical-align:middle" onchange="setLiveStartOd()">
+        <button id="liveLockBtn" class="w3-button w3-amber" style="padding:6px 12px;vertical-align:middle" onclick="toggleLiveLock()">Unlocked</button>
+        <span id="liveSyncStatus" style="font-size:11px;color:#666;vertical-align:middle;margin-left:8px;"></span>
+      </div>
       <div id='p78' class="w3-bar w3-blue" style="display: none">
         <button id='p781' name="ods" class="w3-bar-item w3-button w3-border-right" onclick="indb(this)">Delhi</button>
         <button disabled id='p782' name="odt" class="w3-bar-item w3-button w3-border-right">Tiruppur</button>
