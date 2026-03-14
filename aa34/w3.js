@@ -190,11 +190,12 @@ setTimeout(function() {
   if (el) {
     el.value = localStorage.getItem('liveSheetStartOd') || '';
     if (localStorage.getItem('liveSheetLocked') === '1') {
-      el.readOnly = true;
+      el.disabled = true;
+      el.style.background = '#eee';
       let btn = document.getElementById('liveLockBtn');
       btn.textContent = 'Locked';
-      btn.classList.remove('w3-amber');
-      btn.classList.add('w3-red');
+      btn.style.background = '#c0392b';
+      btn.style.color = '#fff';
     }
   }
 }, 500);
@@ -212,20 +213,22 @@ function setLiveStartOd() {
 function toggleLiveLock() {
   let inp = document.getElementById('liveStartOd');
   let btn = document.getElementById('liveLockBtn');
-  if (inp.readOnly) {
+  if (inp.disabled) {
     // Unlock
-    inp.readOnly = false;
+    inp.disabled = false;
+    inp.style.background = '#fff';
     btn.textContent = 'Unlocked';
-    btn.classList.remove('w3-red');
-    btn.classList.add('w3-amber');
+    btn.style.background = '#ffc107';
+    btn.style.color = '#000';
     localStorage.setItem('liveSheetLocked', '0');
   } else {
     // Lock
     if (!inp.value.trim()) { alert('Enter a starting order number first'); return; }
-    inp.readOnly = true;
+    inp.disabled = true;
+    inp.style.background = '#eee';
     btn.textContent = 'Locked';
-    btn.classList.remove('w3-amber');
-    btn.classList.add('w3-red');
+    btn.style.background = '#c0392b';
+    btn.style.color = '#fff';
     localStorage.setItem('liveSheetLocked', '1');
     localStorage.setItem('liveSheetStartOd', inp.value.trim());
   }
