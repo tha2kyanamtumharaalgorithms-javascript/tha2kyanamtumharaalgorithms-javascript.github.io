@@ -95,7 +95,16 @@ async function expStock() {
   await newc1()
 }
 
+// Auto-fill export input with last exported order number on load
+setTimeout(function() {
+  let el = document.getElementById('exportFromOd');
+  if (el) el.value = localStorage.getItem('lastExportedOdNum') || '';
+}, 500);
+
 async function exportSold() {
+  let inp = document.getElementById('exportFromOd');
+  let fromNum = Number(inp.value) || 0;
+
   // 1. Collect all order IDs from all godowns
   let godowns = [
     { key: 'pin', prefix: 'ods' },
@@ -107,32 +116,26 @@ async function exportSold() {
   for (let g of godowns) {
     let data = JSON.parse(localStorage.getItem(g.key) || '{}');
     for (let k in data) {
-      allOrderKeys.push({ key: k, prefix: g.prefix });
+      let idNum = Number(k.slice(g.prefix.length));
+      if (idNum > fromNum) allOrderKeys.push({ key: k, prefix: g.prefix, id: idNum });
     }
   }
 
-  // 2. Filter out already exported
-  let exported = JSON.parse(localStorage.getItem('exportedIds') || '[]');
-  let exportedSet = new Set(exported);
-  let newKeys = allOrderKeys.filter(o => !exportedSet.has(o.key));
+  if (!allOrderKeys.length) { alert('No new orders to export'); return; }
 
-  if (!newKeys.length) { alert('No new orders to export'); return; }
-
-  // 3. Load orders and aggregate by product/color/size
+  // 2. Load orders and aggregate by product/color/size
   let all = {};
-  let exportedNow = [];
+  let maxId = fromNum;
+  let orderCount = 0;
   let lastDb = '';
-  for (let o of newKeys) {
-    let k = o.key;
-    let prefixLen = o.prefix.length; // 3 for ods/odt/odk, 4 for odpd
-    let dbPrefix = o.prefix.slice(-1); // s, t, k, d
-    let idStr = k.slice(prefixLen);
+  for (let o of allOrderKeys) {
+    let dbPrefix = o.prefix.slice(-1);
+    let idStr = o.key.slice(o.prefix.length);
     let monthCode = dbPrefix + idStr.slice(0, 6);
-    let orderId = Number(idStr);
 
     if (lastDb !== monthCode) { await mthdb(monthCode); lastDb = monthCode; }
-    let order = await oddb.od.get(orderId);
-    if (!order || !order.tot) continue; // skip deleted orders
+    let order = await oddb.od.get(o.id);
+    if (!order || !order.tot) continue;
 
     let kk = order.od;
     for (let t in kk) {
@@ -144,12 +147,13 @@ async function exportSold() {
         }
       }
     }
-    exportedNow.push(k);
+    if (o.id > maxId) maxId = o.id;
+    orderCount++;
   }
 
-  if (!exportedNow.length) { alert('No new orders to export'); return; }
+  if (!orderCount) { alert('No new orders to export'); return; }
 
-  // 4. Build CSV rows: Product Name, Color, Size, Quantity
+  // 3. Build CSV rows: Product Name, Color, Size, Quantity
   let csv = [];
   let grandTotal = 0;
   for (let t in all) {
@@ -163,7 +167,7 @@ async function exportSold() {
   }
   csv.push(`startxrow,${grandTotal},,`);
 
-  // 5. Download CSV file
+  // 4. Download CSV file
   let csvString = csv.join('\r\n');
   let blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
   let url = URL.createObjectURL(blob);
@@ -176,8 +180,8 @@ async function exportSold() {
   a.click();
   document.body.removeChild(a);
 
-  // 6. Save exported IDs to localStorage
-  let allExported = [...exported, ...exportedNow];
-  localStorage.setItem('exportedIds', JSON.stringify(allExported));
-  alert('Exported ' + exportedNow.length + ' orders (' + grandTotal + ' total qty)');
+  // 5. Auto-fill input with last exported order number
+  inp.value = maxId;
+  localStorage.setItem('lastExportedOdNum', String(maxId));
+  alert('Exported ' + orderCount + ' orders (' + grandTotal + ' total qty)');
 }
