@@ -1247,7 +1247,7 @@ function openCourierSettings() {
   } else {
     let html = '';
     shpNames.forEach(name => {
-      let checked = shpSelected.includes(name) ? 'checked' : '';
+      let checked = (!shpSelected.length || shpSelected.includes(name)) ? 'checked' : '';
       html += `<label class="w3-block w3-padding-small"><input type="checkbox" class="w3-check shpCheck" value="${name}" ${checked}> ${name}</label>`;
     });
     shpEl.innerHTML = html;
@@ -1261,7 +1261,7 @@ function openCourierSettings() {
   } else {
     let html = '';
     rkbNames.forEach(name => {
-      let checked = rkbSelected.includes(name) ? 'checked' : '';
+      let checked = (!rkbSelected.length || rkbSelected.includes(name)) ? 'checked' : '';
       html += `<label class="w3-block w3-padding-small"><input type="checkbox" class="w3-check rkbCheck" value="${name}" ${checked}> ${name}</label>`;
     });
     rkbEl.innerHTML = html;
