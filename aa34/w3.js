@@ -403,10 +403,13 @@ async function fetchLiveWebStartOdFromSheet() {
 function setLiveWebStartOd() {
   let val = document.getElementById('liveWebStartOd').value.trim();
   if (val) {
+    // New starting order = fresh memory (old orders no longer relevant)
+    clearLiveWebSeenOrders();
     localStorage.setItem('liveWebSheetStartOd', val);
     syncLiveWebSheet();
   } else {
     localStorage.removeItem('liveWebSheetStartOd');
+    clearLiveWebSeenOrders();
   }
 }
 
@@ -444,6 +447,27 @@ function debounceSyncLiveWebSheet() {
 var _liveWebSheetUrl = 'https://docs.google.com/spreadsheets/d/1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0/gviz/tq?tqx=out:csv&sheet=PendingOrder';
 var _liveWebPollTimer = null;
 
+// Persistent memory of all orders ever seen — survives page reload
+// Key: orderId, Value: { od: {...} } (the order items data)
+// This prevents losing orders that are packed & marked "done" before next poll
+var _liveWebSeenOrders = {};
+(function() {
+  try {
+    let saved = localStorage.getItem('liveWebSeenOrders');
+    if (saved) _liveWebSeenOrders = JSON.parse(saved);
+  } catch(e) {}
+})();
+
+function _saveLiveWebSeenOrders() {
+  try { localStorage.setItem('liveWebSeenOrders', JSON.stringify(_liveWebSeenOrders)); } catch(e) {}
+}
+
+// Call this when startOd changes to clear old memory
+function clearLiveWebSeenOrders() {
+  _liveWebSeenOrders = {};
+  localStorage.removeItem('liveWebSeenOrders');
+}
+
 async function syncLiveWebSheet() {
   let startOd = localStorage.getItem('liveWebSheetStartOd');
   if (!startOd) return;
@@ -465,9 +489,8 @@ async function syncLiveWebSheet() {
     let csvText = await res.text();
 
     // Parse CSV rows - each row: "orderID||Pending","JSON_data"
-    let all = {};
-    let orderCount = 0;
     let lines = csvText.split('\n');
+    let currentPanelIds = {};
 
     for (let line of lines) {
       line = line.trim();
@@ -492,13 +515,25 @@ async function syncLiveWebSheet() {
       let orderData;
       try { orderData = JSON.parse(jsonStr); } catch (e) { continue; }
 
-      // Skip orders with hold status
-      // if (orderData.hold) continue;
-
       let kk = orderData.od;
       if (!kk || typeof kk !== 'object') continue;
 
-      // Aggregate: type > color > size > qty
+      // Save/update this order in persistent memory
+      // If order is still on panel, always update (picks up edits)
+      _liveWebSeenOrders[orderId] = { od: kk };
+      currentPanelIds[orderId] = true;
+    }
+
+    _saveLiveWebSeenOrders();
+
+    // Aggregate from ALL ever-seen orders (not just current panel)
+    let all = {};
+    let orderCount = 0;
+
+    for (let oid in _liveWebSeenOrders) {
+      let kk = _liveWebSeenOrders[oid].od;
+      if (!kk || typeof kk !== 'object') continue;
+
       for (let t in kk) {
         all[t] = all[t] || {};
         for (let c in kk[t]) {
@@ -550,20 +585,20 @@ async function syncLiveWebSheet() {
   }
 }
 
-// Auto-poll: fetch from dashboard every 5 minutes to catch live updates
+// Auto-poll: fetch from dashboard every 30 seconds to catch orders before they're done
 function startLiveWebPoll() {
   if (_liveWebPollTimer) clearInterval(_liveWebPollTimer);
   let startOd = localStorage.getItem('liveWebSheetStartOd');
   if (!startOd) return;
-  // Poll every 300 seconds (5 min) - similar to dashboard's 400s
+  // Poll every 30 seconds — orders can be packed & done within minutes
   _liveWebPollTimer = setInterval(function() {
     let h = new Date().getHours();
     // Only poll during working hours 8AM-10PM
     if (h >= 8 && h <= 22) {
       syncLiveWebSheet();
     }
-  }, 300000);
-  console.log('Live web polling started (every 5 min)');
+  }, 30000);
+  console.log('Live web polling started (every 30 sec)');
 }
 
 function stopLiveWebPoll() {
