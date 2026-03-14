@@ -1180,12 +1180,13 @@ async function gosh(obj1, obj2, obj3) {
             if (v.status == 200) {
               let d = v.data.available_courier_companies;
               console.log(d);
+              let allShpNames = JSON.parse(localStorage.shpAllCouriers || '[]');
+              d.forEach((v) => { if (!allShpNames.includes(v.courier_name)) allShpNames.push(v.courier_name); });
+              localStorage.shpAllCouriers = JSON.stringify(allShpNames);
+              let selectedShp = localStorage.shpSelectedCouriers ? JSON.parse(localStorage.shpSelectedCouriers) : null;
               d.forEach((v) => {
-                let cor = String(v.courier_name);
-                // console.log(cor)
-                if (cor.includes("Blue Dart") || cor.includes("Delhivery") || cor.includes("Amazon") || cor.includes("DTDC")) {
-                  list += `<div id="shp" tabindex="${v.courier_company_id}" class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Save</a><i> ETD: ${v.etd} </i><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Book</a><i class="w3-right">${v.is_surface ? 'Surface' : 'Air'}</i></div>`;
-                }
+                if (selectedShp && !selectedShp.includes(v.courier_name)) return;
+                list += `<div id="shp" tabindex="${v.courier_company_id}" class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Save</a><i> ETD: ${v.etd} </i><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Book</a><i class="w3-right">${v.is_surface ? 'Surface' : 'Air'}</i></div>`;
               })
               document.getElementById('allcor').innerHTML = list + document.getElementById('allcor').innerHTML;
             }
@@ -1200,12 +1201,13 @@ async function gosh(obj1, obj2, obj3) {
           if (v.status == 200) {
             let d = v.data.available_courier_companies;
             console.log(d);
+            let allShpNames = JSON.parse(localStorage.shpAllCouriers || '[]');
+            d.forEach((v) => { if (!allShpNames.includes(v.courier_name)) allShpNames.push(v.courier_name); });
+            localStorage.shpAllCouriers = JSON.stringify(allShpNames);
+            let selectedShp = localStorage.shpSelectedCouriers ? JSON.parse(localStorage.shpSelectedCouriers) : null;
             d.forEach((v) => {
-              let cor = String(v.courier_name);
-              // console.log(cor)
-              if (cor.includes("Blue Dart") || cor.includes("Delhivery") || cor.includes("Amazon") || cor.includes("DTDC")) {
-                list += `<div id="shp" tabindex="${v.courier_company_id}" class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Save</a><i> ETD: ${v.etd} </i><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Book</a><i class="w3-right">${v.is_surface ? 'Surface' : 'Air'}</i></div>`;
-              }
+              if (selectedShp && !selectedShp.includes(v.courier_name)) return;
+              list += `<div id="shp" tabindex="${v.courier_company_id}" class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Save</a><i> ETD: ${v.etd} </i><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Book</a><i class="w3-right">${v.is_surface ? 'Surface' : 'Air'}</i></div>`;
             })
             document.getElementById('allcor').innerHTML = list + document.getElementById('allcor').innerHTML;
           }; rez();
@@ -1236,29 +1238,52 @@ async function gosh(obj1, obj2, obj3) {
 
 function openCourierSettings() {
   w3_close();
-  let names = localStorage.rkbAllCouriers ? JSON.parse(localStorage.rkbAllCouriers) : [];
-  let selected = localStorage.rkbSelectedCouriers ? JSON.parse(localStorage.rkbSelectedCouriers) : null;
-  let el = document.getElementById('rkbCourierList');
-  if (names.length === 0) {
-    el.innerHTML = '<p>Open courier rates for any order first to load courier names.</p>';
+  // ShipRocket couriers
+  let shpNames = localStorage.shpAllCouriers ? JSON.parse(localStorage.shpAllCouriers) : [];
+  let shpSelected = localStorage.shpSelectedCouriers ? JSON.parse(localStorage.shpSelectedCouriers) : [];
+  let shpEl = document.getElementById('shpCourierList');
+  if (shpNames.length === 0) {
+    shpEl.innerHTML = '<p>Open courier rates for any order first to load courier names.</p>';
   } else {
     let html = '';
-    names.forEach(name => {
-      let checked = (selected === null || selected.includes(name)) ? 'checked' : '';
+    shpNames.forEach(name => {
+      let checked = shpSelected.includes(name) ? 'checked' : '';
+      html += `<label class="w3-block w3-padding-small"><input type="checkbox" class="w3-check shpCheck" value="${name}" ${checked}> ${name}</label>`;
+    });
+    shpEl.innerHTML = html;
+  }
+  // RocketBox couriers
+  let rkbNames = localStorage.rkbAllCouriers ? JSON.parse(localStorage.rkbAllCouriers) : [];
+  let rkbSelected = localStorage.rkbSelectedCouriers ? JSON.parse(localStorage.rkbSelectedCouriers) : [];
+  let rkbEl = document.getElementById('rkbCourierList');
+  if (rkbNames.length === 0) {
+    rkbEl.innerHTML = '<p>Open courier rates for any order first to load courier names.</p>';
+  } else {
+    let html = '';
+    rkbNames.forEach(name => {
+      let checked = rkbSelected.includes(name) ? 'checked' : '';
       html += `<label class="w3-block w3-padding-small"><input type="checkbox" class="w3-check rkbCheck" value="${name}" ${checked}> ${name}</label>`;
     });
-    el.innerHTML = html;
+    rkbEl.innerHTML = html;
   }
   document.getElementById('courierSettingsModal').style.display = 'block';
 }
 
 function saveCourierSettings() {
-  let checks = document.querySelectorAll('.rkbCheck');
-  let selected = [];
-  checks.forEach(c => { if (c.checked) selected.push(c.value); });
-  localStorage.rkbSelectedCouriers = JSON.stringify(selected);
+  let shpChecks = document.querySelectorAll('.shpCheck');
+  if (shpChecks.length > 0) {
+    let shpSelected = [];
+    shpChecks.forEach(c => { if (c.checked) shpSelected.push(c.value); });
+    localStorage.shpSelectedCouriers = JSON.stringify(shpSelected);
+  }
+  let rkbChecks = document.querySelectorAll('.rkbCheck');
+  if (rkbChecks.length > 0) {
+    let rkbSelected = [];
+    rkbChecks.forEach(c => { if (c.checked) rkbSelected.push(c.value); });
+    localStorage.rkbSelectedCouriers = JSON.stringify(rkbSelected);
+  }
   document.getElementById('courierSettingsModal').style.display = 'none';
-  alert('Saved! ' + selected.length + ' couriers selected.');
+  alert('Saved!');
 }
 
 function formatDate(date, n) {
