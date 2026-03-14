@@ -237,6 +237,34 @@ async function done() {
 
 }
 
+async function deleteod() {
+    let sel1 = Object.keys(sel);
+    if (!sel1.length) return;
+
+    sel1.forEach(v => {
+        let e = document.getElementById('b' + v);
+        if (e) e.classList.add('w3-opacity-max');
+    });
+    await clearsel();
+
+    // Step 1: Remove from PendingOrder (same as Done)
+    let fmd = new FormData();
+    fmd.append("myd", JSON.stringify(sel1));
+    fetch("https://script.google.com/macros/s/AKfycbxJs1MUozlOyJWpxY4EQmBL3qSkQq6hVKUwmvhSn53Fuhwh6Q3-Tzu3ntuAjqa0aTcK/exec", { method: 'POST', body: fmd });
+
+    // Step 2: Record deletion in Live Website Apps Script
+    let liveUrl = localStorage.getItem('liveWebScriptUrl');
+    if (liveUrl) {
+        fetch(liveUrl, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'deleteOrder', orderIds: sel1 }),
+            mode: 'no-cors'
+        });
+    }
+
+    snackbar('Deleted', 1500);
+}
+
 function omprint() {
     if (Object.keys(sel).length) {
         // let myW= window.open("", "_blank"); let winbody = myW.document.body;
