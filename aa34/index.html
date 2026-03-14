@@ -285,7 +285,23 @@
       <a href="exgst.html" class="w3-bar-item w3-border-top w3-button">Monthly GST</a>
       <a href="allcache.html" class="w3-bar-item w3-border-top w3-button">View</a>
       <a href="#" onclick="addch()" class="w3-bar-item w3-border-top w3-button">Offline</a>
-      <a href="#" onclick="clearch()" class="w3-bar-item w3-border-top w3-border-bottom w3-button">Clear</a>
+      <a href="#" onclick="clearch()" class="w3-bar-item w3-border-top w3-button">Clear</a>
+      <a href="#" onclick="openCourierSettings()" class="w3-bar-item w3-border-top w3-border-bottom w3-button">Courier Settings</a>
+    </div>
+
+    <div id="courierSettingsModal" class="w3-modal" style="display:none;">
+      <div class="w3-modal-content w3-card-4 w3-animate-top" style="max-width:500px">
+        <header class="w3-container w3-blue-gray">
+          <span onclick="document.getElementById('courierSettingsModal').style.display='none'" class="w3-button w3-display-topright">&times;</span>
+          <h4>RocketBox Courier Settings</h4>
+        </header>
+        <div class="w3-container w3-padding" id="rkbCourierList">
+          <p>Open courier rates for any order first to load courier names.</p>
+        </div>
+        <footer class="w3-container w3-padding">
+          <button onclick="saveCourierSettings()" class="w3-button w3-green w3-block">Save</button>
+        </footer>
+      </div>
     </div>
     <script>
       function w3_open() {
