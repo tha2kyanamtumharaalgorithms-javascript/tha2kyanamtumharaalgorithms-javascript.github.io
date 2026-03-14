@@ -94,3 +94,90 @@ async function expStock() {
   document.body.removeChild(a);
   await newc1()
 }
+
+async function exportSold() {
+  // 1. Collect all order IDs from all godowns
+  let godowns = [
+    { key: 'pin', prefix: 'ods' },
+    { key: 'pint', prefix: 'odt' },
+    { key: 'pink', prefix: 'odk' },
+    { key: 'pinpd', prefix: 'odpd' }
+  ];
+  let allOrderKeys = [];
+  for (let g of godowns) {
+    let data = JSON.parse(localStorage.getItem(g.key) || '{}');
+    for (let k in data) {
+      allOrderKeys.push({ key: k, prefix: g.prefix });
+    }
+  }
+
+  // 2. Filter out already exported
+  let exported = JSON.parse(localStorage.getItem('exportedIds') || '[]');
+  let exportedSet = new Set(exported);
+  let newKeys = allOrderKeys.filter(o => !exportedSet.has(o.key));
+
+  if (!newKeys.length) { alert('No new orders to export'); return; }
+
+  // 3. Load orders and aggregate by product/color/size
+  let all = {};
+  let exportedNow = [];
+  let lastDb = '';
+  for (let o of newKeys) {
+    let k = o.key;
+    let prefixLen = o.prefix.length; // 3 for ods/odt/odk, 4 for odpd
+    let dbPrefix = o.prefix.slice(-1); // s, t, k, d
+    let idStr = k.slice(prefixLen);
+    let monthCode = dbPrefix + idStr.slice(0, 6);
+    let orderId = Number(idStr);
+
+    if (lastDb !== monthCode) { await mthdb(monthCode); lastDb = monthCode; }
+    let order = await oddb.od.get(orderId);
+    if (!order || !order.tot) continue; // skip deleted orders
+
+    let kk = order.od;
+    for (let t in kk) {
+      all[t] = all[t] || {};
+      for (let c in kk[t]) {
+        all[t][c] = all[t][c] || {};
+        for (let s in kk[t][c]) {
+          all[t][c][s] = (all[t][c][s] || 0) + kk[t][c][s];
+        }
+      }
+    }
+    exportedNow.push(k);
+  }
+
+  if (!exportedNow.length) { alert('No new orders to export'); return; }
+
+  // 4. Build CSV rows: Product Name, Color, Size, Quantity
+  let csv = [];
+  let grandTotal = 0;
+  for (let t in all) {
+    for (let c in all[t]) {
+      for (let s in all[t][c]) {
+        let qty = all[t][c][s];
+        csv.push(`${t},${c},${s},${qty}`);
+        grandTotal += qty;
+      }
+    }
+  }
+  csv.push(`startxrow,${grandTotal},,`);
+
+  // 5. Download CSV file
+  let csvString = csv.join('\r\n');
+  let blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+  let url = URL.createObjectURL(blob);
+  let a = document.createElement('a');
+  a.href = url;
+  let ts = new Date().toLocaleTimeString('en', { day: '2-digit', month: 'short', year: 'numeric', hour: "2-digit", minute: "2-digit", hour12: true });
+  a.download = 'soldstock_' + ts.replaceAll(', ', '') + '.csv';
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  // 6. Save exported IDs to localStorage
+  let allExported = [...exported, ...exportedNow];
+  localStorage.setItem('exportedIds', JSON.stringify(allExported));
+  alert('Exported ' + exportedNow.length + ' orders (' + grandTotal + ' total qty)');
+}
