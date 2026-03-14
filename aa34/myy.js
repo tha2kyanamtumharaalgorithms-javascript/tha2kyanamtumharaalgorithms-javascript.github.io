@@ -1235,6 +1235,7 @@ async function gosh(obj1, obj2, obj3) {
 }
 
 function openCourierSettings() {
+  w3_close();
   let names = localStorage.rkbAllCouriers ? JSON.parse(localStorage.rkbAllCouriers) : [];
   let selected = localStorage.rkbSelectedCouriers ? JSON.parse(localStorage.rkbSelectedCouriers) : null;
   let el = document.getElementById('rkbCourierList');
