@@ -1221,11 +1221,11 @@ async function gosh(obj1, obj2, obj3) {
           list += `<div id="dl0" tabindex="0" class="w3-padding w3-light-blue"><div><b>DUSHIRTS01 SURFACE</b><b class="w3-right">${v[0][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this,'dl0')" class="w3-hover-red">Save</a><i> ... </i><a href="#" onclick="dlfn(this,'dl0')" class="w3-hover-red">Book</a><i class="w3-right">Surface</i></div>`;
           list += `<div id="dl1" tabindex="1" class="w3-padding w3-light-blue"><div><b>DUSHIRTSEXPRESS</b><b class="w3-right">${v[1][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this,'dl1')" class="w3-hover-red">Save</a><i> ... </i><a href="#" onclick="dlfn(this,'dl1')" class="w3-hover-red">Book</a><i class="w3-right">Air</i></div>`;
           list += `<div id="dl2" tabindex="2" class="w3-padding w3-light-blue"><div><b>10KG DUSURFACE</b><b class="w3-right">${v[2][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this,'dl2')" class="w3-hover-red">Save</a><i> ... </i><a href="#" onclick="dlfn(this,'dl2')" class="w3-hover-red">Book</a><i class="w3-right">Surface</i></div>`;
+          localStorage.rkbAllCouriers = JSON.stringify(Object.keys(v[3]));
+          let selectedRkb = localStorage.rkbSelectedCouriers ? JSON.parse(localStorage.rkbSelectedCouriers) : null;
           for (let i in v[3]) {
-            // console.log(i,v[3][i])
-            // if (String(i).includes("Delhivery") || String(i).includes("Gati")) {
+            if (selectedRkb && !selectedRkb.includes(i)) continue;
             list += `<div id="rkb" title="${v[3][i].mode_id},${v[3][i].id}" class="w3-padding w3-lime"><div><b>${i}</b><b class="w3-right">${v[3][i]["rates"]}₹</b></div><a href="#" onclick="dlfn(this,'rkb')" class="w3-hover-red">Save</a><i> ETD: ${v[3][i]["tat"] + ' / ' + v[3][i]["avg_delivery_days"]}</i><a href="#" onclick="dlfn(this,'rkb')" class="w3-hover-red">Book</a><i class="w3-right">${v[3][i]["mode_name"]}</i></div>`;
-            // }
           }
           document.getElementById('allcor').innerHTML += list; rez();
         }).catch((v) => { console.log(v); });
@@ -1234,6 +1234,31 @@ async function gosh(obj1, obj2, obj3) {
   document.querySelector("#allcor .loading").remove();
 }
 
+function openCourierSettings() {
+  let names = localStorage.rkbAllCouriers ? JSON.parse(localStorage.rkbAllCouriers) : [];
+  let selected = localStorage.rkbSelectedCouriers ? JSON.parse(localStorage.rkbSelectedCouriers) : null;
+  let el = document.getElementById('rkbCourierList');
+  if (names.length === 0) {
+    el.innerHTML = '<p>Open courier rates for any order first to load courier names.</p>';
+  } else {
+    let html = '';
+    names.forEach(name => {
+      let checked = (selected === null || selected.includes(name)) ? 'checked' : '';
+      html += `<label class="w3-block w3-padding-small"><input type="checkbox" class="w3-check rkbCheck" value="${name}" ${checked}> ${name}</label>`;
+    });
+    el.innerHTML = html;
+  }
+  document.getElementById('courierSettingsModal').style.display = 'block';
+}
+
+function saveCourierSettings() {
+  let checks = document.querySelectorAll('.rkbCheck');
+  let selected = [];
+  checks.forEach(c => { if (c.checked) selected.push(c.value); });
+  localStorage.rkbSelectedCouriers = JSON.stringify(selected);
+  document.getElementById('courierSettingsModal').style.display = 'none';
+  alert('Saved! ' + selected.length + ' couriers selected.');
+}
 
 function formatDate(date, n) {
   const year = date.getFullYear();
