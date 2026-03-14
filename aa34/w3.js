@@ -590,15 +590,14 @@ function startLiveWebPoll() {
   if (_liveWebPollTimer) clearInterval(_liveWebPollTimer);
   let startOd = localStorage.getItem('liveWebSheetStartOd');
   if (!startOd) return;
-  // Poll every 30 seconds — orders can be packed & done within minutes
+  // Poll every 5 seconds — orders can disappear from PendingOrder within seconds
   _liveWebPollTimer = setInterval(function() {
     let h = new Date().getHours();
-    // Only poll during working hours 8AM-10PM
     if (h >= 8 && h <= 22) {
       syncLiveWebSheet();
     }
-  }, 30000);
-  console.log('Live web polling started (every 30 sec)');
+  }, 5000);
+  console.log('Live web polling started (every 5 sec)');
 }
 
 function stopLiveWebPoll() {
