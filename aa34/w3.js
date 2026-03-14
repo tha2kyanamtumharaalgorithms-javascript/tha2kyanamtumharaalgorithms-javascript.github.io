@@ -104,8 +104,10 @@ setTimeout(function() {
 async function exportSold() {
   let inp = document.getElementById('exportFromOd');
   let fromNum = Number(inp.value) || 0;
+  let fromStr = String(fromNum);
+  let fromPrefix = fromStr.length >= 6 ? fromStr.slice(0, 6) : '';
 
-  // 1. Collect all order IDs from all godowns
+  // 1. Collect all order IDs from all godowns (same month prefix only)
   let godowns = [
     { key: 'pin', prefix: 'ods' },
     { key: 'pint', prefix: 'odt' },
@@ -117,7 +119,8 @@ async function exportSold() {
     let data = JSON.parse(localStorage.getItem(g.key) || '{}');
     for (let k in data) {
       let idNum = Number(k.slice(g.prefix.length));
-      if (idNum > fromNum) allOrderKeys.push({ key: k, prefix: g.prefix, id: idNum });
+      let idPrefix = String(idNum).slice(0, 6);
+      if (idNum >= fromNum && (!fromPrefix || idPrefix === fromPrefix)) allOrderKeys.push({ key: k, prefix: g.prefix, id: idNum });
     }
   }
 
