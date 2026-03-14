@@ -118,57 +118,37 @@ async function exportSold(debug) {
     log.push('');
   }
 
-  // 1. Collect all order IDs from Delhi godown (between from and to inclusive)
-  let godowns = [
-    { key: 'pin', prefix: 'ods' }
-  ];
-  let allOrderKeys = [];
-  for (let g of godowns) {
-    let data = JSON.parse(localStorage.getItem(g.key) || '{}');
-    let keys = Object.keys(data);
-    if (debug) log.push('Godown "' + g.key + '" (' + g.prefix + '): ' + keys.length + ' total keys');
-    for (let k of keys) {
-      let idNum = Number(k.slice(g.prefix.length));
-      let pass = idNum >= fromNum && idNum <= toNum;
-      if (debug) {
-        log.push('  ' + k + ' → id=' + idNum + (pass ? ' ✓ INCLUDED' : ' ✗ skipped (out of range)'));
-      }
-      if (pass) allOrderKeys.push({ key: k, prefix: g.prefix, id: idNum, godown: g.key });
-    }
-  }
+  // 1. Open the month DB and query orders directly from IndexedDB (includes unpinned/done orders)
+  let fromStr = String(fromNum);
+  let monthCode = 's' + fromStr.slice(0, 6);
+  if (debug) log.push('Opening DB: "' + monthCode + '"');
+  await mthdb(monthCode);
 
+  let actualTo = toNum === Infinity ? fromNum + 9999999 : toNum;
+  let allOrders = await oddb.od.where('id').between(fromNum, actualTo, true, true).toArray();
   if (debug) {
-    log.push('');
-    log.push('Total matched order keys: ' + allOrderKeys.length);
+    log.push('Queried orders between ' + fromNum + ' and ' + actualTo + ' (both inclusive)');
+    log.push('Found: ' + allOrders.length + ' orders in IndexedDB');
     log.push('');
   }
 
-  if (!allOrderKeys.length) {
+  if (!allOrders.length) {
     if (debug) { log.push('NO ORDERS FOUND — stopping.'); showDebugLog(log); }
     else alert('No new orders to export');
     return;
   }
 
-  // 2. Load orders and aggregate by product/color/size
+  // 2. Aggregate by product/color/size
   let all = {};
   let maxId = fromNum;
   let orderCount = 0;
-  let lastDb = '';
-  if (debug) log.push('--- Loading orders from IndexedDB ---');
-  for (let o of allOrderKeys) {
-    let dbPrefix = o.prefix.slice(-1);
-    let idStr = o.key.slice(o.prefix.length);
-    let monthCode = dbPrefix + idStr.slice(0, 6);
+  if (debug) log.push('--- Processing orders ---');
+  for (let order of allOrders) {
+    let o = order;
+    if (debug) log.push('Order id=' + o.id + ', tot=' + o.tot + ', keys in od=' + (o.od ? Object.keys(o.od).join(', ') : 'NONE'));
+    if (!o.tot) { if (debug) log.push('  tot is 0/falsy — SKIPPED'); continue; }
 
-    if (lastDb !== monthCode) { await mthdb(monthCode); lastDb = monthCode; }
-    if (debug) log.push('DB: "' + monthCode + '" → oddb.od.get(' + o.id + ')');
-    let order = await oddb.od.get(o.id);
-
-    if (!order) { if (debug) log.push('  Result: null/undefined — SKIPPED'); continue; }
-    if (debug) log.push('  Result: tot=' + order.tot + ', keys in od=' + (order.od ? Object.keys(order.od).join(', ') : 'NONE'));
-    if (!order.tot) { if (debug) log.push('  tot is 0/falsy — SKIPPED'); continue; }
-
-    let kk = order.od;
+    let kk = o.od;
     for (let t in kk) {
       all[t] = all[t] || {};
       for (let c in kk[t]) {
