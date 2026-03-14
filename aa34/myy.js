@@ -25,6 +25,7 @@ async function delod() {
     sendd(urli, shod11, 'del order');
 
     await oddb.od.put(shod11.od, Number(odno));
+    debounceSyncLiveSheet();
     selod5 = {};
     document.querySelector(`[name=${selg}]`).click();//await bulkdb.bk.delete(shod11.od.id);
   } catch (error) {
@@ -232,6 +233,7 @@ function creatod(eid) {
       paz['ods' + shod0.od.id] = 'Pending';
       selpin(gd);//pinz
       localStorage.setItem(pinz, JSON.stringify(paz));
+      debounceSyncLiveSheet();
     }).catch((error) => {
       console.log('error add order fn-', error);
       alert('error in add order fn-', error);
@@ -332,6 +334,7 @@ async function updateod(myz, eid) {
     await mthdb(selg.slice(-1) + String(pk8).slice(0, 6));
     await oddb.od.put(shod1.od, pk8)
       .then(async () => {
+        debounceSyncLiveSheet();
         shod1.pcwt = odwt;
         // console.log(pctt);
         let instock = document.getElementById('instock1');

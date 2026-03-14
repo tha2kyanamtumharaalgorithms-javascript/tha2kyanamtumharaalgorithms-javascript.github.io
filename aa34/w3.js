@@ -128,8 +128,6 @@ async function exportSold() {
   let maxId = fromNum;
   let orderCount = 0;
   for (let o of allOrders) {
-    if (!o.tot) continue;
-
     let kk = o.od;
     for (let t in kk) {
       all[t] = all[t] || {};
@@ -180,4 +178,140 @@ async function exportSold() {
   inpFrom.value = maxId;
   localStorage.setItem('lastExportedOdNum', String(maxId));
   alert('Exported ' + orderCount + ' orders (' + grandTotal + ' total qty)');
+}
+
+// ===== Live Sheet Auto-Sync =====
+
+let _liveSyncTimer = null;
+
+// Initialize live sheet UI on page load
+setTimeout(function() {
+  let el = document.getElementById('liveStartOd');
+  if (el) {
+    el.value = localStorage.getItem('liveSheetStartOd') || '';
+    if (localStorage.getItem('liveSheetLocked') === '1') {
+      el.readOnly = true;
+      let btn = document.getElementById('liveLockBtn');
+      btn.textContent = 'Locked';
+      btn.classList.remove('w3-amber');
+      btn.classList.add('w3-red');
+    }
+  }
+}, 500);
+
+function setLiveStartOd() {
+  let val = document.getElementById('liveStartOd').value.trim();
+  if (val) {
+    localStorage.setItem('liveSheetStartOd', val);
+    syncLiveSheet();
+  } else {
+    localStorage.removeItem('liveSheetStartOd');
+  }
+}
+
+function toggleLiveLock() {
+  let inp = document.getElementById('liveStartOd');
+  let btn = document.getElementById('liveLockBtn');
+  if (inp.readOnly) {
+    // Unlock
+    inp.readOnly = false;
+    btn.textContent = 'Unlocked';
+    btn.classList.remove('w3-red');
+    btn.classList.add('w3-amber');
+    localStorage.setItem('liveSheetLocked', '0');
+  } else {
+    // Lock
+    if (!inp.value.trim()) { alert('Enter a starting order number first'); return; }
+    inp.readOnly = true;
+    btn.textContent = 'Locked';
+    btn.classList.remove('w3-amber');
+    btn.classList.add('w3-red');
+    localStorage.setItem('liveSheetLocked', '1');
+    localStorage.setItem('liveSheetStartOd', inp.value.trim());
+  }
+}
+
+// Debounced sync — called from order create/update/delete hooks
+function debounceSyncLiveSheet() {
+  if (_liveSyncTimer) clearTimeout(_liveSyncTimer);
+  _liveSyncTimer = setTimeout(syncLiveSheet, 500);
+}
+
+async function syncLiveSheet() {
+  let startOd = localStorage.getItem('liveSheetStartOd');
+  if (!startOd) return;
+  let fromNum = Number(startOd);
+  if (!fromNum) return;
+
+  let scriptUrl = localStorage.getItem('liveSheetScriptUrl');
+  if (!scriptUrl) {
+    console.log('Live sheet: no script URL set in localStorage.liveSheetScriptUrl');
+    return;
+  }
+
+  let statusEl = document.getElementById('liveSyncStatus');
+  if (statusEl) statusEl.textContent = 'Syncing...';
+
+  try {
+    // Open month DB and query orders
+    let fromStr = String(fromNum);
+    let monthCode = 's' + fromStr.slice(0, 6);
+    await mthdb(monthCode);
+
+    let actualTo = fromNum + 9999999;
+    let allOrders = await oddb.od.where('id').between(fromNum, actualTo, true, true).toArray();
+
+    // Aggregate by product/color/size
+    let all = {};
+    let orderCount = 0;
+    for (let o of allOrders) {
+      let kk = o.od;
+      if (!kk || typeof kk !== 'object') continue;
+      for (let t in kk) {
+        all[t] = all[t] || {};
+        for (let c in kk[t]) {
+          all[t][c] = all[t][c] || {};
+          for (let s in kk[t][c]) {
+            all[t][c][s] = (all[t][c][s] || 0) + kk[t][c][s];
+          }
+        }
+      }
+      orderCount++;
+    }
+
+    // Build data rows
+    let data = [];
+    let grandTotal = 0;
+    for (let t in all) {
+      for (let c in all[t]) {
+        for (let s in all[t][c]) {
+          let qty = all[t][c][s];
+          data.push([t, c, s, qty]);
+          grandTotal += qty;
+        }
+      }
+    }
+
+    // Send to Google Apps Script
+    let payload = JSON.stringify({
+      startOd: fromNum,
+      data: data,
+      totalQty: grandTotal,
+      orderCount: orderCount,
+      timestamp: new Date().toISOString()
+    });
+
+    await fetch(scriptUrl, {
+      method: 'POST',
+      body: payload,
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    let syncTime = new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: true });
+    if (statusEl) statusEl.textContent = 'Synced ' + syncTime + ' (' + orderCount + ' orders, ' + grandTotal + ' qty)';
+    console.log('Live sheet synced:', orderCount, 'orders,', grandTotal, 'qty');
+  } catch (err) {
+    console.log('Live sheet sync error:', err);
+    if (statusEl) statusEl.textContent = 'Sync failed';
+  }
 }
