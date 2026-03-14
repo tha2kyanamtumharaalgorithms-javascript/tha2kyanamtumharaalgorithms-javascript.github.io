@@ -105,9 +105,9 @@ async function exportSold(debug) {
   let inpFrom = document.getElementById('exportFromOd');
   let inpTo = document.getElementById('exportToOd');
   let fromNum = Number(inpFrom.value) || 0;
-  let toNum = Number(inpTo.value) || 0;
+  let toNum = Number(inpTo.value) || Infinity;
 
-  if (!fromNum || !toNum) { alert('Enter both From and To order numbers'); return; }
+  if (!fromNum) { alert('Enter From order number'); return; }
   if (toNum < fromNum) { alert('To must be >= From'); return; }
 
   let log = [];
