@@ -101,13 +101,24 @@ setTimeout(function() {
   if (el) el.value = localStorage.getItem('lastExportedOdNum') || '';
 }, 500);
 
-async function exportSold() {
-  let inp = document.getElementById('exportFromOd');
-  let fromNum = Number(inp.value) || 0;
-  let fromStr = String(fromNum);
-  let fromPrefix = fromStr.length >= 6 ? fromStr.slice(0, 6) : '';
+async function exportSold(debug) {
+  let inpFrom = document.getElementById('exportFromOd');
+  let inpTo = document.getElementById('exportToOd');
+  let fromNum = Number(inpFrom.value) || 0;
+  let toNum = Number(inpTo.value) || 0;
 
-  // 1. Collect all order IDs from all godowns (same month prefix only)
+  if (!fromNum || !toNum) { alert('Enter both From and To order numbers'); return; }
+  if (toNum < fromNum) { alert('To must be >= From'); return; }
+
+  let log = [];
+  if (debug) {
+    log.push('=== EXPORT DEBUG ===');
+    log.push('From input: "' + inpFrom.value + '" → fromNum: ' + fromNum);
+    log.push('To input: "' + inpTo.value + '" → toNum: ' + toNum);
+    log.push('');
+  }
+
+  // 1. Collect all order IDs from all godowns (between from and to inclusive)
   let godowns = [
     { key: 'pin', prefix: 'ods' },
     { key: 'pint', prefix: 'odt' },
@@ -117,28 +128,48 @@ async function exportSold() {
   let allOrderKeys = [];
   for (let g of godowns) {
     let data = JSON.parse(localStorage.getItem(g.key) || '{}');
-    for (let k in data) {
+    let keys = Object.keys(data);
+    if (debug) log.push('Godown "' + g.key + '" (' + g.prefix + '): ' + keys.length + ' total keys');
+    for (let k of keys) {
       let idNum = Number(k.slice(g.prefix.length));
-      let idPrefix = String(idNum).slice(0, 6);
-      if (idNum >= fromNum && (!fromPrefix || idPrefix === fromPrefix)) allOrderKeys.push({ key: k, prefix: g.prefix, id: idNum });
+      let pass = idNum >= fromNum && idNum <= toNum;
+      if (debug) {
+        log.push('  ' + k + ' → id=' + idNum + (pass ? ' ✓ INCLUDED' : ' ✗ skipped (out of range)'));
+      }
+      if (pass) allOrderKeys.push({ key: k, prefix: g.prefix, id: idNum, godown: g.key });
     }
   }
 
-  if (!allOrderKeys.length) { alert('No new orders to export'); return; }
+  if (debug) {
+    log.push('');
+    log.push('Total matched order keys: ' + allOrderKeys.length);
+    log.push('');
+  }
+
+  if (!allOrderKeys.length) {
+    if (debug) { log.push('NO ORDERS FOUND — stopping.'); showDebugLog(log); }
+    else alert('No new orders to export');
+    return;
+  }
 
   // 2. Load orders and aggregate by product/color/size
   let all = {};
   let maxId = fromNum;
   let orderCount = 0;
   let lastDb = '';
+  if (debug) log.push('--- Loading orders from IndexedDB ---');
   for (let o of allOrderKeys) {
     let dbPrefix = o.prefix.slice(-1);
     let idStr = o.key.slice(o.prefix.length);
     let monthCode = dbPrefix + idStr.slice(0, 6);
 
     if (lastDb !== monthCode) { await mthdb(monthCode); lastDb = monthCode; }
+    if (debug) log.push('DB: "' + monthCode + '" → oddb.od.get(' + o.id + ')');
     let order = await oddb.od.get(o.id);
-    if (!order || !order.tot) continue;
+
+    if (!order) { if (debug) log.push('  Result: null/undefined — SKIPPED'); continue; }
+    if (debug) log.push('  Result: tot=' + order.tot + ', keys in od=' + (order.od ? Object.keys(order.od).join(', ') : 'NONE'));
+    if (!order.tot) { if (debug) log.push('  tot is 0/falsy — SKIPPED'); continue; }
 
     let kk = order.od;
     for (let t in kk) {
@@ -147,6 +178,7 @@ async function exportSold() {
         all[t][c] = all[t][c] || {};
         for (let s in kk[t][c]) {
           all[t][c][s] = (all[t][c][s] || 0) + kk[t][c][s];
+          if (debug) log.push('    + ' + t + ' | ' + c + ' | ' + s + ' | qty=' + kk[t][c][s]);
         }
       }
     }
@@ -154,7 +186,18 @@ async function exportSold() {
     orderCount++;
   }
 
-  if (!orderCount) { alert('No new orders to export'); return; }
+  if (debug) {
+    log.push('');
+    log.push('Orders with data: ' + orderCount);
+    log.push('maxId: ' + maxId);
+    log.push('');
+  }
+
+  if (!orderCount) {
+    if (debug) { log.push('NO ORDERS WITH DATA — stopping.'); showDebugLog(log); }
+    else alert('No new orders to export');
+    return;
+  }
 
   // 3. Build CSV rows: Product Name, Color, Size, Quantity
   let csv = [];
@@ -170,6 +213,16 @@ async function exportSold() {
   }
   csv.push(`startxrow,${grandTotal},,`);
 
+  if (debug) {
+    log.push('--- CSV Output (' + csv.length + ' rows) ---');
+    for (let row of csv) log.push(row);
+    log.push('');
+    log.push('Grand Total Qty: ' + grandTotal);
+    log.push('Will auto-fill input with: ' + maxId);
+    showDebugLog(log);
+    return; // Debug mode: show log only, don't download or update input
+  }
+
   // 4. Download CSV file
   let csvString = csv.join('\r\n');
   let blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
@@ -183,8 +236,23 @@ async function exportSold() {
   a.click();
   document.body.removeChild(a);
 
-  // 5. Auto-fill input with last exported order number
-  inp.value = maxId;
+  // 5. Auto-fill From input with maxId for next export
+  inpFrom.value = maxId;
   localStorage.setItem('lastExportedOdNum', String(maxId));
   alert('Exported ' + orderCount + ' orders (' + grandTotal + ' total qty)');
+}
+
+function showDebugLog(log) {
+  let div = document.createElement('div');
+  div.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:99999;overflow:auto;padding:10px;';
+  let pre = document.createElement('pre');
+  pre.style.cssText = 'color:#0f0;font-size:12px;white-space:pre-wrap;word-break:break-all;margin:0;';
+  pre.textContent = log.join('\n');
+  let btn = document.createElement('button');
+  btn.textContent = 'CLOSE';
+  btn.style.cssText = 'position:fixed;top:10px;right:10px;padding:10px 20px;font-size:16px;background:#f44;color:#fff;border:none;border-radius:5px;z-index:100000;';
+  btn.onclick = function() { document.body.removeChild(div); };
+  div.appendChild(btn);
+  div.appendChild(pre);
+  document.body.appendChild(div);
 }
