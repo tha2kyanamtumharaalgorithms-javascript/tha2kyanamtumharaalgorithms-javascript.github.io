@@ -314,10 +314,18 @@
     <div class="w3-modal-content w3-card-4 w3-animate-top" style="max-width:500px">
       <header class="w3-container w3-blue-gray">
         <span onclick="document.getElementById('courierSettingsModal').style.display='none'" class="w3-button w3-display-topright">&times;</span>
-        <h4>RocketBox Courier Settings</h4>
+        <h4>Courier Settings</h4>
       </header>
-      <div class="w3-container w3-padding" id="rkbCourierList">
-        <p>Open courier rates for any order first to load courier names.</p>
+      <div class="w3-container w3-padding">
+        <h5 class="w3-text-blue-gray"><b>ShipRocket Couriers</b></h5>
+        <div id="shpCourierList">
+          <p>Open courier rates for any order first to load courier names.</p>
+        </div>
+        <hr>
+        <h5 class="w3-text-blue-gray"><b>RocketBox Couriers</b></h5>
+        <div id="rkbCourierList">
+          <p>Open courier rates for any order first to load courier names.</p>
+        </div>
       </div>
       <footer class="w3-container w3-padding">
         <button onclick="saveCourierSettings()" class="w3-button w3-green w3-block">Save</button>
