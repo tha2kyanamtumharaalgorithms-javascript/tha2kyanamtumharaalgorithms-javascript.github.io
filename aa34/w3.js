@@ -101,7 +101,7 @@ setTimeout(function() {
   if (el) el.value = localStorage.getItem('lastExportedOdNum') || '';
 }, 500);
 
-async function exportSold(debug) {
+async function exportSold() {
   let inpFrom = document.getElementById('exportFromOd');
   let inpTo = document.getElementById('exportToOd');
   let fromNum = Number(inpFrom.value) || 0;
@@ -110,31 +110,16 @@ async function exportSold(debug) {
   if (!fromNum) { alert('Enter From order number'); return; }
   if (toNum < fromNum) { alert('To must be >= From'); return; }
 
-  let log = [];
-  if (debug) {
-    log.push('=== EXPORT DEBUG ===');
-    log.push('From input: "' + inpFrom.value + '" → fromNum: ' + fromNum);
-    log.push('To input: "' + inpTo.value + '" → toNum: ' + toNum);
-    log.push('');
-  }
-
   // 1. Open the month DB and query orders directly from IndexedDB (includes unpinned/done orders)
   let fromStr = String(fromNum);
   let monthCode = 's' + fromStr.slice(0, 6);
-  if (debug) log.push('Opening DB: "' + monthCode + '"');
   await mthdb(monthCode);
 
   let actualTo = toNum === Infinity ? fromNum + 9999999 : toNum;
   let allOrders = await oddb.od.where('id').between(fromNum, actualTo, true, true).toArray();
-  if (debug) {
-    log.push('Queried orders between ' + fromNum + ' and ' + actualTo + ' (both inclusive)');
-    log.push('Found: ' + allOrders.length + ' orders in IndexedDB');
-    log.push('');
-  }
 
   if (!allOrders.length) {
-    if (debug) { log.push('NO ORDERS FOUND — stopping.'); showDebugLog(log); }
-    else alert('No new orders to export');
+    alert('No new orders to export');
     return;
   }
 
@@ -142,11 +127,8 @@ async function exportSold(debug) {
   let all = {};
   let maxId = fromNum;
   let orderCount = 0;
-  if (debug) log.push('--- Processing orders ---');
-  for (let order of allOrders) {
-    let o = order;
-    if (debug) log.push('Order id=' + o.id + ', tot=' + o.tot + ', keys in od=' + (o.od ? Object.keys(o.od).join(', ') : 'NONE'));
-    if (!o.tot) { if (debug) log.push('  tot is 0/falsy — SKIPPED'); continue; }
+  for (let o of allOrders) {
+    if (!o.tot) continue;
 
     let kk = o.od;
     for (let t in kk) {
@@ -155,7 +137,6 @@ async function exportSold(debug) {
         all[t][c] = all[t][c] || {};
         for (let s in kk[t][c]) {
           all[t][c][s] = (all[t][c][s] || 0) + kk[t][c][s];
-          if (debug) log.push('    + ' + t + ' | ' + c + ' | ' + s + ' | qty=' + kk[t][c][s]);
         }
       }
     }
@@ -163,16 +144,8 @@ async function exportSold(debug) {
     orderCount++;
   }
 
-  if (debug) {
-    log.push('');
-    log.push('Orders with data: ' + orderCount);
-    log.push('maxId: ' + maxId);
-    log.push('');
-  }
-
   if (!orderCount) {
-    if (debug) { log.push('NO ORDERS WITH DATA — stopping.'); showDebugLog(log); }
-    else alert('No new orders to export');
+    alert('No new orders to export');
     return;
   }
 
@@ -189,16 +162,6 @@ async function exportSold(debug) {
     }
   }
   csv.push(`startxrow,${grandTotal},,`);
-
-  if (debug) {
-    log.push('--- CSV Output (' + csv.length + ' rows) ---');
-    for (let row of csv) log.push(row);
-    log.push('');
-    log.push('Grand Total Qty: ' + grandTotal);
-    log.push('Will auto-fill input with: ' + maxId);
-    showDebugLog(log);
-    return; // Debug mode: show log only, don't download or update input
-  }
 
   // 4. Download CSV file
   let csvString = csv.join('\r\n');
@@ -217,19 +180,4 @@ async function exportSold(debug) {
   inpFrom.value = maxId;
   localStorage.setItem('lastExportedOdNum', String(maxId));
   alert('Exported ' + orderCount + ' orders (' + grandTotal + ' total qty)');
-}
-
-function showDebugLog(log) {
-  let div = document.createElement('div');
-  div.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:99999;overflow:auto;padding:10px;';
-  let pre = document.createElement('pre');
-  pre.style.cssText = 'color:#0f0;font-size:12px;white-space:pre-wrap;word-break:break-all;margin:0;';
-  pre.textContent = log.join('\n');
-  let btn = document.createElement('button');
-  btn.textContent = 'CLOSE';
-  btn.style.cssText = 'position:fixed;top:10px;right:10px;padding:10px 20px;font-size:16px;background:#f44;color:#fff;border:none;border-radius:5px;z-index:100000;';
-  btn.onclick = function() { document.body.removeChild(div); };
-  div.appendChild(btn);
-  div.appendChild(pre);
-  document.body.appendChild(div);
 }
