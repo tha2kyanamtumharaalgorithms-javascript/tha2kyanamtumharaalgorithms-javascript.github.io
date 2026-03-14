@@ -117,7 +117,7 @@ async function exportSold() {
     let data = JSON.parse(localStorage.getItem(g.key) || '{}');
     for (let k in data) {
       let idNum = Number(k.slice(g.prefix.length));
-      if (idNum > fromNum) allOrderKeys.push({ key: k, prefix: g.prefix, id: idNum });
+      if (idNum >= fromNum) allOrderKeys.push({ key: k, prefix: g.prefix, id: idNum });
     }
   }
 
