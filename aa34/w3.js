@@ -342,7 +342,7 @@ async function syncLiveSheet() {
     console.log('Live sheet POST sent (no-cors)');
 
     let syncTime = new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: true });
-    if (statusEl) statusEl.textContent = 'Synced ' + syncTime + ' (' + orderCount + ' orders, ' + grandTotal + ' qty)';
+    if (statusEl) statusEl.textContent = 'Sync ' + syncTime;
     console.log('Live sheet synced:', orderCount, 'orders,', grandTotal, 'qty');
   } catch (err) {
     console.log('Live sheet sync error:', err);
