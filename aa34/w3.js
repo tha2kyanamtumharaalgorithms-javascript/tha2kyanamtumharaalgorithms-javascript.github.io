@@ -184,21 +184,49 @@ async function exportSold() {
 
 let _liveSyncTimer = null;
 
-// Initialize live sheet UI on page load
-setTimeout(function() {
+// Initialize live sheet UI on page load — fetch starting order from Google Sheet
+setTimeout(async function() {
   let el = document.getElementById('liveStartOd');
-  if (el) {
-    el.value = localStorage.getItem('liveSheetStartOd') || '';
-    if (localStorage.getItem('liveSheetLocked') === '1') {
+  if (!el) return;
+
+  // First show localStorage value (instant)
+  el.value = localStorage.getItem('liveSheetStartOd') || '';
+  if (localStorage.getItem('liveSheetLocked') === '1') {
+    el.disabled = true;
+    el.style.background = '#eee';
+    let btn = document.getElementById('liveLockBtn');
+    btn.textContent = 'Locked';
+    btn.style.background = '#c0392b';
+    btn.style.color = '#fff';
+  }
+
+  // Then fetch from Google Sheet (source of truth)
+  fetchLiveStartOdFromSheet();
+}, 500);
+
+async function fetchLiveStartOdFromSheet() {
+  let scriptUrl = localStorage.getItem('liveSheetScriptUrl');
+  if (!scriptUrl) return;
+  try {
+    let res = await fetch(scriptUrl);
+    let json = await res.json();
+    if (json.startOd) {
+      let el = document.getElementById('liveStartOd');
+      el.value = json.startOd;
+      localStorage.setItem('liveSheetStartOd', String(json.startOd));
+      // Auto-lock since it came from the sheet
       el.disabled = true;
       el.style.background = '#eee';
       let btn = document.getElementById('liveLockBtn');
       btn.textContent = 'Locked';
       btn.style.background = '#c0392b';
       btn.style.color = '#fff';
+      localStorage.setItem('liveSheetLocked', '1');
     }
+  } catch (err) {
+    console.log('Could not fetch start order from sheet:', err);
   }
-}, 500);
+}
 
 function setLiveStartOd() {
   let val = document.getElementById('liveStartOd').value.trim();
