@@ -1185,7 +1185,7 @@ async function gosh(obj1, obj2, obj3) {
               localStorage.shpAllCouriers = JSON.stringify(allShpNames);
               let selectedShp = localStorage.shpSelectedCouriers ? JSON.parse(localStorage.shpSelectedCouriers) : null;
               d.forEach((v) => {
-                if (selectedShp && !selectedShp.includes(v.courier_name)) return;
+                if (selectedShp && selectedShp.length && !selectedShp.includes(v.courier_name)) return;
                 list += `<div id="shp" tabindex="${v.courier_company_id}" class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Save</a><i> ETD: ${v.etd} </i><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Book</a><i class="w3-right">${v.is_surface ? 'Surface' : 'Air'}</i></div>`;
               })
               document.getElementById('allcor').innerHTML = list + document.getElementById('allcor').innerHTML;
@@ -1206,7 +1206,7 @@ async function gosh(obj1, obj2, obj3) {
             localStorage.shpAllCouriers = JSON.stringify(allShpNames);
             let selectedShp = localStorage.shpSelectedCouriers ? JSON.parse(localStorage.shpSelectedCouriers) : null;
             d.forEach((v) => {
-              if (selectedShp && !selectedShp.includes(v.courier_name)) return;
+              if (selectedShp && selectedShp.length && !selectedShp.includes(v.courier_name)) return;
               list += `<div id="shp" tabindex="${v.courier_company_id}" class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Save</a><i> ETD: ${v.etd} </i><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Book</a><i class="w3-right">${v.is_surface ? 'Surface' : 'Air'}</i></div>`;
             })
             document.getElementById('allcor').innerHTML = list + document.getElementById('allcor').innerHTML;
@@ -1226,7 +1226,7 @@ async function gosh(obj1, obj2, obj3) {
           localStorage.rkbAllCouriers = JSON.stringify(Object.keys(v[3]));
           let selectedRkb = localStorage.rkbSelectedCouriers ? JSON.parse(localStorage.rkbSelectedCouriers) : null;
           for (let i in v[3]) {
-            if (selectedRkb && !selectedRkb.includes(i)) continue;
+            if (selectedRkb && selectedRkb.length && !selectedRkb.includes(i)) continue;
             list += `<div id="rkb" title="${v[3][i].mode_id},${v[3][i].id}" class="w3-padding w3-lime"><div><b>${i}</b><b class="w3-right">${v[3][i]["rates"]}₹</b></div><a href="#" onclick="dlfn(this,'rkb')" class="w3-hover-red">Save</a><i> ETD: ${v[3][i]["tat"] + ' / ' + v[3][i]["avg_delivery_days"]}</i><a href="#" onclick="dlfn(this,'rkb')" class="w3-hover-red">Book</a><i class="w3-right">${v[3][i]["mode_name"]}</i></div>`;
           }
           document.getElementById('allcor').innerHTML += list; rez();
