@@ -2,13 +2,17 @@
 // Google Apps Script — paste this into your Apps Script project
 // Deploy as Web App (Execute as: Me, Access: Anyone)
 // After deploying, copy the URL and save it in your browser:
-//   localStorage.setItem('liveSheetScriptUrl', 'YOUR_DEPLOYED_URL')
+//   localStorage.setItem('liveSheetScriptUrl', 'YOUR_DEPLOYED_URL')       — for Live Offline
+//   localStorage.setItem('liveWebSheetScriptUrl', 'YOUR_DEPLOYED_URL')    — for Live Website
 //
 // HOW TO USE:
-// 1. On the "Live Offline" sheet, put your starting order number in cell B1
+// 1. On the "Live Offline" or "Live Website" sheet, put your starting order number in cell B1
 //    (Cell A1 says "Start Order:" as label — don't change it)
 // 2. The app will read B1 and auto-sync all orders from that number
 // 3. Never touch row 1 again — data fills from row 3 onward
+//
+// This script handles BOTH sheets. The payload.sheetName tells which sheet to write to.
+// If no sheetName is sent, it defaults to "Live Offline" (backward compatible).
 // ============================================================
 
 function doPost(e) {
@@ -18,11 +22,12 @@ function doPost(e) {
   var orderCount = payload.orderCount;
   var timestamp = payload.timestamp;
   var startOd = payload.startOd;
+  var sheetName = payload.sheetName || "Live Offline";
 
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName("Live Offline");
+  var sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
-    sheet = ss.insertSheet("Live Offline");
+    sheet = ss.insertSheet(sheetName);
   }
 
   // Row 1: NEVER touch — user's starting order number lives here
@@ -59,14 +64,16 @@ function doPost(e) {
   sheet.getRange(totalRow, 4).setValue(totalQty);
 
   return ContentService.createTextOutput(
-    JSON.stringify({ status: "ok", rows: data.length, totalQty: totalQty })
+    JSON.stringify({ status: "ok", rows: data.length, totalQty: totalQty, sheet: sheetName })
   ).setMimeType(ContentService.MimeType.JSON);
 }
 
 // doGet — returns the starting order number from cell B1
+// Pass ?sheet=Live%20Website to read from Live Website sheet
 function doGet(e) {
+  var sheetName = (e && e.parameter && e.parameter.sheet) || "Live Offline";
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName("Live Offline");
+  var sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
     return ContentService.createTextOutput(
       JSON.stringify({ status: "ok", startOd: null })

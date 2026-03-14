@@ -183,6 +183,7 @@ async function exportSold() {
 // ===== Live Sheet Auto-Sync =====
 
 let _liveSyncTimer = null;
+let _liveWebSyncTimer = null;
 
 // Initialize live sheet UI on page load — fetch starting order from Google Sheet
 setTimeout(async function() {
@@ -346,6 +347,166 @@ async function syncLiveSheet() {
     console.log('Live sheet synced:', orderCount, 'orders,', grandTotal, 'qty');
   } catch (err) {
     console.log('Live sheet sync error:', err);
+    if (statusEl) statusEl.textContent = 'Sync failed';
+  }
+}
+
+// ===== Live Website Sheet Auto-Sync =====
+
+// Initialize live web sheet UI on page load
+setTimeout(async function() {
+  let el = document.getElementById('liveWebStartOd');
+  if (!el) return;
+
+  el.value = localStorage.getItem('liveWebSheetStartOd') || '';
+  if (localStorage.getItem('liveWebSheetLocked') === '1') {
+    el.disabled = true;
+    el.style.background = '#eee';
+    let btn = document.getElementById('liveWebLockBtn');
+    btn.textContent = 'Locked';
+    btn.style.background = '#c0392b';
+    btn.style.color = '#fff';
+  }
+
+  fetchLiveWebStartOdFromSheet();
+}, 600);
+
+async function fetchLiveWebStartOdFromSheet() {
+  let scriptUrl = localStorage.getItem('liveWebSheetScriptUrl');
+  if (!scriptUrl) return;
+  try {
+    let sep = scriptUrl.includes('?') ? '&' : '?';
+    let res = await fetch(scriptUrl + sep + 'sheet=Live%20Website', { redirect: 'follow' });
+    let txt = await res.text();
+    console.log('Live web sheet GET response:', txt);
+    let json = JSON.parse(txt);
+    if (json.startOd) {
+      let el = document.getElementById('liveWebStartOd');
+      el.value = json.startOd;
+      localStorage.setItem('liveWebSheetStartOd', String(json.startOd));
+      el.disabled = true;
+      el.style.background = '#eee';
+      let btn = document.getElementById('liveWebLockBtn');
+      btn.textContent = 'Locked';
+      btn.style.background = '#c0392b';
+      btn.style.color = '#fff';
+      localStorage.setItem('liveWebSheetLocked', '1');
+    }
+  } catch (err) {
+    console.log('Could not fetch start order from web sheet:', err);
+  }
+}
+
+function setLiveWebStartOd() {
+  let val = document.getElementById('liveWebStartOd').value.trim();
+  if (val) {
+    localStorage.setItem('liveWebSheetStartOd', val);
+    syncLiveWebSheet();
+  } else {
+    localStorage.removeItem('liveWebSheetStartOd');
+  }
+}
+
+function toggleLiveWebLock() {
+  let inp = document.getElementById('liveWebStartOd');
+  let btn = document.getElementById('liveWebLockBtn');
+  if (inp.disabled) {
+    inp.disabled = false;
+    inp.style.background = '#fff';
+    btn.textContent = 'Unlocked';
+    btn.style.background = '#ffc107';
+    btn.style.color = '#000';
+    localStorage.setItem('liveWebSheetLocked', '0');
+  } else {
+    if (!inp.value.trim()) { alert('Enter a starting order number first'); return; }
+    inp.disabled = true;
+    inp.style.background = '#eee';
+    btn.textContent = 'Locked';
+    btn.style.background = '#c0392b';
+    btn.style.color = '#fff';
+    localStorage.setItem('liveWebSheetLocked', '1');
+    localStorage.setItem('liveWebSheetStartOd', inp.value.trim());
+  }
+}
+
+function debounceSyncLiveWebSheet() {
+  if (_liveWebSyncTimer) clearTimeout(_liveWebSyncTimer);
+  _liveWebSyncTimer = setTimeout(syncLiveWebSheet, 500);
+}
+
+async function syncLiveWebSheet() {
+  let startOd = localStorage.getItem('liveWebSheetStartOd');
+  if (!startOd) return;
+  let fromNum = Number(startOd);
+  if (!fromNum) return;
+
+  let scriptUrl = localStorage.getItem('liveWebSheetScriptUrl');
+  if (!scriptUrl) {
+    console.log('Live web sheet: no script URL set in localStorage.liveWebSheetScriptUrl');
+    return;
+  }
+
+  let statusEl = document.getElementById('liveWebSyncStatus');
+  if (statusEl) statusEl.textContent = 'Syncing...';
+
+  try {
+    let fromStr = String(fromNum);
+    let monthCode = 's' + fromStr.slice(0, 6);
+    await mthdb(monthCode);
+
+    let actualTo = fromNum + 9999999;
+    let allOrders = await oddb.od.where('id').between(fromNum, actualTo, true, true).toArray();
+
+    let all = {};
+    let orderCount = 0;
+    for (let o of allOrders) {
+      let kk = o.od;
+      if (!kk || typeof kk !== 'object') continue;
+      for (let t in kk) {
+        all[t] = all[t] || {};
+        for (let c in kk[t]) {
+          all[t][c] = all[t][c] || {};
+          for (let s in kk[t][c]) {
+            all[t][c][s] = (all[t][c][s] || 0) + kk[t][c][s];
+          }
+        }
+      }
+      orderCount++;
+    }
+
+    let data = [];
+    let grandTotal = 0;
+    for (let t in all) {
+      for (let c in all[t]) {
+        for (let s in all[t][c]) {
+          let qty = all[t][c][s];
+          data.push([t, c, s, qty]);
+          grandTotal += qty;
+        }
+      }
+    }
+
+    let payload = JSON.stringify({
+      startOd: fromNum,
+      data: data,
+      totalQty: grandTotal,
+      orderCount: orderCount,
+      timestamp: new Date().toISOString(),
+      sheetName: 'Live Website'
+    });
+
+    await fetch(scriptUrl, {
+      method: 'POST',
+      body: payload,
+      mode: 'no-cors'
+    });
+    console.log('Live web sheet POST sent (no-cors)');
+
+    let syncTime = new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: true });
+    if (statusEl) statusEl.textContent = 'Sync ' + syncTime;
+    console.log('Live web sheet synced:', orderCount, 'orders,', grandTotal, 'qty');
+  } catch (err) {
+    console.log('Live web sheet sync error:', err);
     if (statusEl) statusEl.textContent = 'Sync failed';
   }
 }
