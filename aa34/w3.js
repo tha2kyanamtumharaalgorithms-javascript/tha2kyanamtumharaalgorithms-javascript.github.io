@@ -102,22 +102,23 @@ setTimeout(function() {
 }, 500);
 
 async function exportSold(debug) {
-  let inp = document.getElementById('exportFromOd');
-  let fromNum = Number(inp.value) || 0;
-  let fromStr = String(fromNum);
-  let fromPrefix = fromStr.length >= 6 ? fromStr.slice(0, 6) : '';
+  let inpFrom = document.getElementById('exportFromOd');
+  let inpTo = document.getElementById('exportToOd');
+  let fromNum = Number(inpFrom.value) || 0;
+  let toNum = Number(inpTo.value) || 0;
+
+  if (!fromNum || !toNum) { alert('Enter both From and To order numbers'); return; }
+  if (toNum < fromNum) { alert('To must be >= From'); return; }
 
   let log = [];
   if (debug) {
     log.push('=== EXPORT DEBUG ===');
-    log.push('Input value: "' + inp.value + '"');
-    log.push('fromNum: ' + fromNum);
-    log.push('fromPrefix: "' + fromPrefix + '"');
-    log.push('lastExportedOdNum in localStorage: "' + (localStorage.getItem('lastExportedOdNum') || '') + '"');
+    log.push('From input: "' + inpFrom.value + '" → fromNum: ' + fromNum);
+    log.push('To input: "' + inpTo.value + '" → toNum: ' + toNum);
     log.push('');
   }
 
-  // 1. Collect all order IDs from all godowns (same month prefix only)
+  // 1. Collect all order IDs from all godowns (between from and to inclusive)
   let godowns = [
     { key: 'pin', prefix: 'ods' },
     { key: 'pint', prefix: 'odt' },
@@ -131,16 +132,11 @@ async function exportSold(debug) {
     if (debug) log.push('Godown "' + g.key + '" (' + g.prefix + '): ' + keys.length + ' total keys');
     for (let k of keys) {
       let idNum = Number(k.slice(g.prefix.length));
-      let idPrefix = String(idNum).slice(0, 6);
-      let pass = idNum >= fromNum && (!fromPrefix || idPrefix === fromPrefix);
-      if (debug && idPrefix === fromPrefix) {
-        log.push('  ' + k + ' → id=' + idNum + ' prefix=' + idPrefix + (pass ? ' ✓ INCLUDED' : ' ✗ skipped (id < fromNum)'));
+      let pass = idNum >= fromNum && idNum <= toNum;
+      if (debug) {
+        log.push('  ' + k + ' → id=' + idNum + (pass ? ' ✓ INCLUDED' : ' ✗ skipped (out of range)'));
       }
       if (pass) allOrderKeys.push({ key: k, prefix: g.prefix, id: idNum, godown: g.key });
-    }
-    if (debug) {
-      let skippedOther = keys.filter(k => String(Number(k.slice(g.prefix.length))).slice(0, 6) !== fromPrefix).length;
-      if (skippedOther) log.push('  (' + skippedOther + ' keys skipped: different month prefix)');
     }
   }
 
@@ -240,8 +236,8 @@ async function exportSold(debug) {
   a.click();
   document.body.removeChild(a);
 
-  // 5. Auto-fill input with last exported order number
-  inp.value = maxId;
+  // 5. Auto-fill From input with maxId for next export
+  inpFrom.value = maxId;
   localStorage.setItem('lastExportedOdNum', String(maxId));
   alert('Exported ' + orderCount + ' orders (' + grandTotal + ' total qty)');
 }
