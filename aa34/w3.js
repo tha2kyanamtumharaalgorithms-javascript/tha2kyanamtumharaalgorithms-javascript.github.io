@@ -366,6 +366,9 @@ setTimeout(async function() {
     btn.textContent = 'Locked';
     btn.style.background = '#c0392b';
     btn.style.color = '#fff';
+    // Auto-start polling and do initial sync on page load
+    syncLiveWebSheet();
+    startLiveWebPoll();
   }
 
   fetchLiveWebStartOdFromSheet();
@@ -417,6 +420,7 @@ function toggleLiveWebLock() {
     btn.style.background = '#ffc107';
     btn.style.color = '#000';
     localStorage.setItem('liveWebSheetLocked', '0');
+    stopLiveWebPoll();
   } else {
     if (!inp.value.trim()) { alert('Enter a starting order number first'); return; }
     inp.disabled = true;
@@ -426,6 +430,8 @@ function toggleLiveWebLock() {
     btn.style.color = '#fff';
     localStorage.setItem('liveWebSheetLocked', '1');
     localStorage.setItem('liveWebSheetStartOd', inp.value.trim());
+    syncLiveWebSheet();
+    startLiveWebPoll();
   }
 }
 
@@ -433,6 +439,10 @@ function debounceSyncLiveWebSheet() {
   if (_liveWebSyncTimer) clearTimeout(_liveWebSyncTimer);
   _liveWebSyncTimer = setTimeout(syncLiveWebSheet, 500);
 }
+
+// Dashboard Google Sheet that receives all website orders
+var _liveWebSheetUrl = 'https://docs.google.com/spreadsheets/d/1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0/gviz/tq?tqx=out:csv&sheet=PendingOrder';
+var _liveWebPollTimer = null;
 
 async function syncLiveWebSheet() {
   let startOd = localStorage.getItem('liveWebSheetStartOd');
@@ -447,21 +457,48 @@ async function syncLiveWebSheet() {
   }
 
   let statusEl = document.getElementById('liveWebSyncStatus');
-  if (statusEl) statusEl.textContent = 'Syncing...';
+  if (statusEl) statusEl.textContent = 'Fetching...';
 
   try {
-    let fromStr = String(fromNum);
-    let monthCode = 's' + fromStr.slice(0, 6);
-    await mthdb(monthCode);
+    // Fetch live order data from the external dashboard Google Sheet
+    let res = await fetch(_liveWebSheetUrl);
+    let csvText = await res.text();
 
-    let actualTo = fromNum + 9999999;
-    let allOrders = await oddb.od.where('id').between(fromNum, actualTo, true, true).toArray();
-
+    // Parse CSV rows - each row: "orderID||Pending","JSON_data"
     let all = {};
     let orderCount = 0;
-    for (let o of allOrders) {
-      let kk = o.od;
+    let lines = csvText.split('\n');
+
+    for (let line of lines) {
+      line = line.trim();
+      if (!line) continue;
+
+      // Extract order ID from first field: "2526030023270||Pending"
+      let idMatch = line.match(/^"(\d+)\|\|/);
+      if (!idMatch) continue;
+      let orderId = Number(idMatch[1]);
+
+      // Filter: only orders >= startOd
+      if (orderId < fromNum) continue;
+
+      // Extract JSON from second field
+      let jsonStart = line.indexOf('","');
+      if (jsonStart === -1) continue;
+      let jsonStr = line.slice(jsonStart + 3); // skip ","
+      if (jsonStr.endsWith('"')) jsonStr = jsonStr.slice(0, -1);
+      // Unescape CSV double-quotes
+      jsonStr = jsonStr.replace(/""/g, '"');
+
+      let orderData;
+      try { orderData = JSON.parse(jsonStr); } catch (e) { continue; }
+
+      // Skip orders with hold status
+      // if (orderData.hold) continue;
+
+      let kk = orderData.od;
       if (!kk || typeof kk !== 'object') continue;
+
+      // Aggregate: type > color > size > qty
       for (let t in kk) {
         all[t] = all[t] || {};
         for (let c in kk[t]) {
@@ -474,6 +511,7 @@ async function syncLiveWebSheet() {
       orderCount++;
     }
 
+    // Build data array for the sheet
     let data = [];
     let grandTotal = 0;
     for (let t in all) {
@@ -503,10 +541,32 @@ async function syncLiveWebSheet() {
     console.log('Live web sheet POST sent (no-cors)');
 
     let syncTime = new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: true });
-    if (statusEl) statusEl.textContent = 'Sync ' + syncTime;
-    console.log('Live web sheet synced:', orderCount, 'orders,', grandTotal, 'qty');
+    if (statusEl) statusEl.textContent = orderCount + ' orders | ' + grandTotal + ' pcs | ' + syncTime;
+    console.log('Live web sheet synced:', orderCount, 'orders,', grandTotal, 'qty from dashboard');
   } catch (err) {
     console.log('Live web sheet sync error:', err);
+    let statusEl = document.getElementById('liveWebSyncStatus');
     if (statusEl) statusEl.textContent = 'Sync failed';
   }
+}
+
+// Auto-poll: fetch from dashboard every 5 minutes to catch live updates
+function startLiveWebPoll() {
+  if (_liveWebPollTimer) clearInterval(_liveWebPollTimer);
+  let startOd = localStorage.getItem('liveWebSheetStartOd');
+  if (!startOd) return;
+  // Poll every 300 seconds (5 min) - similar to dashboard's 400s
+  _liveWebPollTimer = setInterval(function() {
+    let h = new Date().getHours();
+    // Only poll during working hours 8AM-10PM
+    if (h >= 8 && h <= 22) {
+      syncLiveWebSheet();
+    }
+  }, 300000);
+  console.log('Live web polling started (every 5 min)');
+}
+
+function stopLiveWebPoll() {
+  if (_liveWebPollTimer) { clearInterval(_liveWebPollTimer); _liveWebPollTimer = null; }
+  console.log('Live web polling stopped');
 }
