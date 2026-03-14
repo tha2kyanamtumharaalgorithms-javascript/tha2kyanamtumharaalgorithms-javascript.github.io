@@ -1240,28 +1240,28 @@ function openCourierSettings() {
   w3_close();
   // ShipRocket couriers
   let shpNames = localStorage.shpAllCouriers ? JSON.parse(localStorage.shpAllCouriers) : [];
-  let shpSelected = localStorage.shpSelectedCouriers ? JSON.parse(localStorage.shpSelectedCouriers) : null;
+  let shpSelected = localStorage.shpSelectedCouriers ? JSON.parse(localStorage.shpSelectedCouriers) : [];
   let shpEl = document.getElementById('shpCourierList');
   if (shpNames.length === 0) {
     shpEl.innerHTML = '<p>Open courier rates for any order first to load courier names.</p>';
   } else {
     let html = '';
     shpNames.forEach(name => {
-      let checked = (shpSelected === null || shpSelected.includes(name)) ? 'checked' : '';
+      let checked = shpSelected.includes(name) ? 'checked' : '';
       html += `<label class="w3-block w3-padding-small"><input type="checkbox" class="w3-check shpCheck" value="${name}" ${checked}> ${name}</label>`;
     });
     shpEl.innerHTML = html;
   }
   // RocketBox couriers
   let rkbNames = localStorage.rkbAllCouriers ? JSON.parse(localStorage.rkbAllCouriers) : [];
-  let rkbSelected = localStorage.rkbSelectedCouriers ? JSON.parse(localStorage.rkbSelectedCouriers) : null;
+  let rkbSelected = localStorage.rkbSelectedCouriers ? JSON.parse(localStorage.rkbSelectedCouriers) : [];
   let rkbEl = document.getElementById('rkbCourierList');
   if (rkbNames.length === 0) {
     rkbEl.innerHTML = '<p>Open courier rates for any order first to load courier names.</p>';
   } else {
     let html = '';
     rkbNames.forEach(name => {
-      let checked = (rkbSelected === null || rkbSelected.includes(name)) ? 'checked' : '';
+      let checked = rkbSelected.includes(name) ? 'checked' : '';
       html += `<label class="w3-block w3-padding-small"><input type="checkbox" class="w3-check rkbCheck" value="${name}" ${checked}> ${name}</label>`;
     });
     rkbEl.innerHTML = html;
@@ -1271,15 +1271,19 @@ function openCourierSettings() {
 
 function saveCourierSettings() {
   let shpChecks = document.querySelectorAll('.shpCheck');
-  let shpSelected = [];
-  shpChecks.forEach(c => { if (c.checked) shpSelected.push(c.value); });
-  localStorage.shpSelectedCouriers = JSON.stringify(shpSelected);
+  if (shpChecks.length > 0) {
+    let shpSelected = [];
+    shpChecks.forEach(c => { if (c.checked) shpSelected.push(c.value); });
+    localStorage.shpSelectedCouriers = JSON.stringify(shpSelected);
+  }
   let rkbChecks = document.querySelectorAll('.rkbCheck');
-  let rkbSelected = [];
-  rkbChecks.forEach(c => { if (c.checked) rkbSelected.push(c.value); });
-  localStorage.rkbSelectedCouriers = JSON.stringify(rkbSelected);
+  if (rkbChecks.length > 0) {
+    let rkbSelected = [];
+    rkbChecks.forEach(c => { if (c.checked) rkbSelected.push(c.value); });
+    localStorage.rkbSelectedCouriers = JSON.stringify(rkbSelected);
+  }
   document.getElementById('courierSettingsModal').style.display = 'none';
-  alert('Saved! ShipRocket: ' + shpSelected.length + ', RocketBox: ' + rkbSelected.length + ' couriers selected.');
+  alert('Saved!');
 }
 
 function formatDate(date, n) {
