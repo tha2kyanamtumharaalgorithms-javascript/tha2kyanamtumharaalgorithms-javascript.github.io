@@ -118,12 +118,9 @@ async function exportSold(debug) {
     log.push('');
   }
 
-  // 1. Collect all order IDs from all godowns (between from and to inclusive)
+  // 1. Collect all order IDs from Delhi godown (between from and to inclusive)
   let godowns = [
-    { key: 'pin', prefix: 'ods' },
-    { key: 'pint', prefix: 'odt' },
-    { key: 'pink', prefix: 'odk' },
-    { key: 'pinpd', prefix: 'odpd' }
+    { key: 'pin', prefix: 'ods' }
   ];
   let allOrderKeys = [];
   for (let g of godowns) {
