@@ -1186,8 +1186,8 @@ async function gosh(obj1, obj2, obj3) {
               let selectedShp = localStorage.shpSelectedCouriers ? JSON.parse(localStorage.shpSelectedCouriers) : null;
               d.forEach((v) => {
                 if (selectedShp && selectedShp.length && !selectedShp.includes(v.courier_name)) return;
-                let stars = v.rating ? '⭐' + v.rating : '';
-                list += `<div id="shp" tabindex="${v.courier_company_id}" class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Save</a><i> ETD: ${v.etd} </i><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Book</a><i class="w3-right">${v.is_surface ? 'Surface' : 'Air'}</i><i class="w3-right w3-margin-right">${stars}</i></div>`;
+                let stars = v.rating ? ' ⭐' + v.rating : '';
+                list += `<div id="shp" tabindex="${v.courier_company_id}" class="w3-padding w3-khaki"><div><b>${v.courier_name}${stars}</b><b class="w3-right">${v.freight_charge}₹</b></div><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Save</a><i> ETD: ${v.etd} </i><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Book</a><i class="w3-right">${v.is_surface ? 'Surface' : 'Air'}</i></div>`;
               })
               document.getElementById('allcor').innerHTML = list + document.getElementById('allcor').innerHTML;
             }
@@ -1208,8 +1208,8 @@ async function gosh(obj1, obj2, obj3) {
             let selectedShp = localStorage.shpSelectedCouriers ? JSON.parse(localStorage.shpSelectedCouriers) : null;
             d.forEach((v) => {
               if (selectedShp && selectedShp.length && !selectedShp.includes(v.courier_name)) return;
-              let stars = v.rating ? '⭐' + v.rating : '';
-              list += `<div id="shp" tabindex="${v.courier_company_id}" class="w3-padding w3-khaki"><div><b>${v.courier_name}</b><b class="w3-right">${v.freight_charge}₹</b></div><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Save</a><i> ETD: ${v.etd} </i><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Book</a><i class="w3-right">${v.is_surface ? 'Surface' : 'Air'}</i><i class="w3-right w3-margin-right">${stars}</i></div>`;
+              let stars = v.rating ? ' ⭐' + v.rating : '';
+              list += `<div id="shp" tabindex="${v.courier_company_id}" class="w3-padding w3-khaki"><div><b>${v.courier_name}${stars}</b><b class="w3-right">${v.freight_charge}₹</b></div><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Save</a><i> ETD: ${v.etd} </i><a href="#" onclick="dlfn(this,'shp')" class="w3-hover-red">Book</a><i class="w3-right">${v.is_surface ? 'Surface' : 'Air'}</i></div>`;
             })
             document.getElementById('allcor').innerHTML = list + document.getElementById('allcor').innerHTML;
           }; rez();
