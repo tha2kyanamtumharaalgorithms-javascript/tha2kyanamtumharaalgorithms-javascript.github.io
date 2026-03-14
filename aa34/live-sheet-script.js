@@ -17,6 +17,10 @@
 
 function doPost(e) {
   var payload = JSON.parse(e.postData.contents);
+
+  // Piggyback: snapshot PendingOrder → NotCapturedYet on every POST
+  try { snapshotPendingOrders(); } catch(err) {}
+
   var data = payload.data;       // [[product, color, size, qty], ...]
   var totalQty = payload.totalQty;
   var orderCount = payload.orderCount;
@@ -63,9 +67,64 @@ function doPost(e) {
   sheet.getRange(totalRow, 1).setValue("TOTAL");
   sheet.getRange(totalRow, 4).setValue(totalQty);
 
+  // Cleanup NotCapturedYet: remove orders that browser has already captured
+  if (payload.capturedIds && payload.capturedIds.length) {
+    try {
+      var srcSs = SpreadsheetApp.openById('1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0');
+      var nctSheet = srcSs.getSheetByName('NotCapturedYet');
+      if (nctSheet && nctSheet.getLastRow() > 0) {
+        var nctData = nctSheet.getDataRange().getValues();
+        var capturedSet = {};
+        payload.capturedIds.forEach(function(id) { capturedSet[id] = true; });
+        for (var i = nctData.length - 1; i >= 0; i--) {
+          var idm = String(nctData[i][0]).match(/^(\d+)\|\|/);
+          var isCaptured = idm && capturedSet[Number(idm[1])];
+          var isStale = nctData[i][2] && ((new Date() - new Date(nctData[i][2])) > 5 * 60 * 1000);
+          if (isCaptured || isStale) {
+            nctSheet.deleteRow(i + 1);
+          }
+        }
+      }
+    } catch(err) {}
+  }
+
   return ContentService.createTextOutput(
     JSON.stringify({ status: "ok", rows: data.length, totalQty: totalQty, sheet: sheetName })
   ).setMimeType(ContentService.MimeType.JSON);
+}
+
+// ============================================================
+// snapshotPendingOrders — copies PendingOrder rows to NotCapturedYet tab
+// Set up a 1-minute time-driven trigger for this function:
+//   Edit > Triggers > Add Trigger > snapshotPendingOrders > Time-driven > Every minute
+// Also called from doPost() as a piggyback (runs every 30s when browser is active)
+// ============================================================
+function snapshotPendingOrders() {
+  var srcSs = SpreadsheetApp.openById('1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0');
+  var pendingSheet = srcSs.getSheetByName('PendingOrder');
+  if (!pendingSheet || pendingSheet.getLastRow() < 1) return;
+
+  var nctSheet = srcSs.getSheetByName('NotCapturedYet');
+  if (!nctSheet) nctSheet = srcSs.insertSheet('NotCapturedYet');
+
+  // Read existing NotCapturedYet order IDs to avoid duplicates
+  var existingIds = {};
+  if (nctSheet.getLastRow() > 0) {
+    var existingData = nctSheet.getDataRange().getValues();
+    for (var i = 0; i < existingData.length; i++) {
+      var match = String(existingData[i][0]).match(/^(\d+)\|\|/);
+      if (match) existingIds[match[1]] = true;
+    }
+  }
+
+  // Copy new orders from PendingOrder to NotCapturedYet
+  var data = pendingSheet.getDataRange().getValues();
+  for (var j = 0; j < data.length; j++) {
+    var idMatch = String(data[j][0]).match(/^(\d+)\|\|/);
+    if (idMatch && !existingIds[idMatch[1]]) {
+      nctSheet.appendRow([data[j][0], data[j][1], new Date().toISOString()]);
+    }
+  }
 }
 
 // doGet — returns the starting order number from cell B1

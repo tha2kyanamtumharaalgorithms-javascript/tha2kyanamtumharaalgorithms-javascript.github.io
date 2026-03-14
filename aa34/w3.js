@@ -445,6 +445,8 @@ function debounceSyncLiveWebSheet() {
 
 // Dashboard Google Sheet that receives all website orders
 var _liveWebSheetUrl = 'https://docs.google.com/spreadsheets/d/1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0/gviz/tq?tqx=out:csv&sheet=PendingOrder';
+// Safety net: NotCapturedYet tab catches orders that disappear from PendingOrder before poll
+var _liveWebSheetUrlSafetyNet = 'https://docs.google.com/spreadsheets/d/1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0/gviz/tq?tqx=out:csv&sheet=NotCapturedYet';
 var _liveWebPollTimer = null;
 
 // Persistent memory of all orders ever seen — survives page reload
@@ -484,45 +486,43 @@ async function syncLiveWebSheet() {
   if (statusEl) statusEl.textContent = 'Fetching...';
 
   try {
-    // Fetch live order data from the external dashboard Google Sheet
-    let res = await fetch(_liveWebSheetUrl);
+    // Fetch from BOTH PendingOrder and NotCapturedYet tabs in parallel
+    let [res, res2] = await Promise.all([
+      fetch(_liveWebSheetUrl),
+      fetch(_liveWebSheetUrlSafetyNet).catch(() => null)
+    ]);
     let csvText = await res.text();
+    let csvText2 = res2 ? await res2.text() : '';
 
-    // Parse CSV rows - each row: "orderID||Pending","JSON_data"
-    let lines = csvText.split('\n');
-    let currentPanelIds = {};
-
-    for (let line of lines) {
-      line = line.trim();
-      if (!line) continue;
-
-      // Extract order ID from first field: "2526030023270||Pending"
-      let idMatch = line.match(/^"(\d+)\|\|/);
-      if (!idMatch) continue;
-      let orderId = Number(idMatch[1]);
-
-      // Filter: only orders >= startOd
-      if (orderId < fromNum) continue;
-
-      // Extract JSON from second field
-      let jsonStart = line.indexOf('","');
-      if (jsonStart === -1) continue;
-      let jsonStr = line.slice(jsonStart + 3); // skip ","
-      if (jsonStr.endsWith('"')) jsonStr = jsonStr.slice(0, -1);
-      // Unescape CSV double-quotes
-      jsonStr = jsonStr.replace(/""/g, '"');
-
-      let orderData;
-      try { orderData = JSON.parse(jsonStr); } catch (e) { continue; }
-
-      let kk = orderData.od;
-      if (!kk || typeof kk !== 'object') continue;
-
-      // Save/update this order in persistent memory
-      // If order is still on panel, always update (picks up edits)
-      _liveWebSeenOrders[orderId] = { od: kk };
-      currentPanelIds[orderId] = true;
+    // Helper: parse CSV rows - each row: "orderID||Pending","JSON_data"
+    function _parseLiveWebCsv(csv, fromNum, onlyNew) {
+      let lines = csv.split('\n');
+      for (let line of lines) {
+        line = line.trim();
+        if (!line) continue;
+        let idMatch = line.match(/^"(\d+)\|\|/);
+        if (!idMatch) continue;
+        let orderId = Number(idMatch[1]);
+        if (orderId < fromNum) continue;
+        let jsonStart = line.indexOf('","');
+        if (jsonStart === -1) continue;
+        let jsonStr = line.slice(jsonStart + 3);
+        if (jsonStr.endsWith('"')) jsonStr = jsonStr.slice(0, -1);
+        jsonStr = jsonStr.replace(/""/g, '"');
+        let orderData;
+        try { orderData = JSON.parse(jsonStr); } catch (e) { continue; }
+        let kk = orderData.od;
+        if (!kk || typeof kk !== 'object') continue;
+        // onlyNew: only save if not already in memory (PendingOrder takes precedence)
+        if (onlyNew && _liveWebSeenOrders[orderId]) continue;
+        _liveWebSeenOrders[orderId] = { od: kk };
+      }
     }
+
+    // Parse PendingOrder first (takes precedence — has latest edits)
+    _parseLiveWebCsv(csvText, fromNum, false);
+    // Parse NotCapturedYet second (only add orders not already captured)
+    if (csvText2) _parseLiveWebCsv(csvText2, fromNum, true);
 
     _saveLiveWebSeenOrders();
 
@@ -565,7 +565,8 @@ async function syncLiveWebSheet() {
       totalQty: grandTotal,
       orderCount: orderCount,
       timestamp: new Date().toISOString(),
-      sheetName: 'Live Website'
+      sheetName: 'Live Website',
+      capturedIds: Object.keys(_liveWebSeenOrders).map(Number)
     });
 
     await fetch(scriptUrl, {
@@ -590,14 +591,14 @@ function startLiveWebPoll() {
   if (_liveWebPollTimer) clearInterval(_liveWebPollTimer);
   let startOd = localStorage.getItem('liveWebSheetStartOd');
   if (!startOd) return;
-  // Poll every 5 seconds — orders can disappear from PendingOrder within seconds
+  // Poll every 30 seconds — NotCapturedYet safety net catches fast-processed orders
   _liveWebPollTimer = setInterval(function() {
     let h = new Date().getHours();
     if (h >= 8 && h <= 22) {
       syncLiveWebSheet();
     }
-  }, 5000);
-  console.log('Live web polling started (every 5 sec)');
+  }, 30000);
+  console.log('Live web polling started (every 30 sec)');
 }
 
 function stopLiveWebPoll() {
