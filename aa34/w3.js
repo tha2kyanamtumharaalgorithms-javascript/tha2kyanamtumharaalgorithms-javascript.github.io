@@ -208,8 +208,10 @@ async function fetchLiveStartOdFromSheet() {
   let scriptUrl = localStorage.getItem('liveSheetScriptUrl');
   if (!scriptUrl) return;
   try {
-    let res = await fetch(scriptUrl);
-    let json = await res.json();
+    let res = await fetch(scriptUrl, { redirect: 'follow' });
+    let txt = await res.text();
+    console.log('Live sheet GET response:', txt);
+    let json = JSON.parse(txt);
     if (json.startOd) {
       let el = document.getElementById('liveStartOd');
       el.value = json.startOd;
@@ -335,8 +337,9 @@ async function syncLiveSheet() {
     await fetch(scriptUrl, {
       method: 'POST',
       body: payload,
-      headers: { 'Content-Type': 'application/json' }
+      mode: 'no-cors'
     });
+    console.log('Live sheet POST sent (no-cors)');
 
     let syncTime = new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: true });
     if (statusEl) statusEl.textContent = 'Synced ' + syncTime + ' (' + orderCount + ' orders, ' + grandTotal + ' qty)';
