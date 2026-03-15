@@ -260,7 +260,7 @@ async function deleteod() {
     deleteLiveWebOrder(sel1);
 
     // Step 3: Record deletion in Apps Script (DeletedOrders tab)
-    let liveUrl = localStorage.getItem('liveWebScriptUrl');
+    let liveUrl = localStorage.getItem('liveWebSheetScriptUrl');
     if (liveUrl) {
         fetch(liveUrl, {
             method: 'POST',
@@ -672,11 +672,9 @@ function syncOrdersToLiveWeb() {
 
 function updateLiveWebOrder(orderId, newOdData) {
     let cache = JSON.parse(localStorage.liveWebOrders || '{}');
-    if (cache[orderId]) {
-        cache[orderId] = newOdData;
-        localStorage.setItem('liveWebOrders', JSON.stringify(cache));
-        aggregateAndSyncLiveWeb();
-    }
+    cache[orderId] = newOdData;
+    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
+    aggregateAndSyncLiveWeb();
 }
 
 function deleteLiveWebOrder(orderIds) {
