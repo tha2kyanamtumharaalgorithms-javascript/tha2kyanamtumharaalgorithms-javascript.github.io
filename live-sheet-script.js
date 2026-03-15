@@ -13,9 +13,39 @@
 var SHEET_ID = '1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0';
 
 function doPost(e) {
+  // Debug: log what we received
+  console.log('doPost called');
+  console.log('e.parameter keys:', e.parameter ? Object.keys(e.parameter) : 'none');
+  console.log('e.parameter.payload exists:', !!(e.parameter && e.parameter.payload));
+  console.log('e.postData type:', e.postData ? e.postData.type : 'none');
+  console.log('e.postData.contents (first 300):', e.postData && e.postData.contents ? e.postData.contents.substring(0, 300) : 'none');
+
   // Support both form submission (e.parameter.payload) and JSON POST (e.postData.contents)
-  var raw = (e.parameter && e.parameter.payload) ? e.parameter.payload : e.postData.contents;
-  var payload = JSON.parse(raw);
+  var raw;
+  if (e.parameter && e.parameter.payload) {
+    raw = e.parameter.payload;
+    console.log('Using e.parameter.payload, length:', raw.length);
+  } else if (e.postData && e.postData.contents) {
+    raw = e.postData.contents;
+    console.log('Using e.postData.contents, length:', raw.length);
+  } else {
+    console.log('ERROR: No payload found! e.parameter:', JSON.stringify(e.parameter), 'e.postData:', JSON.stringify(e.postData));
+    return ContentService.createTextOutput(
+      JSON.stringify({ status: "error", message: "No payload received" })
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  var payload;
+  try {
+    payload = JSON.parse(raw);
+  } catch (err) {
+    console.log('ERROR parsing JSON:', err.message, 'raw (first 200):', raw.substring(0, 200));
+    return ContentService.createTextOutput(
+      JSON.stringify({ status: "error", message: "JSON parse error: " + err.message })
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  console.log('Parsed payload — action:', payload.action || 'sync', 'dataRows:', payload.data ? payload.data.length : 0, 'totalQty:', payload.totalQty, 'orderCount:', payload.orderCount, 'sheet:', payload.sheetName);
 
   if (payload.action === 'deleteOrder') {
     return handleDeleteOrder(payload);
