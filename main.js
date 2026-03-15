@@ -254,7 +254,7 @@ async function deleteod() {
     // Step 1: Remove from PendingOrder (same as Done)
     let fmd = new FormData();
     fmd.append("myd", JSON.stringify(sel1));
-    fetch("https://script.google.com/macros/s/AKfycbxJs1MUozlOyJWpxY4EQmBL3qSkQq6hVKUwmvhSn53Fuhwh6Q3-Tzu3ntuAjqa0aTcK/exec", { method: 'POST', body: fmd });
+    fetch("https://script.google.com/macros/s/AKfycbxJs1MUozlOyJWpxY4EQmBL3qSkQq6hVKUwmvhSn53Fuhwh6Q3-Tzu3ntuAjqa0aTcK/exec", { method: 'POST', body: fmd, mode: 'no-cors' });
 
     // Step 2: Remove from Live Website sheet and re-sync
     deleteLiveWebOrder(sel1);
