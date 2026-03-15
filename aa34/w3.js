@@ -183,7 +183,6 @@ async function exportSold() {
 // ===== Live Sheet Auto-Sync =====
 
 let _liveSyncTimer = null;
-let _liveWebSyncTimer = null;
 
 // Initialize live sheet UI on page load — fetch starting order from Google Sheet
 setTimeout(async function() {
@@ -351,9 +350,11 @@ async function syncLiveSheet() {
   }
 }
 
-// ===== Live Website Sheet Auto-Sync =====
+// ===== Live Website Sheet =====
+// Live Website sync is now handled by the dashboard (main.js).
+// The startOd UI below is kept so you can set the starting order number.
+// Dashboard reads liveWebSheetStartOd from localStorage (set here).
 
-// Initialize live web sheet UI on page load
 setTimeout(async function() {
   let el = document.getElementById('liveWebStartOd');
   if (!el) return;
@@ -366,9 +367,6 @@ setTimeout(async function() {
     btn.textContent = 'Locked';
     btn.style.background = '#c0392b';
     btn.style.color = '#fff';
-    // Auto-start polling and do initial sync on page load
-    syncLiveWebSheet();
-    startLiveWebPoll();
   }
 
   fetchLiveWebStartOdFromSheet();
@@ -404,7 +402,6 @@ function setLiveWebStartOd() {
   let val = document.getElementById('liveWebStartOd').value.trim();
   if (val) {
     localStorage.setItem('liveWebSheetStartOd', val);
-    syncLiveWebSheet();
   } else {
     localStorage.removeItem('liveWebSheetStartOd');
   }
@@ -420,7 +417,6 @@ function toggleLiveWebLock() {
     btn.style.background = '#ffc107';
     btn.style.color = '#000';
     localStorage.setItem('liveWebSheetLocked', '0');
-    stopLiveWebPoll();
   } else {
     if (!inp.value.trim()) { alert('Enter a starting order number first'); return; }
     inp.disabled = true;
@@ -430,143 +426,5 @@ function toggleLiveWebLock() {
     btn.style.color = '#fff';
     localStorage.setItem('liveWebSheetLocked', '1');
     localStorage.setItem('liveWebSheetStartOd', inp.value.trim());
-    syncLiveWebSheet();
-    startLiveWebPoll();
   }
-}
-
-function debounceSyncLiveWebSheet() {
-  if (_liveWebSyncTimer) clearTimeout(_liveWebSyncTimer);
-  _liveWebSyncTimer = setTimeout(syncLiveWebSheet, 500);
-}
-
-// Dashboard Google Sheet that receives all website orders
-var _liveWebSheetUrl = 'https://docs.google.com/spreadsheets/d/1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0/gviz/tq?tqx=out:csv&sheet=PendingOrder';
-var _liveWebPollTimer = null;
-
-async function syncLiveWebSheet() {
-  let startOd = localStorage.getItem('liveWebSheetStartOd');
-  if (!startOd) return;
-  let fromNum = Number(startOd);
-  if (!fromNum) return;
-
-  let scriptUrl = localStorage.getItem('liveWebSheetScriptUrl');
-  if (!scriptUrl) {
-    console.log('Live web sheet: no script URL set in localStorage.liveWebSheetScriptUrl');
-    return;
-  }
-
-  let statusEl = document.getElementById('liveWebSyncStatus');
-  if (statusEl) statusEl.textContent = 'Fetching...';
-
-  try {
-    // Fetch live order data from the external dashboard Google Sheet
-    let res = await fetch(_liveWebSheetUrl);
-    let csvText = await res.text();
-
-    // Parse CSV rows - each row: "orderID||Pending","JSON_data"
-    let all = {};
-    let orderCount = 0;
-    let lines = csvText.split('\n');
-
-    for (let line of lines) {
-      line = line.trim();
-      if (!line) continue;
-
-      // Extract order ID from first field: "2526030023270||Pending"
-      let idMatch = line.match(/^"(\d+)\|\|/);
-      if (!idMatch) continue;
-      let orderId = Number(idMatch[1]);
-
-      // Filter: only orders >= startOd
-      if (orderId < fromNum) continue;
-
-      // Extract JSON from second field
-      let jsonStart = line.indexOf('","');
-      if (jsonStart === -1) continue;
-      let jsonStr = line.slice(jsonStart + 3); // skip ","
-      if (jsonStr.endsWith('"')) jsonStr = jsonStr.slice(0, -1);
-      // Unescape CSV double-quotes
-      jsonStr = jsonStr.replace(/""/g, '"');
-
-      let orderData;
-      try { orderData = JSON.parse(jsonStr); } catch (e) { continue; }
-
-      // Skip orders with hold status
-      // if (orderData.hold) continue;
-
-      let kk = orderData.od;
-      if (!kk || typeof kk !== 'object') continue;
-
-      // Aggregate: type > color > size > qty
-      for (let t in kk) {
-        all[t] = all[t] || {};
-        for (let c in kk[t]) {
-          all[t][c] = all[t][c] || {};
-          for (let s in kk[t][c]) {
-            all[t][c][s] = (all[t][c][s] || 0) + kk[t][c][s];
-          }
-        }
-      }
-      orderCount++;
-    }
-
-    // Build data array for the sheet
-    let data = [];
-    let grandTotal = 0;
-    for (let t in all) {
-      for (let c in all[t]) {
-        for (let s in all[t][c]) {
-          let qty = all[t][c][s];
-          data.push([t, c, s, qty]);
-          grandTotal += qty;
-        }
-      }
-    }
-
-    let payload = JSON.stringify({
-      startOd: fromNum,
-      data: data,
-      totalQty: grandTotal,
-      orderCount: orderCount,
-      timestamp: new Date().toISOString(),
-      sheetName: 'Live Website'
-    });
-
-    await fetch(scriptUrl, {
-      method: 'POST',
-      body: payload,
-      mode: 'no-cors'
-    });
-    console.log('Live web sheet POST sent (no-cors)');
-
-    let syncTime = new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: true });
-    if (statusEl) statusEl.textContent = orderCount + ' orders | ' + grandTotal + ' pcs | ' + syncTime;
-    console.log('Live web sheet synced:', orderCount, 'orders,', grandTotal, 'qty from dashboard');
-  } catch (err) {
-    console.log('Live web sheet sync error:', err);
-    let statusEl = document.getElementById('liveWebSyncStatus');
-    if (statusEl) statusEl.textContent = 'Sync failed';
-  }
-}
-
-// Auto-poll: fetch from dashboard every 5 minutes to catch live updates
-function startLiveWebPoll() {
-  if (_liveWebPollTimer) clearInterval(_liveWebPollTimer);
-  let startOd = localStorage.getItem('liveWebSheetStartOd');
-  if (!startOd) return;
-  // Poll every 300 seconds (5 min) - similar to dashboard's 400s
-  _liveWebPollTimer = setInterval(function() {
-    let h = new Date().getHours();
-    // Only poll during working hours 8AM-10PM
-    if (h >= 8 && h <= 22) {
-      syncLiveWebSheet();
-    }
-  }, 300000);
-  console.log('Live web polling started (every 5 min)');
-}
-
-function stopLiveWebPoll() {
-  if (_liveWebPollTimer) { clearInterval(_liveWebPollTimer); _liveWebPollTimer = null; }
-  console.log('Live web polling stopped');
 }
