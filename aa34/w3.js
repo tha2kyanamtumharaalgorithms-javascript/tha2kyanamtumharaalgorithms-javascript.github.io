@@ -1,5 +1,7 @@
 function sendd(urld, d9, b, q) {
   return new Promise(async (rez) => {
+    urld = urld || localStorage.gr5;
+    if (!urld) { console.log('sendd skipped: no API URL (gr5)'); return rez(); }
     let da = { "id": 0, "type": b, "p": d9.p, "data": d9 };
     switch (d9.p) {
       case '0':
