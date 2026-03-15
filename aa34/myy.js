@@ -240,7 +240,27 @@ function creatod(eid) {
     shod0 = { "p": "0", "g": gd, "od": { ...zsr, "pc": { ...pcb } }, ptd };
 
     await mthdb(gd.slice(-1) + odid.toString().slice(0, 6));
-    await oddb.od.add(shod0.od, odid).then((res) => {
+    // Check if order ID already exists (can happen with synced data), if so increment and retry
+    let existingOd = await oddb.od.get(odid);
+    if (existingOd) {
+      // ID collision - get a new unique ID
+      try {
+        const counterRef = fbDb.ref('data/counters/counter_' + odid.toString().slice(0, 6));
+        const result = await counterRef.transaction((current) => (current || 0) + 1);
+        let newIdf = result.snapshot.val();
+        localStorage.clickcount = newIdf;
+        let fy = odid.toString().slice(0, 6);
+        odid = Number(fy + String(newIdf).padStart(7, 0));
+        shod0.od.id = odid;
+        zsr.id = odid;
+        await mthdb(gd.slice(-1) + odid.toString().slice(0, 6));
+      } catch (e) {
+        odid = Number(odid.toString().slice(0, 6) + String(Date.now()).slice(-7));
+        shod0.od.id = odid;
+        zsr.id = odid;
+      }
+    }
+    await oddb.od.put(shod0.od, odid).then((res) => {
       console.log(res, 'added');
       fbPutOrder(gd.slice(-1) + odid.toString().slice(0, 6), shod0.od);
       selgo(gd);//  pinloc
