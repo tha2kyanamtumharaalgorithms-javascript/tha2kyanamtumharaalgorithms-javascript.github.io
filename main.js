@@ -634,12 +634,10 @@ function holdn() {
 // LIVE WEBSITE SHEET SYNC — v3 (complete rewrite)
 // =====================================================
 // How it works:
-//   1. localStorage.liveWebOrders = cache of all order .od data
-//   2. New orders from getdata() → added to cache
-//   3. Done orders → STAY in cache (still counted as stock sold)
-//   4. Deleted orders → REMOVED from cache
-//   5. Edited orders → cache updated with new .od data
-//   6. After any change → aggregate cache → send to sheet via GET
+//   1. Each sync builds fresh from current pending orders (ods)
+//   2. Only orders >= startOd are included
+//   3. "Done" orders automatically disappear (not in ods anymore)
+//   4. After any change → aggregate → send to sheet via GET
 //
 // Why GET not POST:
 //   Google Apps Script redirects POST with 302, browser changes to GET,
@@ -649,26 +647,24 @@ function holdn() {
 //   Example: T-Shirt~Red~M~5*Pants~Black~L~3
 // =====================================================
 
-// Step 1: merge current pending orders into cache
+// Step 1: collect current pending orders >= startOd (fresh each time)
 function syncOrdersToLiveWeb() {
     let startOd = localStorage.getItem('liveWebSheetStartOd');
     if (!startOd || !Number(startOd)) return;
     let fromNum = Number(startOd);
 
-    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
+    let fresh = {};
 
-    // Add/update every pending order that is >= startOd
+    // Only include currently pending orders >= startOd
     for (let id in ods) {
         if (Number(id) < fromNum) continue;
         let od = ods[id]?.od;
         if (od && typeof od === 'object') {
-            cache[id] = od;
+            fresh[id] = od;
         }
     }
-    // IMPORTANT: do NOT remove orders that disappeared from ods.
-    // They were marked "Done" and should still count as stock sold.
 
-    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
+    localStorage.setItem('liveWebOrders', JSON.stringify(fresh));
     sendSyncToSheet();
 }
 
@@ -733,21 +729,9 @@ function sendSyncToSheet() {
         });
 }
 
-// Called from deleteod() only — removes orders from cache
-function deleteLiveWebOrder(orderIds) {
-    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
-    orderIds.forEach(id => delete cache[id]);
-    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
-    sendSyncToSheet();
-}
-
-// Called from edit.js when order is edited
-function updateLiveWebOrder(orderId, newOdData) {
-    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
-    cache[orderId] = newOdData;
-    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
-    sendSyncToSheet();
-}
+// Called from deleteod() or edit — just re-sync fresh from ods
+function deleteLiveWebOrder() { syncOrdersToLiveWeb(); }
+function updateLiveWebOrder() { syncOrdersToLiveWeb(); }
 
 // ===== Sync Settings UI =====
 function openSyncSettings() {
@@ -813,10 +797,6 @@ function saveSyncSettings() {
             el.textContent = 'Saved! Script v' + d.v;
 
             localStorage.setItem('liveWebSheetScriptUrl', url);
-            let old = localStorage.getItem('liveWebSheetStartOd');
-            if (startOd && startOd !== old) {
-                localStorage.removeItem('liveWebOrders');
-            }
             if (startOd) localStorage.setItem('liveWebSheetStartOd', startOd);
 
             setTimeout(() => {
