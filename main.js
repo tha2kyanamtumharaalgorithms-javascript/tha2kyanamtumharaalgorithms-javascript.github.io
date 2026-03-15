@@ -762,9 +762,18 @@ function aggregateAndSyncLiveWeb() {
     console.log('[SYNC DEBUG] aggregateAndSyncLiveWeb — orders:', orderCount, '| dataRows:', data.length, '| totalQty:', grandTotal, '| payloadSize:', payloadStr.length, 'chars');
     console.log('[SYNC DEBUG] payload preview:', payloadStr.substring(0, 300));
 
-    // Use form submission — reliable cross-origin POST that survives 302 redirects
-    postToAppsScript(scriptUrl, payload);
-    console.log('[SYNC DEBUG] Form POST submitted to:', scriptUrl.substring(0, 60) + '...');
+    // Use no-cors fetch POST (same as AA34 — proven to work with Google Apps Script)
+    fetch(scriptUrl, {
+        method: 'POST',
+        body: payloadStr,
+        mode: 'no-cors'
+    })
+    .then(() => console.log('[SYNC DEBUG] no-cors POST sent OK (response opaque)'))
+    .catch(err => {
+        console.error('[SYNC DEBUG] POST FAILED:', err.message);
+        snackbar('Sync POST failed', 3000);
+    });
+    console.log('[SYNC DEBUG] POST sent to:', scriptUrl.substring(0, 60) + '...');
 
     // Verify the script URL is valid with a GET after a short delay
     setTimeout(() => {
@@ -782,33 +791,19 @@ function aggregateAndSyncLiveWeb() {
     }, 2000);
 }
 
-// Reliable cross-origin POST to Google Apps Script via hidden form + iframe
-// Bypasses CORS, preserves POST body through 302 redirects
+// Send JSON payload to Apps Script via no-cors POST
 function postToAppsScript(scriptUrl, data) {
     let jsonStr = JSON.stringify(data);
     console.log('[SYNC DEBUG] postToAppsScript — payload size:', jsonStr.length, 'chars');
-
-    let iframe = document.getElementById('syncFrame');
-    if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.id = 'syncFrame';
-        iframe.name = 'syncFrame';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-    }
-    let form = document.createElement('form');
-    form.method = 'POST';
-    form.action = scriptUrl;
-    form.target = 'syncFrame';
-    let input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'payload';
-    input.value = jsonStr;
-    form.appendChild(input);
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
-    console.log('[SYNC DEBUG] Form submitted OK');
+    return fetch(scriptUrl, {
+        method: 'POST',
+        body: jsonStr,
+        mode: 'no-cors'
+    }).then(() => {
+        console.log('[SYNC DEBUG] postToAppsScript sent OK');
+    }).catch(err => {
+        console.error('[SYNC DEBUG] postToAppsScript FAILED:', err.message);
+    });
 }
 
 function openSyncSettings() {
