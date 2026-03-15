@@ -24,14 +24,16 @@
 <body class="w3-card-4 w3-content">
   <div class="w3-center">
     <div id="modal" class="w3-modal" style="padding-top: 10px;display: block;">
-      <div class="w3-modal-content w3-card-4 b1 b2 b3 b4" style="height: 96vh;background: #a7a7a7;">
+      <div class="w3-modal-content w3-card-4 b1 b2 b3 b4" style="height: 96vh;background: #a7a7a7;position:relative;">
+        <div style="position:absolute;right:6px;top:6px;z-index:1;">
+          <div class="w3-button w3-red w3-small" onclick="deleteod()">Delete</div>
+        </div>
         <div id="fnc1" class="w3-pale-red b1 b2 fx bod1">
           <div class="w3-button w3-blue-grey w3-padding-large b1 w3-red" onclick="book()">Book</div>
           <div class="w3-button w3-blue-grey w3-padding-large w3-white" onclick="holdn()">Hold</div>
           <div class="w3-button w3-blue-grey w3-padding-large w3-red" onclick="getbookedlabel()">Label</div>
           <div class="w3-button w3-blue-grey w3-padding-large w3-red" onclick="printMergedPDFs()">PLabel</div>
           <div class="w3-button w3-blue-grey w3-padding-large w3-red" onclick="edit()">Edit</div>
-          <div class="w3-button w3-blue-grey w3-padding-large w3-red" onclick="deleteod()">Delete</div>
         </div>
         <div style="margin: 6px;"></div>
         <!-- <hr class="m5" style="border-top: 1px solid #a0a0a0;"> -->
