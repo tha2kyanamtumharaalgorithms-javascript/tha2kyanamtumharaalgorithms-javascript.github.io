@@ -307,12 +307,13 @@ async function syncLiveSheet() {
     for (let o of allOrders) {
       let kk = o.od;
       if (!kk || typeof kk !== 'object') continue;
+      let mult = (o.cn && o.cn.slice(0, 7) === 'instock') ? -1 : 1;
       for (let t in kk) {
         all[t] = all[t] || {};
         for (let c in kk[t]) {
           all[t][c] = all[t][c] || {};
           for (let s in kk[t][c]) {
-            all[t][c][s] = (all[t][c][s] || 0) + kk[t][c][s];
+            all[t][c][s] = (all[t][c][s] || 0) + (kk[t][c][s] * mult);
           }
         }
       }
