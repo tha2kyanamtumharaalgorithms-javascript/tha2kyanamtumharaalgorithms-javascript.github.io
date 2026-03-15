@@ -11,8 +11,11 @@
 //   ?action=ping                 → returns {status:'ok', v:3} for version check
 //   (default)                    → returns startOd from cell B1
 
-var SHEET_ID = '1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0';
-var VER = 3;
+// IMPORTANT: This must match YOUR spreadsheet URL:
+// https://docs.google.com/spreadsheets/d/YOUR_ID/edit
+// Copy the ID from your browser URL bar ↑
+var SHEET_ID = '1I8ggjHJ_wDIzPz3r0BAZoSbV9oZcJozegApIXcMgOR0';
+var VER = 4;
 
 function doGet(e) {
   var p = (e && e.parameter) || {};
