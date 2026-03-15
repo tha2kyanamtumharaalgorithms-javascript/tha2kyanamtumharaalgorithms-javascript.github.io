@@ -1,3 +1,6 @@
+.btn-row{width:100%;}
+.btn-row>div,.btn-row>.w3-dropdown-hover{flex:1;text-align:center;padding:8px 4px!important;font-size:14px;}
+.btn-row .w3-dropdown-content .w3-bar-item{padding:10px 16px!important;text-align:left;}
 .fxbl {align-items: baseline;}/* gap: 2px; */
 .check {width: 28px;height: 30px;margin: 2px;}
 

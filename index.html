@@ -7,7 +7,7 @@
   <title>Dashboard</title>
   <link rel="stylesheet" href="https://d2fzc2z1ecgedb.cloudfront.net/webw3.css">
   <link rel="stylesheet" href="https://d2fzc2z1ecgedb.cloudfront.net/okbw.css">
-  <link rel="stylesheet" href="main.css?v=1">
+  <link rel="stylesheet" href="main.css?v=2">
   <script src="main.js?v=301" defer></script>
   <script src="edit.js?v=1" defer></script>
   <meta name="mobile-web-app-capable" content="yes">
@@ -25,26 +25,29 @@
   <div class="w3-center">
     <div id="modal" class="w3-modal" style="padding-top: 10px;display: block;">
       <div class="w3-modal-content w3-card-4 b1 b2 b3 b4" style="height: 96vh;background: #a7a7a7;position:relative;">
-        <div style="position:absolute;right:6px;top:6px;z-index:1;">
-          <div class="w3-button w3-red w3-small" onclick="deleteod()">Delete</div>
-        </div>
-        <div id="fnc1" class="w3-pale-red b1 b2 fx bod1">
-          <div class="w3-button w3-blue-grey w3-padding-large b1 w3-red" onclick="book()">Book</div>
-          <div class="w3-button w3-blue-grey w3-padding-large w3-white" onclick="holdn()">Hold</div>
-          <div class="w3-button w3-blue-grey w3-padding-large w3-red" onclick="getbookedlabel()">Label</div>
-          <div class="w3-button w3-blue-grey w3-padding-large w3-red" onclick="printMergedPDFs()">PLabel</div>
-          <div class="w3-button w3-blue-grey w3-padding-large w3-red" onclick="edit()">Edit</div>
+        <div id="fnc1" class="w3-pale-red b1 b2 fx bod1 btn-row">
+          <div class="w3-button w3-blue-grey b1 w3-red" onclick="book()">Book</div>
+          <div class="w3-button w3-blue-grey w3-white" onclick="holdn()">Hold</div>
+          <div class="w3-button w3-blue-grey w3-red" onclick="printMergedPDFs()">PLabel</div>
+          <div class="w3-button w3-blue-grey w3-red" onclick="edit()">Edit</div>
+          <div class="w3-dropdown-hover" style="position:relative;">
+            <div class="w3-button w3-blue-grey w3-dark-grey" style="padding:8px 12px;">More</div>
+            <div class="w3-dropdown-content w3-bar-block w3-card-4" style="right:0;min-width:120px;z-index:10;">
+              <div class="w3-bar-item w3-button" onclick="getdata()">Refresh</div>
+              <div class="w3-bar-item w3-button" onclick="openSyncSettings()">Sync</div>
+              <div class="w3-bar-item w3-button" onclick="getbookedlabel()">Label</div>
+              <div class="w3-bar-item w3-button w3-pale-red" onclick="deleteod()">Delete</div>
+            </div>
+          </div>
         </div>
         <div style="margin: 6px;"></div>
         <!-- <hr class="m5" style="border-top: 1px solid #a0a0a0;"> -->
         <div style="font-size: 16px;">
-          <div id="fnc2" class="fx bod1">
-            <div class="w3-button w3-blue-gray w3-padding-large" onclick="getdata()">Refresh</div>
-            <div class="w3-button w3-blue-gray w3-padding-large" onclick="omprint()">Order</div>
-            <div class="w3-button w3-blue-gray w3-padding-large" onclick="dlbill()">Bill</div>
-            <div class="w3-button w3-blue-gray w3-padding-large" onclick="done()">Done</div>
-            <div class="w3-button w3-blue-gray w3-padding-large" onclick="printadd()">Slip</div>
-            <div class="w3-button w3-blue-gray w3-padding-large" onclick="openSyncSettings()">Sync</div>
+          <div id="fnc2" class="fx bod1 btn-row">
+            <div class="w3-button w3-blue-gray" onclick="omprint()">Order</div>
+            <div class="w3-button w3-blue-gray" onclick="dlbill()">Bill</div>
+            <div class="w3-button w3-blue-gray" onclick="done()">Done</div>
+            <div class="w3-button w3-blue-gray" onclick="printadd()">Slip</div>
           </div>
           <div style="margin: 4px;"></div>
           <div id="orders">
