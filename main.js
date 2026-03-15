@@ -69,7 +69,7 @@ async function getdata() {
     let olddem = JSON.parse(localStorage.dubli);
     htmlx = `<div class="load"><div id="loadx"></div></div>`;
     document.getElementById('loadx').classList.add('loading');
-    const sheetURL = `https://docs.google.com/spreadsheets/d/1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0/gviz/tq?tqx=out:csv&sheet=PendingOrder`;
+    const sheetURL = `https://docs.google.com/spreadsheets/d/1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0/gviz/tq?tqx=out:csv&sheet=NotCapturedYet`;
     let txt = [];
     await fetch(sheetURL).then(v => v.text()).then((t) => {
         if (t.length) {
@@ -162,6 +162,17 @@ async function getdata() {
             })
         }, 8)
 
+        // Clean up captured orders from NotCapturedYet
+        let capturedIds = Object.keys(ods);
+        let liveUrl = localStorage.getItem('liveWebScriptUrl');
+        if (liveUrl && capturedIds.length) {
+            fetch(liveUrl, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'cleanupCaptured', capturedIds }),
+                mode: 'no-cors'
+            });
+        }
+
     });
 };
 
@@ -206,7 +217,7 @@ function Refresh(t) {
     }, 1000 * t);
 }
 
-Refresh(400);
+Refresh(60);
 
 async function done() {
     let sel1 = Object.keys(sel);

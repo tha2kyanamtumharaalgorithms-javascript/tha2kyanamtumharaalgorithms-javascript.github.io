@@ -7,12 +7,12 @@
 // SETUP:
 // 1. Deploy this script as a Web App
 // 2. In Apps Script editor: Triggers > Add Trigger
-//    - Function: snapshotPendingOrders
-//    - Event source: Time-driven
-//    - Type: Minutes timer > Every 1 minute
+//    - Function: syncPendingToNotCaptured
+//    - Event source: From spreadsheet
+//    - Event type: On change
 //
 // This script handles:
-// - snapshotPendingOrders(): copies PendingOrder to NotCapturedYet (1-min trigger)
+// - syncPendingToNotCaptured(): merges PendingOrder into NotCapturedYet (onChange trigger)
 // - deleteOrder: records deleted orders in DeletedOrders tab
 // - cleanupCaptured: removes captured orders from NotCapturedYet
 // ============================================================
@@ -33,28 +33,97 @@ function doPost(e) {
   // ... your existing doPost logic here ...
 }
 
-// ===== snapshotPendingOrders =====
-// Copies all PendingOrder rows to NotCapturedYet tab (rolling snapshot).
-// Set up a 1-minute time-driven trigger for this function.
-function snapshotPendingOrders() {
-  var ss = SpreadsheetApp.openById(SHEET_ID);
-  var src = ss.getSheetByName('PendingOrder');
-  if (!src) return;
+// ===== syncPendingToNotCaptured =====
+// Merges PendingOrder rows into NotCapturedYet tab (upsert, never removes).
+// Set up an installable onChange trigger (From spreadsheet > On change).
+// - New orders in PendingOrder → ADDED to NotCapturedYet
+// - Edited orders in PendingOrder → UPDATED in NotCapturedYet
+// - Orders removed from PendingOrder (Done) → KEPT in NotCapturedYet until dashboard syncs
+function syncPendingToNotCaptured(e) {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) return; // skip if another instance is running
 
-  var lastRow = src.getLastRow();
-  if (lastRow < 1) return;
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var src = ss.getSheetByName('PendingOrder');
+    if (!src) return;
 
-  var data = src.getRange(1, 1, lastRow, src.getLastColumn()).getValues();
+    // Read PendingOrder data
+    var srcLastRow = src.getLastRow();
+    var pendingData = srcLastRow > 0
+      ? src.getRange(1, 1, srcLastRow, src.getLastColumn()).getValues()
+      : [];
 
-  var dst = ss.getSheetByName('NotCapturedYet');
-  if (!dst) {
-    dst = ss.insertSheet('NotCapturedYet');
-  }
+    // Build pending map: orderID → row data
+    var pendingMap = {};
+    for (var i = 0; i < pendingData.length; i++) {
+      var orderId = String(pendingData[i][0]).split('||')[0];
+      if (orderId) pendingMap[orderId] = pendingData[i];
+    }
 
-  // Clear old snapshot and write fresh copy
-  dst.clearContents();
-  if (data.length > 0) {
-    dst.getRange(1, 1, data.length, data[0].length).setValues(data);
+    // Read NotCapturedYet data
+    var dst = ss.getSheetByName('NotCapturedYet');
+    if (!dst) {
+      dst = ss.insertSheet('NotCapturedYet');
+    }
+
+    var dstLastRow = dst.getLastRow();
+    var capturedData = dstLastRow > 0
+      ? dst.getRange(1, 1, dstLastRow, dst.getLastColumn()).getValues()
+      : [];
+
+    // Build captured map: orderID → row data
+    var capturedMap = {};
+    for (var j = 0; j < capturedData.length; j++) {
+      var capId = String(capturedData[j][0]).split('||')[0];
+      if (capId) capturedMap[capId] = capturedData[j];
+    }
+
+    // Merge: start with all captured rows (preserves Done'd orders)
+    var merged = {};
+    var mergedIds = [];
+
+    // Keep all existing NotCapturedYet rows (preserves order)
+    for (var k in capturedMap) {
+      merged[k] = capturedMap[k];
+      mergedIds.push(k);
+    }
+
+    // Upsert from PendingOrder: update existing, add new
+    for (var p in pendingMap) {
+      if (merged[p]) {
+        // UPDATE: overwrite with latest from PendingOrder
+        merged[p] = pendingMap[p];
+      } else {
+        // ADD: new order
+        merged[p] = pendingMap[p];
+        mergedIds.push(p);
+      }
+    }
+
+    // Build final rows array and normalize column count
+    var rows = [];
+    var maxCols = 1;
+    for (var m = 0; m < mergedIds.length; m++) {
+      var row = merged[mergedIds[m]];
+      if (row.length > maxCols) maxCols = row.length;
+      rows.push(row);
+    }
+
+    // Pad shorter rows to match max column count
+    for (var r = 0; r < rows.length; r++) {
+      while (rows[r].length < maxCols) {
+        rows[r].push('');
+      }
+    }
+
+    // Write merged result
+    dst.clearContents();
+    if (rows.length > 0) {
+      dst.getRange(1, 1, rows.length, maxCols).setValues(rows);
+    }
+  } finally {
+    lock.releaseLock();
   }
 }
 
