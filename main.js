@@ -719,8 +719,8 @@ function sendSyncToSheet() {
 
     for (let id in cache) {
         let od = cache[id];
-        if (!od || typeof od !== 'object') continue;
-        orderCount++;
+        if (!od || typeof od !== 'object' || Object.keys(od).length === 0) continue;
+        let odQty = 0;
         for (let type in od) {
             if (!agg[type]) agg[type] = {};
             for (let color in od[type]) {
@@ -729,9 +729,11 @@ function sendSyncToSheet() {
                     let qty = Number(od[type][color][size]) || 0;
                     agg[type][color][size] = (agg[type][color][size] || 0) + qty;
                     totalQty += qty;
+                    odQty += qty;
                 }
             }
         }
+        if (odQty > 0) orderCount++;
     }
 
     // Build compact string: product~color~size~qty joined by *
