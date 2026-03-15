@@ -654,12 +654,15 @@ function syncOrdersToLiveWeb() {
     let changed = false;
     let skipped = 0, added = 0;
 
+    console.log('syncOrdersToLiveWeb: startOd =', fromNum, 'ods keys sample:', Object.keys(ods).slice(0, 3));
+
     // Add/update orders from current dashboard data
     for (let id in ods) {
         let orderNum = Number(id.slice(6, 13));
+        if (added === 0 && skipped === 0) console.log('First order:', id, 'extracted num:', orderNum, 'fromNum:', fromNum, 'has .od:', !!ods[id].od);
         if (orderNum < fromNum) { skipped++; continue; }
         let odData = ods[id].od;
-        if (!odData || typeof odData !== 'object') { console.log('Sync skip order (no .od):', id, ods[id]); skipped++; continue; }
+        if (!odData || typeof odData !== 'object') { console.log('Sync skip order (no .od):', id, typeof ods[id].od, Object.keys(ods[id])); skipped++; continue; }
         cache[id] = odData;
         changed = true;
         added++;
@@ -741,10 +744,9 @@ function aggregateAndSyncLiveWeb() {
     fetch(scriptUrl, {
         method: 'POST',
         body: JSON.stringify(payload),
-        headers: { 'Content-Type': 'text/plain' }
+        mode: 'no-cors'
     })
-    .then(r => r.text())
-    .then(t => console.log('Sheet sync response:', t))
+    .then(() => console.log('Sheet sync request sent (no-cors, response opaque)'))
     .catch(err => console.error('Sheet sync FAILED:', err));
 }
 
