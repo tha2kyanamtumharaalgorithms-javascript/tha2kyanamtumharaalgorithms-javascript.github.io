@@ -566,18 +566,20 @@ function clickonod(b, qwe5, doc) {
 }
 
 (() => {
-  if (localStorage.trp) {
-    let lv = JSON.parse(localStorage.getItem('trp'));
-    let k = Object.entries(lv);
-    let pin = {};
-    if (k.length > 200) {
-      Object.keys(JSON.parse(localStorage.pin)).forEach((v) => {
-        if (lv[v]) { pin[v] = lv[v] }
-      })
-      k = k.slice(-200);
-      localStorage.setItem('trp', JSON.stringify({ ...Object.fromEntries(k), ...pin }));
-    }
-  } else { localStorage.setItem('trp', '{}'); }
+  try {
+    if (localStorage.trp) {
+      let lv = JSON.parse(localStorage.getItem('trp'));
+      let k = Object.entries(lv);
+      let pin = {};
+      if (k.length > 200) {
+        Object.keys(JSON.parse(localStorage.pin || '{}')).forEach((v) => {
+          if (lv[v]) { pin[v] = lv[v] }
+        })
+        k = k.slice(-200);
+        localStorage.setItem('trp', JSON.stringify({ ...Object.fromEntries(k), ...pin }));
+      }
+    } else { localStorage.setItem('trp', '{}'); }
+  } catch(e) { localStorage.setItem('trp', '{}'); }
 })();
 
 function pmtdf(d) {
@@ -842,6 +844,7 @@ function unpingen() {
           if (localStorage.gre === '555') { } else {
             let m = await getnmm();
             ord.eid = String(m); await oddb.od.put(ord, ord.id);
+            fbPutOrder(selg.slice(-1) + String(ord.id).slice(0, 6), ord);
           }
         }
         let vkz6 = { p: "31", "g": selg, "od": ord, "pt": pt, pin: { ...mk5 } };
@@ -908,9 +911,12 @@ function selpin(g) {
 }
 
 // onload set last image
-let tt5 = JSON.parse(localStorage.imglastod);
-document.getElementById('lastodimg').src = tt5.im5;
-document.getElementById('lastodcn').innerHTML = tt5.cn;
+let tt5 = {};
+try { tt5 = JSON.parse(localStorage.imglastod) || {}; } catch(e) {}
+if (tt5.im5) {
+  document.getElementById('lastodimg').src = tt5.im5;
+  document.getElementById('lastodcn').innerHTML = tt5.cn || '';
+}
 
 document.getElementById('lastimgc').addEventListener('click', async (v) => {
   let blobx = await makeblob(tt5.im5);
