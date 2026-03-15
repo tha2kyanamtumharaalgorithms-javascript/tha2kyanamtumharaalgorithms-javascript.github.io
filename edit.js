@@ -128,5 +128,7 @@ function backedit(v) {
     let fmd = new FormData(); fmd.append("myd", JSON.stringify(s));
     fetch("https://script.google.com/macros/s/AKfycbwAERsQuAd05odSohoOxFDFN6fvL5jznyTWt7aGou2CJPHd2GgOliAmxFljAfmJFMq-/exec", { method: 'POST', body: fmd }).then(res => res.json()).finally((v) => {
         snackbar('Updated', 1000); console.log('Updated');
+        // Update Live Website sheet with edited order data
+        updateLiveWebOrder(currentEditingId, ods[currentEditingId].od);
     })
 }

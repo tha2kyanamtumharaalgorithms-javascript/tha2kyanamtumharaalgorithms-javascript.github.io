@@ -62,6 +62,7 @@ od.addEventListener('click', (e) => {
 nmzx += 'img/image/hd/new';
 if (!localStorage.oldid) { localStorage.setItem('oldid', '[]') };
 if (!localStorage.dubli) { localStorage.setItem('dubli', '[]') };
+if (!localStorage.liveWebOrders) { localStorage.setItem('liveWebOrders', '{}') };
 let odtype = ['', 'A', 'L', 'T', 'D', 'S', 'Tr'], newid = [], duplicates;
 async function getdata() {
     sel = {}; ods = {}; newid = []; let dem = [];
@@ -69,7 +70,7 @@ async function getdata() {
     let olddem = JSON.parse(localStorage.dubli);
     htmlx = `<div class="load"><div id="loadx"></div></div>`;
     document.getElementById('loadx').classList.add('loading');
-    const sheetURL = `https://docs.google.com/spreadsheets/d/1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0/gviz/tq?tqx=out:csv&sheet=NotCapturedYet`;
+    const sheetURL = `https://docs.google.com/spreadsheets/d/1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0/gviz/tq?tqx=out:csv&sheet=PendingOrder`;
     let txt = [];
     await fetch(sheetURL).then(v => v.text()).then((t) => {
         if (t.length) {
@@ -162,16 +163,8 @@ async function getdata() {
             })
         }, 8)
 
-        // Clean up captured orders from NotCapturedYet
-        let capturedIds = Object.keys(ods);
-        let liveUrl = localStorage.getItem('liveWebScriptUrl');
-        if (liveUrl && capturedIds.length) {
-            fetch(liveUrl, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'cleanupCaptured', capturedIds }),
-                mode: 'no-cors'
-            });
-        }
+        // Sync orders to Live Website sheet
+        syncOrdersToLiveWeb();
 
     });
 };
@@ -263,7 +256,10 @@ async function deleteod() {
     fmd.append("myd", JSON.stringify(sel1));
     fetch("https://script.google.com/macros/s/AKfycbxJs1MUozlOyJWpxY4EQmBL3qSkQq6hVKUwmvhSn53Fuhwh6Q3-Tzu3ntuAjqa0aTcK/exec", { method: 'POST', body: fmd });
 
-    // Step 2: Record deletion in Live Website Apps Script
+    // Step 2: Remove from Live Website sheet and re-sync
+    deleteLiveWebOrder(sel1);
+
+    // Step 3: Record deletion in Apps Script (DeletedOrders tab)
     let liveUrl = localStorage.getItem('liveWebScriptUrl');
     if (liveUrl) {
         fetch(liveUrl, {
@@ -642,4 +638,107 @@ function holdn() {
 //         } else if (p === 'denied') { alert('Notification permission Blocked. Please Allow it in your browser/app settings.'); };
 //     }
 // }
+
+// ===== Live Website Sheet Sync =====
+// Dashboard directly syncs order data to Live Website sheet.
+// Orders stay in cache even after Done (stock was sold).
+// Only Delete removes from cache.
+
+function syncOrdersToLiveWeb() {
+    let startOd = localStorage.getItem('liveWebSheetStartOd');
+    if (!startOd) return;
+    let fromNum = Number(startOd);
+    if (!fromNum) return;
+
+    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
+    let changed = false;
+
+    // Add/update orders from current dashboard data
+    for (let id in ods) {
+        let orderNum = Number(id.slice(6, 13));
+        if (orderNum < fromNum) continue;
+        let odData = ods[id].od;
+        if (!odData || typeof odData !== 'object') continue;
+        cache[id] = odData;
+        changed = true;
+    }
+
+    if (changed) {
+        localStorage.setItem('liveWebOrders', JSON.stringify(cache));
+    }
+
+    aggregateAndSyncLiveWeb();
+}
+
+function updateLiveWebOrder(orderId, newOdData) {
+    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
+    if (cache[orderId]) {
+        cache[orderId] = newOdData;
+        localStorage.setItem('liveWebOrders', JSON.stringify(cache));
+        aggregateAndSyncLiveWeb();
+    }
+}
+
+function deleteLiveWebOrder(orderIds) {
+    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
+    orderIds.forEach(function(id) { delete cache[id]; });
+    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
+    aggregateAndSyncLiveWeb();
+}
+
+function aggregateAndSyncLiveWeb() {
+    let startOd = localStorage.getItem('liveWebSheetStartOd');
+    if (!startOd) return;
+    let fromNum = Number(startOd);
+
+    let scriptUrl = localStorage.getItem('liveWebSheetScriptUrl');
+    if (!scriptUrl) return;
+
+    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
+
+    // Aggregate: type > color > size > qty
+    let all = {};
+    let orderCount = 0;
+    for (let id in cache) {
+        let kk = cache[id];
+        if (!kk || typeof kk !== 'object') continue;
+        for (let t in kk) {
+            all[t] = all[t] || {};
+            for (let c in kk[t]) {
+                all[t][c] = all[t][c] || {};
+                for (let s in kk[t][c]) {
+                    all[t][c][s] = (all[t][c][s] || 0) + kk[t][c][s];
+                }
+            }
+        }
+        orderCount++;
+    }
+
+    // Build data rows
+    let data = [];
+    let grandTotal = 0;
+    for (let t in all) {
+        for (let c in all[t]) {
+            for (let s in all[t][c]) {
+                let qty = all[t][c][s];
+                data.push([t, c, s, qty]);
+                grandTotal += qty;
+            }
+        }
+    }
+
+    fetch(scriptUrl, {
+        method: 'POST',
+        body: JSON.stringify({
+            startOd: fromNum,
+            data: data,
+            totalQty: grandTotal,
+            orderCount: orderCount,
+            timestamp: new Date().toISOString(),
+            sheetName: 'Live Website'
+        }),
+        mode: 'no-cors'
+    });
+    console.log('Live web sheet synced:', orderCount, 'orders,', grandTotal, 'qty');
+}
 
