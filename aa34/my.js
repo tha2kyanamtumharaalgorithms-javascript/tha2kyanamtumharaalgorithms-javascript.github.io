@@ -40,8 +40,8 @@ async function getods(gd) {
         let vtag = "<span id='vtag' ><span name=" + 'ods' + i.id + ">" + "</span></span>" + book[1];
         let nub = i.id.toString();
         nub = nub.slice(4, 6) + Number(nub.slice(-7));
-        let utag = i._user ? "<span style='font-size:9px;background:#673ab7;color:#fff;padding:1px 4px;border-radius:3px;margin-left:4px;font-weight:400;'>" + i._user + "</span>" : '';
-        hmtl0 = "<li " + book[0] + " id=s" + i.id + " " + "tabindex=" + i.pt + " " + ifz + ">" + inp + ' ' + "<b onclick='goadd(" + i.pt + ',' + i.id + ")'>" + nub + '. ' + i.cn + utag + '</b>' + vtag + "<span onclick='opodli(this)'>" + i.tot + ' ' + due + ' ' + i.dt.slice(0, 6) + "</span></li>" + hmtl0;
+        let utag = (i._user && i._user !== getAppUser()) ? "<br><span style='font-size:9px;color:#673ab7;font-weight:400;'>" + i._user.slice(0,4) + "</span>" : '';
+        hmtl0 = "<li " + book[0] + " id=s" + i.id + " " + "tabindex=" + i.pt + " " + ifz + ">" + inp + ' ' + "<b onclick='goadd(" + i.pt + ',' + i.id + ")'>" + nub + '. ' + i.cn + '</b>' + vtag + "<span onclick='opodli(this)'>" + i.tot + ' ' + due + ' ' + i.dt.slice(0, 6) + utag + "</span></li>" + hmtl0;
       });
     }
     document.getElementById('oderli').innerHTML = hmtl0;
@@ -61,8 +61,8 @@ async function appdli(v, s) {
     let gstr = "<span style='padding: 0 1.55em'></span>";
     let inp = "<input onclick='selod(this)' id='ods" + i.id + "' class='w3-check' type='checkbox'>";
     let vtag = "<span id='vtag' ><span name=" + 'ods' + i.id + ">" + "</span></span>";
-    let utag = i._user ? "<span style='font-size:9px;background:#673ab7;color:#fff;padding:1px 4px;border-radius:3px;margin-left:4px;font-weight:400;'>" + i._user + "</span>" : '';
-    hmtl0 = "<li id=s" + i.id + " " + "tabindex=" + i.pt + " " + ifz + ">" + inp + ' ' + "<b onclick='goadd(" + i.pt + ',' + i.id + ")'>" + i.id + '. ' + i.cn + utag + '</b>' + vtag + "<span onclick='opodli(this)'>" + i.tot + ' ' + gstr + ' ' + i.dt.slice(0, 6) + "</span></li>" + hmtl0;
+    let utag = (i._user && i._user !== getAppUser()) ? "<br><span style='font-size:9px;color:#673ab7;font-weight:400;'>" + i._user.slice(0,4) + "</span>" : '';
+    hmtl0 = "<li id=s" + i.id + " " + "tabindex=" + i.pt + " " + ifz + ">" + inp + ' ' + "<b onclick='goadd(" + i.pt + ',' + i.id + ")'>" + i.id + '. ' + i.cn + '</b>' + vtag + "<span onclick='opodli(this)'>" + i.tot + ' ' + gstr + ' ' + i.dt.slice(0, 6) + utag + "</span></li>" + hmtl0;
   }
   document.querySelector('#' + s).innerHTML += hmtl0;
 }
