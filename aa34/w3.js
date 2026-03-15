@@ -236,6 +236,7 @@ function setLiveStartOd() {
   let val = document.getElementById('liveStartOd').value.trim();
   if (val) {
     localStorage.setItem('liveSheetStartOd', val);
+    fbSyncLS('liveSheetStartOd', val);
     syncLiveSheet();
   } else {
     localStorage.removeItem('liveSheetStartOd');
@@ -253,6 +254,7 @@ function toggleLiveLock() {
     btn.style.background = '#ffc107';
     btn.style.color = '#000';
     localStorage.setItem('liveSheetLocked', '0');
+    fbSyncLS('liveSheetLocked', '0');
   } else {
     // Lock
     if (!inp.value.trim()) { alert('Enter a starting order number first'); return; }
@@ -263,6 +265,8 @@ function toggleLiveLock() {
     btn.style.color = '#fff';
     localStorage.setItem('liveSheetLocked', '1');
     localStorage.setItem('liveSheetStartOd', inp.value.trim());
+    fbSyncLS('liveSheetLocked', '1');
+    fbSyncLS('liveSheetStartOd', inp.value.trim());
   }
 }
 
@@ -404,6 +408,7 @@ function setLiveWebStartOd() {
   let val = document.getElementById('liveWebStartOd').value.trim();
   if (val) {
     localStorage.setItem('liveWebSheetStartOd', val);
+    fbSyncLS('liveWebSheetStartOd', val);
   } else {
     localStorage.removeItem('liveWebSheetStartOd');
   }
@@ -419,6 +424,7 @@ function toggleLiveWebLock() {
     btn.style.background = '#ffc107';
     btn.style.color = '#000';
     localStorage.setItem('liveWebSheetLocked', '0');
+    fbSyncLS('liveWebSheetLocked', '0');
   } else {
     if (!inp.value.trim()) { alert('Enter a starting order number first'); return; }
     inp.disabled = true;
@@ -428,5 +434,7 @@ function toggleLiveWebLock() {
     btn.style.color = '#fff';
     localStorage.setItem('liveWebSheetLocked', '1');
     localStorage.setItem('liveWebSheetStartOd', inp.value.trim());
+    fbSyncLS('liveWebSheetLocked', '1');
+    fbSyncLS('liveWebSheetStartOd', inp.value.trim());
   }
 }

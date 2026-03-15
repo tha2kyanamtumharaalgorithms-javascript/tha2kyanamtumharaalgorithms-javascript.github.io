@@ -10,7 +10,7 @@ const FB_DEVICE_ID = localStorage.getItem('_fbDeviceId') || (() => {
 const fbRef = fbDb.ref('data');
 
 // localStorage keys to sync across devices
-const FB_SYNC_LS_KEYS = ['pin', 'pint', 'pink', 'pinpd', 'trp', 'imglastod', 'liveSheetStartOd', 'lastExportedOdNum', 'liveSheetLocked', 'liveWebSheetStartOd', 'liveWebSheetLocked', 'fromod', 'gr5', 'gre', 'clickcount', 'm', 'liveSheetScriptUrl', 'liveWebSheetScriptUrl'];
+const FB_SYNC_LS_KEYS = ['pin', 'pint', 'pink', 'pinpd', 'trp', 'imglastod', 'liveSheetStartOd', 'lastExportedOdNum', 'liveSheetLocked', 'liveWebSheetStartOd', 'liveWebSheetLocked', 'fromod', 'gr5', 'gre', 'clickcount', 'm', 'liveSheetScriptUrl', 'liveWebSheetScriptUrl', 'shipr1', 'shpdt', 'shpSelectedCouriers', 'rkbSelectedCouriers', 'shpAllCouriers', 'rkbAllCouriers'];
 
 // ===== Core Write Functions =====
 
@@ -233,6 +233,8 @@ function fbSetupListeners() {
       if (!d || d._dev === FB_DEVICE_ID) return;
       if (d.v !== undefined) {
         localStorage.setItem(key, d.v);
+        if (key === 'gr5' && typeof urli !== 'undefined') { urli = d.v; }
+        if (key === 'shipr1') { try { shipr1 = JSON.parse(d.v).a; } catch(e) {} }
         console.log('fb: localStorage updated from other device:', key);
       }
     });

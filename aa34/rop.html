@@ -493,7 +493,7 @@
       oddb.version(1).stores({ od: "id,dt,bulk" });
     }
     let selg = 'ods';
-    var urli = localStorage.gr5;
+    var urli = localStorage.gr5 || '';
     let selod5 = {};
     function selod(h) {
       let er5 = h.id;
@@ -504,7 +504,7 @@
     // onload get all(50) recent order
     // let st = new Localbase('st');
 
-    let j = JSON.parse(localStorage.pin);
+    let j = JSON.parse(localStorage.pin || '{}');
 
     async function dddd() {
       let htmlli = ''; let vb = '';
@@ -595,7 +595,7 @@
         // let sel = y;// Object.keys(selod5);
         if (y) {
           // selgo(selg);
-          let mk5 = JSON.parse(localStorage.pin);
+          let mk5 = JSON.parse(localStorage.pin || '{}');
           // let t = y//.pop();
           // let px1 = document.getElementById(t);
           // px1.parentNode.style.background = 'purple!important'; //px1.checked = false;
@@ -677,7 +677,7 @@
             let m = await getnmm();
             ods.eid = String(m); await oddb.od.put(ods, ods.id);
           }
-          let mk5 = JSON.parse(localStorage.pin);
+          let mk5 = JSON.parse(localStorage.pin || '{}');
           let vkz6 = { p: "31", "g": selg, "od": ods, "pt": pt, pin: { ...mk5 } };
           let rexx = await sendd(urli, vkz6, 'unpin');
         }

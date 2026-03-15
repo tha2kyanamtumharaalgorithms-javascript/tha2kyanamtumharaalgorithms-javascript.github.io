@@ -149,8 +149,14 @@ async function odcount() { // numb.slice(4, 6) + Number(numb.slice(-7));
   let idf;
   try {
     // Use Firebase transaction for unique counter across all devices
+    // If Firebase counter is lower than local clickcount, initialize it from local value
+    let localCount = Number(st.clickcount) || 0;
     const counterRef = fbDb.ref('data/counters/' + counterKey);
-    const result = await counterRef.transaction((current) => (current || 0) + 1);
+    const result = await counterRef.transaction((current) => {
+      let base = current || 0;
+      // Take the higher of Firebase counter or local counter, then add 1
+      return Math.max(base, localCount) + 1;
+    });
     idf = result.snapshot.val();
     st.clickcount = idf;
   } catch (e) {
@@ -294,6 +300,7 @@ function creatod(eid) {
         document.getElementById('lastodcn').innerHTML = txtcn;
         tt5 = imglastod; await newc();
         localStorage.setItem('imglastod', JSON.stringify(imglastod));
+        fbSyncLS('imglastod', JSON.stringify(imglastod));
         html33.style.width = '';
         await sendd(urli, shod0, 'new order');
         rez(shod0);
@@ -393,6 +400,7 @@ async function updateod(myz, eid) {
             document.getElementById('lastodcn').innerHTML = txtcn;
             tt5 = imglastod;
             localStorage.setItem('imglastod', JSON.stringify(imglastod));
+            fbSyncLS('imglastod', JSON.stringify(imglastod));
           });
         html33.style.width = '';
         await newc();
@@ -1151,7 +1159,8 @@ document.getElementById('alltab').onclick = function () {
   document.getElementById('cor1').style.display = '';
 };
 
-let shipr1 = JSON.parse(localStorage.shipr1).a;
+let shipr1 = '';
+try { shipr1 = JSON.parse(localStorage.shipr1).a; } catch(e) {}
 let dlid; // {"id":3065,"coid":55,"ch":286.7,"st":0};
 async function getcor(k) {
   console.log('HI');
@@ -1321,12 +1330,14 @@ function saveCourierSettings() {
     let shpSelected = [];
     shpChecks.forEach(c => { if (c.checked) shpSelected.push(c.value); });
     localStorage.shpSelectedCouriers = JSON.stringify(shpSelected);
+    fbSyncLS('shpSelectedCouriers', JSON.stringify(shpSelected));
   }
   let rkbChecks = document.querySelectorAll('.rkbCheck');
   if (rkbChecks.length > 0) {
     let rkbSelected = [];
     rkbChecks.forEach(c => { if (c.checked) rkbSelected.push(c.value); });
     localStorage.rkbSelectedCouriers = JSON.stringify(rkbSelected);
+    fbSyncLS('rkbSelectedCouriers', JSON.stringify(rkbSelected));
   }
   document.getElementById('courierSettingsModal').style.display = 'none';
   alert('Saved!');
