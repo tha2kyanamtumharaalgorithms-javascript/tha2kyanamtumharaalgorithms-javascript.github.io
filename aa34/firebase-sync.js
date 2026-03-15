@@ -10,7 +10,7 @@ const FB_DEVICE_ID = localStorage.getItem('_fbDeviceId') || (() => {
 const fbRef = fbDb.ref('data');
 
 // localStorage keys to sync across devices
-const FB_SYNC_LS_KEYS = ['pin', 'pint', 'pink', 'pinpd', 'trp', 'imglastod', 'liveSheetStartOd', 'lastExportedOdNum', 'liveSheetLocked', 'liveWebSheetStartOd', 'liveWebSheetLocked', 'fromod'];
+const FB_SYNC_LS_KEYS = ['pin', 'pint', 'pink', 'pinpd', 'trp', 'imglastod', 'liveSheetStartOd', 'lastExportedOdNum', 'liveSheetLocked', 'liveWebSheetStartOd', 'liveWebSheetLocked', 'fromod', 'gr5', 'gre', 'clickcount', 'm', 'liveSheetScriptUrl', 'liveWebSheetScriptUrl'];
 
 // ===== Core Write Functions =====
 
