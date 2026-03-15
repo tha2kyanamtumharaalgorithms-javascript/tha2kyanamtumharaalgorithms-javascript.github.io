@@ -67,15 +67,6 @@
             style="color: #000;float: left;width: 100%;font-size: 12px;word-wrap: break-word;">dad</span>
         </button>
       </div>
-      <div class="w3-bar" style="margin:0;padding:2px 8px;background:#fff8e1;border-top:1px solid #ffe082;">
-        <input id="exportFromOd" type="text" inputmode="numeric" placeholder="From#" style="width:130px;padding:6px;border:1px solid #ccc;vertical-align:middle"><input id="exportToOd" type="text" inputmode="numeric" placeholder="To#" style="width:130px;padding:6px;border:1px solid #ccc;border-left:none;vertical-align:middle"><button class="w3-button w3-green" style="padding:6px 16px;vertical-align:middle" onclick="exportSold()">Export</button>
-      </div>
-      <div class="w3-bar" style="margin:0;padding:2px 8px;background:#f1f1f1;border-top:1px solid #ddd;white-space:nowrap;overflow:hidden;">
-        <input id="liveStartOd" type="text" inputmode="numeric" placeholder="Live From Order#" style="width:120px;padding:4px;border:1px solid #ccc;vertical-align:middle;font-size:12px;" onchange="setLiveStartOd()"><button id="liveLockBtn" class="w3-button w3-amber" style="padding:4px 8px;vertical-align:middle;font-size:11px;" onclick="toggleLiveLock()">Unlocked</button><span id="liveSyncStatus" style="font-size:10px;color:#666;vertical-align:middle;margin-left:4px;"></span>
-      </div>
-      <div class="w3-bar" style="margin:0;padding:2px 8px;background:#e8f5e9;border-top:1px solid #c8e6c9;white-space:nowrap;overflow:hidden;">
-        <input id="liveWebStartOd" type="text" inputmode="numeric" placeholder="Web From Order#" style="width:120px;padding:4px;border:1px solid #a5d6a7;vertical-align:middle;font-size:12px;" onchange="setLiveWebStartOd()"><button id="liveWebLockBtn" class="w3-button w3-amber" style="padding:4px 8px;vertical-align:middle;font-size:11px;" onclick="toggleLiveWebLock()">Unlocked</button>
-      </div>
       <div id='p78' class="w3-bar w3-blue" style="display: none">
         <button id='p781' name="ods" class="w3-bar-item w3-button w3-border-right" onclick="indb(this)">Delhi</button>
         <button disabled id='p782' name="odt" class="w3-bar-item w3-button w3-border-right">Tiruppur</button>
@@ -298,6 +289,18 @@
       <a href="#" onclick="addch()" class="w3-bar-item w3-border-top w3-button">Offline</a>
       <a href="#" onclick="clearch()" class="w3-bar-item w3-border-top w3-button">Clear</a>
       <a href="#" onclick="openCourierSettings()" class="w3-bar-item w3-border-top w3-button">Courier Settings</a>
+      <div class="w3-bar-item w3-border-top" style="padding:8px 12px;background:#fff8e1;">
+        <div style="font-size:11px;font-weight:600;color:#555;margin-bottom:4px;">Export Stock</div>
+        <input id="exportFromOd" type="text" inputmode="numeric" placeholder="From#" style="width:70px;padding:5px;border:1px solid #ccc;font-size:13px;"><input id="exportToOd" type="text" inputmode="numeric" placeholder="To#" style="width:70px;padding:5px;border:1px solid #ccc;border-left:none;font-size:13px;"><button class="w3-button w3-green" style="padding:5px 10px;font-size:12px;" onclick="exportSold()">Export</button>
+      </div>
+      <div class="w3-bar-item w3-border-top" style="padding:6px 12px;background:#f1f1f1;">
+        <div style="font-size:11px;font-weight:600;color:#555;margin-bottom:4px;">Live Sheet</div>
+        <input id="liveStartOd" type="text" inputmode="numeric" placeholder="Start Order#" style="width:100px;padding:4px;border:1px solid #ccc;font-size:12px;" onchange="setLiveStartOd()"><button id="liveLockBtn" class="w3-button w3-amber" style="padding:4px 8px;font-size:11px;" onclick="toggleLiveLock()">Unlocked</button><span id="liveSyncStatus" style="font-size:10px;color:#666;margin-left:4px;"></span>
+      </div>
+      <div class="w3-bar-item w3-border-top" style="padding:6px 12px;background:#e8f5e9;">
+        <div style="font-size:11px;font-weight:600;color:#555;margin-bottom:4px;">Live Website</div>
+        <input id="liveWebStartOd" type="text" inputmode="numeric" placeholder="Start Order#" style="width:100px;padding:4px;border:1px solid #a5d6a7;font-size:12px;" onchange="setLiveWebStartOd()"><button id="liveWebLockBtn" class="w3-button w3-amber" style="padding:4px 8px;font-size:11px;" onclick="toggleLiveWebLock()">Unlocked</button>
+      </div>
       <div class="w3-bar-item w3-border-top" style="padding:8px 16px;">
         <span id="fbSyncStatus" style="font-size:11px;color:#999;">Cloud: --</span>
       </div>
