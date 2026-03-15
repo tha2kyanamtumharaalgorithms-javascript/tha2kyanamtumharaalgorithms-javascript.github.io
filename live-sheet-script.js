@@ -15,7 +15,7 @@
 // https://docs.google.com/spreadsheets/d/YOUR_ID/edit
 // Copy the ID from your browser URL bar ↑
 var SHEET_ID = '1I8ggjHJ_wDIzPz3r0BAZoSbV9oZcJozegApIXcMgOR0';
-var VER = 4;
+var VER = 5;
 
 function doGet(e) {
   var p = (e && e.parameter) || {};
@@ -104,7 +104,9 @@ function doSync(p) {
   sh.getRange(tr, 1).setValue('TOTAL');
   sh.getRange(tr, 4).setValue(q);
 
-  return reply({ synced: rows.length, qty: q });
+  // Return startOd from B1 so dashboard always stays in sync
+  var startOd = sh.getRange(1, 2).getValue();
+  return reply({ synced: rows.length, qty: q, startOd: startOd || null });
 }
 
 function openSheet() {

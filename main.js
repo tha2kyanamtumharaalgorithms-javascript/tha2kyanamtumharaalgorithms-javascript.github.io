@@ -634,12 +634,13 @@ function holdn() {
 // LIVE WEBSITE SHEET SYNC — v3 (complete rewrite)
 // =====================================================
 // How it works:
-//   1. localStorage.liveWebOrders = cache of all orders from startOd onwards
-//   2. New orders from getdata() → added to cache (keeps growing)
-//   3. Done orders → STAY in cache (stock already sold, keeps counting)
-//   4. Deleted orders → REMOVED from cache via deleteLiveWebOrder()
-//   5. Edited orders → UPDATED in cache via updateLiveWebOrder()
-//   6. After any change → aggregate cache → send to sheet via GET
+//   1. startOd comes from cell B1 in the Google Sheet (source of truth)
+//   2. localStorage.liveWebOrders = cache of all orders from startOd onwards
+//   3. New orders from getdata() → added to cache (keeps growing)
+//   4. Done orders → STAY in cache (stock already sold, keeps counting)
+//   5. Deleted orders → REMOVED from cache via deleteLiveWebOrder()
+//   6. Edited orders → UPDATED in cache via updateLiveWebOrder()
+//   7. After any change → aggregate cache → send to sheet via GET
 //
 // Why GET not POST:
 //   Google Apps Script redirects POST with 302, browser changes to GET,
@@ -649,12 +650,45 @@ function holdn() {
 //   Example: T-Shirt~Red~M~5*Pants~Black~L~3
 // =====================================================
 
-// Step 1: merge current pending orders into cache (accumulates over time)
+// Fetch startOd from sheet B1 (source of truth), then sync
 function syncOrdersToLiveWeb() {
-    let startOd = localStorage.getItem('liveWebSheetStartOd');
-    if (!startOd || !Number(startOd)) return;
-    let fromNum = Number(startOd);
+    let scriptUrl = localStorage.getItem('liveWebSheetScriptUrl');
+    if (!scriptUrl) return;
 
+    // If we already have a cached startOd, sync immediately with it
+    let cached = localStorage.getItem('liveWebSheetStartOd');
+    if (cached && Number(cached)) {
+        mergeAndSync(Number(cached));
+    }
+
+    // Also fetch latest B1 in background to stay updated
+    fetchStartOdFromSheet();
+}
+
+// Fetch B1 from sheet, update cache if changed, re-sync if needed
+function fetchStartOdFromSheet() {
+    let scriptUrl = localStorage.getItem('liveWebSheetScriptUrl');
+    if (!scriptUrl) return;
+
+    let sep = scriptUrl.includes('?') ? '&' : '?';
+    fetch(scriptUrl + sep + '_t=' + Date.now(), { redirect: 'follow' })
+        .then(r => r.ok ? r.json() : Promise.reject('HTTP ' + r.status))
+        .then(d => {
+            if (!d.startOd) return;
+            let newOd = String(d.startOd);
+            let old = localStorage.getItem('liveWebSheetStartOd');
+            if (newOd !== old) {
+                console.log('[SYNC] B1 startOd changed:', old, '→', newOd);
+                localStorage.removeItem('liveWebOrders'); // new startOd = fresh start
+                localStorage.setItem('liveWebSheetStartOd', newOd);
+                mergeAndSync(Number(newOd)); // re-sync with new startOd
+            }
+        })
+        .catch(e => console.warn('[SYNC] Failed to fetch B1:', e));
+}
+
+// Merge pending orders into cache and send to sheet
+function mergeAndSync(fromNum) {
     let cache = JSON.parse(localStorage.liveWebOrders || '{}');
 
     // Add/update every pending order that is >= startOd
@@ -725,6 +759,17 @@ function sendSyncToSheet() {
         .then(d => {
             console.log('[SYNC] SUCCESS', d);
             snackbar('Synced ' + d.synced + ' rows', 1500);
+            // Update cached startOd from sheet B1 if it changed
+            if (d.startOd) {
+                let newOd = String(d.startOd);
+                let old = localStorage.getItem('liveWebSheetStartOd');
+                if (newOd !== old) {
+                    console.log('[SYNC] B1 changed during sync:', old, '→', newOd);
+                    localStorage.removeItem('liveWebOrders');
+                    localStorage.setItem('liveWebSheetStartOd', newOd);
+                    mergeAndSync(Number(newOd));
+                }
+            }
         })
         .catch(e => {
             console.error('[SYNC] FAILED', e);
@@ -751,7 +796,6 @@ function updateLiveWebOrder(orderId, newOdData) {
 // ===== Sync Settings UI =====
 function openSyncSettings() {
     document.getElementById('syncScriptUrl').value = localStorage.getItem('liveWebSheetScriptUrl') || '';
-    document.getElementById('syncStartOd').value = localStorage.getItem('liveWebSheetStartOd') || '';
     document.getElementById('syncModal').style.display = 'block';
     document.getElementById('syncStatus').style.display = 'none';
 }
@@ -788,7 +832,6 @@ function testSync() {
 
 function saveSyncSettings() {
     let url = document.getElementById('syncScriptUrl').value.trim();
-    let startOd = document.getElementById('syncStartOd').value.trim();
     let el = document.getElementById('syncStatus');
 
     if (!url) { el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff'; el.textContent = 'Enter URL'; return; }
@@ -806,23 +849,34 @@ function saveSyncSettings() {
         .then(d => {
             console.log('[SAVE] ping response:', d);
             if (d.error) throw new Error(d.error);
-            if (!d.v || d.v < 3) throw new Error('Old script deployed. Need v3. Got v' + (d.v || '?') + '. Deploy the NEW script as a NEW deployment.');
-
-            el.style.background = '#4CAF50'; el.style.color = '#fff';
-            el.textContent = 'Saved! Script v' + d.v;
+            if (!d.v || d.v < 4) throw new Error('Old script deployed. Need v4+. Got v' + (d.v || '?') + '. Deploy the NEW script as a NEW deployment.');
 
             localStorage.setItem('liveWebSheetScriptUrl', url);
-            let old = localStorage.getItem('liveWebSheetStartOd');
-            if (startOd && startOd !== old) {
-                localStorage.removeItem('liveWebOrders'); // new startOd = fresh start
-            }
-            if (startOd) localStorage.setItem('liveWebSheetStartOd', startOd);
 
-            setTimeout(() => {
-                document.getElementById('syncModal').style.display = 'none';
-                el.style.display = 'none';
-                syncOrdersToLiveWeb();
-            }, 1500);
+            // Fetch startOd from B1 immediately
+            return fetch(url + sep + '_t=' + Date.now(), { redirect: 'follow' })
+                .then(r => r.ok ? r.json() : Promise.reject('HTTP ' + r.status))
+                .then(b1 => {
+                    if (b1.startOd) {
+                        let newOd = String(b1.startOd);
+                        let old = localStorage.getItem('liveWebSheetStartOd');
+                        if (newOd !== old) {
+                            localStorage.removeItem('liveWebOrders');
+                            localStorage.setItem('liveWebSheetStartOd', newOd);
+                        }
+                        el.style.background = '#4CAF50'; el.style.color = '#fff';
+                        el.textContent = 'Saved! Script v' + d.v + ' | Start: ' + newOd;
+                    } else {
+                        el.style.background = '#ff9800'; el.style.color = '#fff';
+                        el.textContent = 'Saved! But B1 is empty — enter start order in B1';
+                    }
+
+                    setTimeout(() => {
+                        document.getElementById('syncModal').style.display = 'none';
+                        el.style.display = 'none';
+                        syncOrdersToLiveWeb();
+                    }, 1500);
+                });
         })
         .catch(e => {
             console.error('[SAVE] FAILED:', e);
