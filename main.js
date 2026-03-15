@@ -262,11 +262,7 @@ async function deleteod() {
     // Step 3: Record deletion in Apps Script (DeletedOrders tab)
     let liveUrl = localStorage.getItem('liveWebSheetScriptUrl');
     if (liveUrl) {
-        fetch(liveUrl, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'deleteOrder', orderIds: sel1 }),
-            mode: 'no-cors'
-        });
+        postToAppsScript(liveUrl, { action: 'deleteOrder', orderIds: sel1 });
     }
 
     snackbar('Deleted', 1500);
@@ -746,13 +742,49 @@ function aggregateAndSyncLiveWeb() {
     };
     console.log('Syncing to Live Website sheet:', orderCount, 'orders,', grandTotal, 'qty', payload);
 
-    fetch(scriptUrl, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-        mode: 'no-cors'
-    })
-    .then(() => console.log('Sheet sync request sent (no-cors, response opaque)'))
-    .catch(err => console.error('Sheet sync FAILED:', err));
+    // Use form submission — reliable cross-origin POST that survives 302 redirects
+    postToAppsScript(scriptUrl, payload);
+    console.log('Sheet sync sent via form POST');
+
+    // Verify the script URL is valid with a GET after a short delay
+    setTimeout(() => {
+        let sep = scriptUrl.includes('?') ? '&' : '?';
+        fetch(scriptUrl + sep + 'sheet=Live%20Website', { redirect: 'follow' })
+        .then(res => {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+        })
+        .then(d => console.log('Sync verify OK:', d))
+        .catch(err => {
+            console.error('SYNC ERROR: Apps Script URL is invalid or not deployed:', err.message);
+            snackbar('Sync FAILED: Script URL invalid', 3000);
+        });
+    }, 2000);
+}
+
+// Reliable cross-origin POST to Google Apps Script via hidden form + iframe
+// Bypasses CORS, preserves POST body through 302 redirects
+function postToAppsScript(scriptUrl, data) {
+    let iframe = document.getElementById('syncFrame');
+    if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'syncFrame';
+        iframe.name = 'syncFrame';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+    }
+    let form = document.createElement('form');
+    form.method = 'POST';
+    form.action = scriptUrl;
+    form.target = 'syncFrame';
+    let input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'payload';
+    input.value = JSON.stringify(data);
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
 }
 
 function openSyncSettings() {
@@ -764,13 +796,46 @@ function openSyncSettings() {
 function saveSyncSettings() {
     let url = document.getElementById('syncScriptUrl').value.trim();
     let startOd = document.getElementById('syncStartOd').value.trim();
-    if (url) localStorage.setItem('liveWebSheetScriptUrl', url);
-    // Clear cache when startOd changes
-    let oldStartOd = localStorage.getItem('liveWebSheetStartOd');
-    if (startOd && startOd !== oldStartOd) {
-        localStorage.removeItem('liveWebOrders');
-    }
-    if (startOd) localStorage.setItem('liveWebSheetStartOd', startOd);
-    document.getElementById('syncModal').style.display = 'none';
-    syncOrdersToLiveWeb();
+    let statusEl = document.getElementById('syncStatus');
+
+    if (!url) { statusEl.style.display = 'block'; statusEl.style.background = '#f44336'; statusEl.style.color = '#fff'; statusEl.textContent = 'Enter Apps Script URL'; return; }
+
+    // Test the URL before saving
+    statusEl.style.display = 'block';
+    statusEl.style.background = '#ffc107';
+    statusEl.style.color = '#000';
+    statusEl.textContent = 'Testing connection...';
+
+    let sep = url.includes('?') ? '&' : '?';
+    fetch(url + sep + 'sheet=Live%20Website', { redirect: 'follow' })
+    .then(res => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+    })
+    .then(data => {
+        console.log('Connection test OK:', data);
+        statusEl.style.background = '#4CAF50';
+        statusEl.style.color = '#fff';
+        statusEl.textContent = 'Connected OK';
+
+        // Save settings
+        localStorage.setItem('liveWebSheetScriptUrl', url);
+        let oldStartOd = localStorage.getItem('liveWebSheetStartOd');
+        if (startOd && startOd !== oldStartOd) {
+            localStorage.removeItem('liveWebOrders');
+        }
+        if (startOd) localStorage.setItem('liveWebSheetStartOd', startOd);
+
+        setTimeout(() => {
+            document.getElementById('syncModal').style.display = 'none';
+            statusEl.style.display = 'none';
+            syncOrdersToLiveWeb();
+        }, 1000);
+    })
+    .catch(err => {
+        console.error('Connection test FAILED:', err);
+        statusEl.style.background = '#f44336';
+        statusEl.style.color = '#fff';
+        statusEl.textContent = 'FAILED: URL invalid or not deployed. Check your Apps Script deployment.';
+    });
 }

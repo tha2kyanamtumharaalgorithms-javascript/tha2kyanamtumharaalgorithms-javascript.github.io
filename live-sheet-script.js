@@ -13,7 +13,9 @@
 var SHEET_ID = '1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0';
 
 function doPost(e) {
-  var payload = JSON.parse(e.postData.contents);
+  // Support both form submission (e.parameter.payload) and JSON POST (e.postData.contents)
+  var raw = (e.parameter && e.parameter.payload) ? e.parameter.payload : e.postData.contents;
+  var payload = JSON.parse(raw);
 
   if (payload.action === 'deleteOrder') {
     return handleDeleteOrder(payload);
