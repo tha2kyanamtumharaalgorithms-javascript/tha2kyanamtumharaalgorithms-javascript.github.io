@@ -42,6 +42,18 @@
 </div>
 
 <body>
+  <!-- Login Screen -->
+  <div id="loginScreen" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#607d8b;z-index:100;justify-content:center;align-items:center;">
+    <div style="background:#fff;border-radius:16px;padding:32px 24px;width:300px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+      <h3 style="margin:0 0 8px;color:#333;">Offline Order</h3>
+      <p style="color:#888;font-size:13px;margin:0 0 20px;">Enter credentials to continue</p>
+      <input id="loginUser" type="text" placeholder="Your Name" style="width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;font-size:16px;margin-bottom:12px;box-sizing:border-box;">
+      <input id="loginPass" type="password" placeholder="Password" style="width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;font-size:16px;margin-bottom:16px;box-sizing:border-box;">
+      <button onclick="appLogin()" style="width:100%;padding:12px;background:#2196F3;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;">Login</button>
+      <p id="loginError" style="color:#f44336;font-size:13px;margin:8px 0 0;display:none;">Wrong password</p>
+    </div>
+  </div>
+
   <div id="id01" class="w3-modal" style="display: block;">
     <!-- <button style="z-index: 5;padding-top: 0;" class="w3-button w3-display-topright w3-right w3-blue-gray w3-xlarge" onclick="w3_open()">☰</button> -->
     <div id="sidebarbutton" onclick="w3_open()"
@@ -305,7 +317,8 @@
         <span id="fbSyncStatus" style="font-size:11px;color:#999;">Cloud: --</span>
       </div>
       <button onclick="fbFullUpload()" class="w3-button w3-bar-item w3-border-top">Upload to Cloud</button>
-      <button onclick="fbFullDownload()" class="w3-button w3-bar-item w3-border-top w3-border-bottom">Download from Cloud</button>
+      <button onclick="fbFullDownload()" class="w3-button w3-bar-item w3-border-top">Download from Cloud</button>
+      <button onclick="appLogout();w3_close()" class="w3-button w3-bar-item w3-border-top w3-border-bottom w3-red">Logout</button>
     </div>
 
     <script>

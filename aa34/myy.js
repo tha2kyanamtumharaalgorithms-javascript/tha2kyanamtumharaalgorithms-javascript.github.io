@@ -191,6 +191,7 @@ function creatod(eid) {
     zsr.tot = odqt;
     zsr.bulk = Number(document.getElementById('bulkc').checked);
     zsr.dt = date.split(' ').join('/');
+    zsr._user = getAppUser();
     zsr.od = od;
     zsr.inv = billinv;
     zsr.wt = odwt;
@@ -322,6 +323,7 @@ async function updateod(myz, eid) {
     zsr.inv = billinv;
     zsr.wt = odwt;
     zsr.xch = [...othch, tbl[6].gst];
+    zsr._user = getAppUser();
     let jkl = document.querySelectorAll('#ctm9 tr');
     if (jkl.length) {
       let cods = [];

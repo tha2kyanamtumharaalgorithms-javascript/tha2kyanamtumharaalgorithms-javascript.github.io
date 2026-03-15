@@ -308,9 +308,72 @@ function fbSetupConnectionStatus() {
   });
 }
 
+// ===== App Login =====
+
+function appLogin() {
+  let user = document.getElementById('loginUser').value.trim();
+  let pass = document.getElementById('loginPass').value;
+  if (!user) { document.getElementById('loginUser').focus(); return; }
+  if (!pass) { document.getElementById('loginPass').focus(); return; }
+
+  fbRef.child('appConfig/password').once('value').then((snap) => {
+    let storedPass = snap.val();
+    if (!storedPass) {
+      // First time — no password set yet, save this one
+      fbRef.child('appConfig/password').set(pass);
+      storedPass = pass;
+    }
+    if (pass === storedPass) {
+      localStorage.setItem('appAuth', '1');
+      localStorage.setItem('appUser', user);
+      document.getElementById('loginScreen').style.display = 'none';
+      console.log('Login success:', user);
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+      document.getElementById('loginPass').value = '';
+      document.getElementById('loginPass').focus();
+    }
+  }).catch(() => {
+    // Offline — allow login if previously authenticated
+    if (localStorage.getItem('appAuth') === '1') {
+      localStorage.setItem('appUser', user);
+      document.getElementById('loginScreen').style.display = 'none';
+    } else {
+      alert('Cannot verify password while offline. Connect to internet first.');
+    }
+  });
+}
+
+// Enter key triggers login
+document.getElementById('loginPass').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') appLogin();
+});
+
+function appCheckAuth() {
+  if (localStorage.getItem('appAuth') !== '1') {
+    let ls = document.getElementById('loginScreen');
+    ls.style.display = 'flex';
+    // Pre-fill username if saved
+    let savedUser = localStorage.getItem('appUser');
+    if (savedUser) document.getElementById('loginUser').value = savedUser;
+  }
+}
+
+function appLogout() {
+  localStorage.removeItem('appAuth');
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').style.display = 'none';
+}
+
+function getAppUser() {
+  return localStorage.getItem('appUser') || '';
+}
+
 // ===== Init =====
 
 (function fbInit() {
+  appCheckAuth();
   fbSetupListeners();
   fbSetupConnectionStatus();
   console.log('fb: sync initialized, device:', FB_DEVICE_ID);
