@@ -237,10 +237,7 @@ async function done() {
         await fetch("https://script.google.com/macros/s/AKfycbxJs1MUozlOyJWpxY4EQmBL3qSkQq6hVKUwmvhSn53Fuhwh6Q3-Tzu3ntuAjqa0aTcK/exec", { method: 'POST', body: fmd }).then(res => res.json()).finally((v) => {
             // setTimeout(async()=>{await getdata();},100)
         })
-
-        // Remove done orders from Live Website cache and re-sync
-        console.log('[SYNC DEBUG] done() — removing done orders from cache:', sel1);
-        deleteLiveWebOrder(sel1);
+        // Done orders STAY in live sheet cache (counted as sold)
     }
 
 }
@@ -633,10 +630,12 @@ function holdn() {
 //     }
 // }
 
-// ===== Live Website Sheet Sync =====
-// Dashboard directly syncs order data to Live Website sheet.
-// Orders stay in cache even after Done (stock was sold).
-// Only Delete removes from cache.
+// ===== Live Website Sheet Sync (v2 — GET only) =====
+// Cache in localStorage tracks all orders from startOd onwards.
+// Done → orders STAY in cache (still counted as sold)
+// Delete → orders REMOVED from cache
+// Edit → cache updated with new data
+// Every sync sends the FULL aggregated state via GET request.
 
 function syncOrdersToLiveWeb() {
     let startOd = localStorage.getItem('liveWebSheetStartOd');
@@ -645,37 +644,28 @@ function syncOrdersToLiveWeb() {
     if (!fromNum) return;
 
     let cache = JSON.parse(localStorage.liveWebOrders || '{}');
-    let changed = false;
 
-    // Purge stale cache entries below startOd
-    for (let id in cache) {
-        if (Number(id) < fromNum) { delete cache[id]; changed = true; }
-    }
-
-    // Add/update orders from current dashboard data
+    // Add/update from current pending orders
     for (let id in ods) {
         if (Number(id) < fromNum) continue;
-        let odData = ods[id].od;
-        if (!odData || typeof odData !== 'object') continue;
-        cache[id] = odData;
-        changed = true;
+        let od = ods[id]?.od;
+        if (od && typeof od === 'object') cache[id] = od;
     }
+    // Done orders that left ods? They STAY in cache. Don't remove them.
 
-    // Remove orders no longer in ods (done/deleted)
-    for (let id in cache) {
-        if (Number(id) >= fromNum && !ods[id]) {
-            delete cache[id];
-            changed = true;
-        }
-    }
-
-    if (changed) {
-        localStorage.setItem('liveWebOrders', JSON.stringify(cache));
-    }
-
+    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
     aggregateAndSyncLiveWeb();
 }
 
+// Called ONLY from deleteod() — removes orders from live sheet
+function deleteLiveWebOrder(orderIds) {
+    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
+    orderIds.forEach(id => delete cache[id]);
+    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
+    aggregateAndSyncLiveWeb();
+}
+
+// Called from edit.js after saving edits
 function updateLiveWebOrder(orderId, newOdData) {
     let cache = JSON.parse(localStorage.liveWebOrders || '{}');
     cache[orderId] = newOdData;
@@ -683,76 +673,49 @@ function updateLiveWebOrder(orderId, newOdData) {
     aggregateAndSyncLiveWeb();
 }
 
-function deleteLiveWebOrder(orderIds) {
-    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
-    orderIds.forEach(function(id) { delete cache[id]; });
-    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
-    aggregateAndSyncLiveWeb();
-}
-
 function aggregateAndSyncLiveWeb() {
-    let startOd = localStorage.getItem('liveWebSheetStartOd');
-    if (!startOd) return;
-    let fromNum = Number(startOd);
-
     let scriptUrl = localStorage.getItem('liveWebSheetScriptUrl');
     if (!scriptUrl) return;
 
     let cache = JSON.parse(localStorage.liveWebOrders || '{}');
 
-    // Aggregate: type > color > size > qty
-    let all = {};
-    let orderCount = 0;
+    // Aggregate all cached orders: type > color > size > qty
+    let all = {}, orderCount = 0, grandTotal = 0;
     for (let id in cache) {
         let kk = cache[id];
-        if (!kk || typeof kk !== 'object') continue;
+        if (!kk || typeof kk === 'string') continue;
         for (let t in kk) {
-            all[t] = all[t] || {};
+            if (!all[t]) all[t] = {};
             for (let c in kk[t]) {
-                all[t][c] = all[t][c] || {};
+                if (!all[t][c]) all[t][c] = {};
                 for (let s in kk[t][c]) {
-                    all[t][c][s] = (all[t][c][s] || 0) + kk[t][c][s];
+                    let v = Number(kk[t][c][s]) || 0;
+                    all[t][c][s] = (all[t][c][s] || 0) + v;
+                    grandTotal += v;
                 }
             }
         }
         orderCount++;
     }
 
-    // Build data rows
-    let data = [];
-    let grandTotal = 0;
-    for (let t in all) {
-        for (let c in all[t]) {
-            for (let s in all[t][c]) {
-                let qty = all[t][c][s];
-                data.push([t, c, s, qty]);
-                grandTotal += qty;
-            }
-        }
+    // Build compact data: product~color~size~qty rows joined by *
+    let parts = [];
+    for (let t in all) for (let c in all[t]) for (let s in all[t][c]) {
+        parts.push(t + '~' + c + '~' + s + '~' + all[t][c][s]);
     }
 
-    // Build compact data string: product~color~size~qty joined by * for rows
-    // ~ and * are NOT encoded by encodeURIComponent, keeping URLs short
-    let dataStr = data.map(r => r.join('~')).join('*');
     let sep = scriptUrl.includes('?') ? '&' : '?';
-    let url = scriptUrl + sep + 'action=sync&s=' + fromNum + '&n=' + orderCount + '&q=' + grandTotal + '&d=' + encodeURIComponent(dataStr);
+    let url = scriptUrl + sep + 'action=sync&n=' + orderCount + '&q=' + grandTotal + '&d=' + encodeURIComponent(parts.join('*'));
 
-    console.log('[SYNC] orders:', orderCount, '| rows:', data.length, '| qty:', grandTotal, '| URL:', url.length, 'chars');
+    console.log('[SYNC] orders:', orderCount, '| rows:', parts.length, '| qty:', grandTotal, '| url:', url.length, 'ch');
 
-    // GET-based sync — no CORS issues, no 302 redirect body loss
     fetch(url, { redirect: 'follow' })
-    .then(res => {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        return res.json();
-    })
-    .then(d => console.log('[SYNC] OK:', JSON.stringify(d)))
-    .catch(err => {
-        console.error('[SYNC] FAILED:', err);
-        snackbar('Sync failed', 3000);
-    });
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(d => console.log('[SYNC] OK', d))
+        .catch(e => { console.error('[SYNC] FAIL', e); snackbar('Sync failed', 2000); });
 }
 
-
+// ===== Sync Settings UI =====
 function openSyncSettings() {
     document.getElementById('syncScriptUrl').value = localStorage.getItem('liveWebSheetScriptUrl') || '';
     document.getElementById('syncStartOd').value = localStorage.getItem('liveWebSheetStartOd') || '';
@@ -762,46 +725,30 @@ function openSyncSettings() {
 function saveSyncSettings() {
     let url = document.getElementById('syncScriptUrl').value.trim();
     let startOd = document.getElementById('syncStartOd').value.trim();
-    let statusEl = document.getElementById('syncStatus');
+    let el = document.getElementById('syncStatus');
 
-    if (!url) { statusEl.style.display = 'block'; statusEl.style.background = '#f44336'; statusEl.style.color = '#fff'; statusEl.textContent = 'Enter Apps Script URL'; return; }
+    if (!url) { el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff'; el.textContent = 'Enter URL'; return; }
 
-    // Test the URL before saving
-    statusEl.style.display = 'block';
-    statusEl.style.background = '#ffc107';
-    statusEl.style.color = '#000';
-    statusEl.textContent = 'Testing connection...';
+    el.style.display = 'block'; el.style.background = '#ffc107'; el.style.color = '#000'; el.textContent = 'Testing...';
 
+    // Ping the script to verify it's the correct version
     let sep = url.includes('?') ? '&' : '?';
-    fetch(url + sep + 'action=status&sheet=Live+Website', { redirect: 'follow' })
-    .then(res => {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        return res.json();
-    })
-    .then(data => {
-        console.log('Connection test OK:', data);
-        statusEl.style.background = '#4CAF50';
-        statusEl.style.color = '#fff';
-        statusEl.textContent = 'Connected OK';
+    fetch(url + sep + 'action=ping', { redirect: 'follow' })
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(d => {
+            if (!d.v) throw new Error('Wrong script version. Deploy the NEW script.');
+            el.style.background = '#4CAF50'; el.style.color = '#fff';
+            el.textContent = 'Connected! Script v' + d.v;
 
-        // Save settings
-        localStorage.setItem('liveWebSheetScriptUrl', url);
-        let oldStartOd = localStorage.getItem('liveWebSheetStartOd');
-        if (startOd && startOd !== oldStartOd) {
-            localStorage.removeItem('liveWebOrders');
-        }
-        if (startOd) localStorage.setItem('liveWebSheetStartOd', startOd);
+            localStorage.setItem('liveWebSheetScriptUrl', url);
+            let old = localStorage.getItem('liveWebSheetStartOd');
+            if (startOd && startOd !== old) localStorage.removeItem('liveWebOrders');
+            if (startOd) localStorage.setItem('liveWebSheetStartOd', startOd);
 
-        setTimeout(() => {
-            document.getElementById('syncModal').style.display = 'none';
-            statusEl.style.display = 'none';
-            syncOrdersToLiveWeb();
-        }, 1000);
-    })
-    .catch(err => {
-        console.error('Connection test FAILED:', err);
-        statusEl.style.background = '#f44336';
-        statusEl.style.color = '#fff';
-        statusEl.textContent = 'FAILED: URL invalid or not deployed. Check your Apps Script deployment.';
-    });
+            setTimeout(() => { document.getElementById('syncModal').style.display = 'none'; el.style.display = 'none'; syncOrdersToLiveWeb(); }, 1000);
+        })
+        .catch(e => {
+            el.style.background = '#f44336'; el.style.color = '#fff';
+            el.textContent = 'FAIL: ' + (e.message || e);
+        });
 }

@@ -1,102 +1,80 @@
-// ============================================================
-// Google Apps Script — Dashboard → Live Website Sheet (GET-only)
-// Deploy as Web App (Execute as: Me, Access: Anyone)
+// Google Apps Script — Live Website Sheet
+// Deploy: Web App → Execute as Me → Access Anyone
+// ALL operations use doGet (POST doesn't work due to Google's 302 redirect)
 //
-// WHY GET instead of POST:
-//   Google Apps Script uses 302 redirects which change POST→GET,
-//   losing the POST body. GET requests work reliably.
-//
-// Data format (compact, URL-safe):
-//   product~color~size~qty  joined by  *  for rows
-//   Example: Oversize 240gsm~Brown~M~9*Oversize 240gsm~Off-white~S~3
-//
-// Endpoints (all via doGet):
-//   ?action=sync&s=START_OD&n=ORDER_COUNT&q=TOTAL_QTY&d=DATA
-//   ?action=status&sheet=Live+Website  (returns startOd from B1)
-//   (no action) → same as status with default sheet
-// ============================================================
+// Endpoints:
+//   ?action=ping          → { status:'ok', v:2 }
+//   ?action=status        → { status:'ok', startOd: <B1 value> }
+//   ?action=sync&n=7&q=172&d=Oversize+240gsm~Brown~M~9*T-Shirt~Red~L~3
+//     n = order count, q = total qty
+//     d = rows of product~color~size~qty separated by *
 
 var SHEET_ID = '1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0';
+var VER = 2;
 
 function doGet(e) {
   var p = (e && e.parameter) || {};
-  var action = p.action || 'status';
-
   try {
-    if (action === 'sync') return handleSync(p);
-    return handleStatus(p);
+    if (p.action === 'ping') return j({ v: VER });
+    if (p.action === 'sync') return doSync(p);
+    // default: status
+    var sh = getOrCreateSheet();
+    return j({ startOd: sh.getRange(1, 2).getValue() || null, v: VER });
   } catch (err) {
-    return json({ status: 'error', message: err.message });
+    return j({ error: err.message });
   }
 }
 
-// ===== Sync: write aggregated data to sheet =====
-function handleSync(p) {
-  var dataStr    = p.d || '';
-  var orderCount = Number(p.n) || 0;
-  var totalQty   = Number(p.q) || 0;
-  var startOd    = p.s || '';
-  var sheetName  = 'Live Website';
-  var timestamp  = new Date().toISOString();
+function doSync(p) {
+  var n = Number(p.n) || 0;
+  var q = Number(p.q) || 0;
+  var d = p.d || '';
+  var ts = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
-  // Parse compact data: product~color~size~qty separated by *
-  var data = [];
-  if (dataStr) {
-    var rows = dataStr.split('*');
-    for (var i = 0; i < rows.length; i++) {
-      var f = rows[i].split('~');
-      if (f.length >= 4) {
-        data.push([f[0], f[1], f[2], Number(f[3])]);
-      }
+  // parse compact data
+  var rows = [];
+  if (d) {
+    var parts = d.split('*');
+    for (var i = 0; i < parts.length; i++) {
+      var f = parts[i].split('~');
+      if (f.length >= 4) rows.push([f[0], f[1], f[2], Number(f[3])]);
     }
   }
 
-  var ss = SpreadsheetApp.openById(SHEET_ID);
-  var sheet = ss.getSheetByName(sheetName);
-  if (!sheet) sheet = ss.insertSheet(sheetName);
+  var sh = getOrCreateSheet();
 
-  // Row 1: label + stats (NEVER touch B1 — user's starting order number)
-  if (!sheet.getRange(1, 1).getValue()) {
-    sheet.getRange(1, 1).setValue('Start Order:');
-  }
-  sheet.getRange(1, 3).setValue('Orders: ' + orderCount);
-  sheet.getRange(1, 4).setValue('Qty: ' + totalQty);
-  sheet.getRange(1, 5).setValue('Updated: ' + timestamp);
+  // row 1: A1=label, B1=user's startOd (NEVER touch), C1-E1=stats
+  if (!sh.getRange(1, 1).getValue()) sh.getRange(1, 1).setValue('Start Order:');
+  sh.getRange(1, 3).setValue('Orders: ' + n);
+  sh.getRange(1, 4).setValue('Qty: ' + q);
+  sh.getRange(1, 5).setValue(ts);
 
-  // Clear rows 2+ (keep row 1)
-  var lastRow = sheet.getLastRow();
-  if (lastRow >= 2) {
-    sheet.getRange(2, 1, lastRow - 1, 5).clearContent();
-  }
+  // clear old data (row 2 onwards)
+  var last = sh.getLastRow();
+  if (last >= 2) sh.getRange(2, 1, last - 1, 5).clearContent();
 
-  // Row 2: headers
-  sheet.getRange(2, 1, 1, 4).setValues([['Product', 'Color', 'Size', 'Qty']]);
+  // row 2: headers
+  sh.getRange(2, 1, 1, 4).setValues([['Product', 'Color', 'Size', 'Qty']]);
 
-  // Row 3+: data
-  if (data.length > 0) {
-    sheet.getRange(3, 1, data.length, 4).setValues(data);
-  }
+  // row 3+: data
+  if (rows.length) sh.getRange(3, 1, rows.length, 4).setValues(rows);
 
-  // Total row
-  var totalRow = data.length + 3;
-  sheet.getRange(totalRow, 1).setValue('TOTAL');
-  sheet.getRange(totalRow, 4).setValue(totalQty);
+  // total row
+  sh.getRange(rows.length + 3, 1).setValue('TOTAL');
+  sh.getRange(rows.length + 3, 4).setValue(q);
 
-  return json({ status: 'ok', rows: data.length, totalQty: totalQty });
+  return j({ synced: rows.length, q: q });
 }
 
-// ===== Status: return startOd from B1 =====
-function handleStatus(p) {
-  var sheetName = p.sheet || 'Live Website';
+function getOrCreateSheet() {
   var ss = SpreadsheetApp.openById(SHEET_ID);
-  var sheet = ss.getSheetByName(sheetName);
-  if (!sheet) return json({ status: 'ok', startOd: null });
-
-  var startOd = sheet.getRange(1, 2).getValue();
-  return json({ status: 'ok', startOd: startOd || null });
+  var sh = ss.getSheetByName('Live Website');
+  if (!sh) sh = ss.insertSheet('Live Website');
+  return sh;
 }
 
-function json(obj) {
+function j(obj) {
+  obj.status = 'ok';
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
