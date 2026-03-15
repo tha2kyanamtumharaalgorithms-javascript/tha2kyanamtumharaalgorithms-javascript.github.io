@@ -260,14 +260,8 @@ async function deleteod() {
     fmd.append("myd", JSON.stringify(sel1));
     fetch("https://script.google.com/macros/s/AKfycbxJs1MUozlOyJWpxY4EQmBL3qSkQq6hVKUwmvhSn53Fuhwh6Q3-Tzu3ntuAjqa0aTcK/exec", { method: 'POST', body: fmd, mode: 'no-cors' });
 
-    // Step 2: Remove from Live Website sheet and re-sync
+    // Step 2: Remove from Live Website sheet and re-sync (GET-based)
     deleteLiveWebOrder(sel1);
-
-    // Step 3: Record deletion in Apps Script (DeletedOrders tab)
-    let liveUrl = localStorage.getItem('liveWebSheetScriptUrl');
-    if (liveUrl) {
-        postToAppsScript(liveUrl, { action: 'deleteOrder', orderIds: sel1 });
-    }
 
     snackbar('Deleted', 1500);
 }
@@ -645,48 +639,35 @@ function holdn() {
 // Only Delete removes from cache.
 
 function syncOrdersToLiveWeb() {
-    console.log('[SYNC DEBUG] syncOrdersToLiveWeb() called');
     let startOd = localStorage.getItem('liveWebSheetStartOd');
-    if (!startOd) { console.log('[SYNC DEBUG] SKIP: no liveWebSheetStartOd in localStorage'); return; }
+    if (!startOd) return;
     let fromNum = Number(startOd);
-    if (!fromNum) { console.log('[SYNC DEBUG] SKIP: invalid startOd', startOd); return; }
+    if (!fromNum) return;
 
     let cache = JSON.parse(localStorage.liveWebOrders || '{}');
-    let cacheSizeBefore = Object.keys(cache).length;
     let changed = false;
-    let skipped = 0, added = 0, purged = 0;
 
     // Purge stale cache entries below startOd
     for (let id in cache) {
-        if (Number(id) < fromNum) { delete cache[id]; changed = true; purged++; }
+        if (Number(id) < fromNum) { delete cache[id]; changed = true; }
     }
-
-    console.log('[SYNC DEBUG] startOd:', fromNum, '| ods total:', Object.keys(ods).length, '| cache before:', cacheSizeBefore, '| purged below startOd:', purged);
 
     // Add/update orders from current dashboard data
     for (let id in ods) {
-        let orderNum = Number(id);
-        if (added === 0 && skipped === 0) console.log('[SYNC DEBUG] First order:', id, 'orderNum:', orderNum, 'fromNum:', fromNum, 'has .od:', !!ods[id].od);
-        if (orderNum < fromNum) { skipped++; continue; }
+        if (Number(id) < fromNum) continue;
         let odData = ods[id].od;
-        if (!odData || typeof odData !== 'object') { console.log('[SYNC DEBUG] SKIP order (no .od):', id, typeof ods[id].od, Object.keys(ods[id])); skipped++; continue; }
+        if (!odData || typeof odData !== 'object') continue;
         cache[id] = odData;
         changed = true;
-        added++;
     }
 
-    // Remove done/deleted orders from cache (orders >= startOd that are no longer in ods)
-    let removed = 0;
+    // Remove orders no longer in ods (done/deleted)
     for (let id in cache) {
         if (Number(id) >= fromNum && !ods[id]) {
-            console.log('[SYNC DEBUG] Removing stale order from cache:', id);
             delete cache[id];
             changed = true;
-            removed++;
         }
     }
-
-    console.log('[SYNC DEBUG] added:', added, '| skipped:', skipped, '| removed stale:', removed, '| cache after:', Object.keys(cache).length);
 
     if (changed) {
         localStorage.setItem('liveWebOrders', JSON.stringify(cache));
@@ -750,61 +731,27 @@ function aggregateAndSyncLiveWeb() {
         }
     }
 
-    let payload = {
-        startOd: fromNum,
-        data: data,
-        totalQty: grandTotal,
-        orderCount: orderCount,
-        timestamp: new Date().toISOString(),
-        sheetName: 'Live Website'
-    };
-    let payloadStr = JSON.stringify(payload);
-    console.log('[SYNC DEBUG] aggregateAndSyncLiveWeb — orders:', orderCount, '| dataRows:', data.length, '| totalQty:', grandTotal, '| payloadSize:', payloadStr.length, 'chars');
-    console.log('[SYNC DEBUG] payload preview:', payloadStr.substring(0, 300));
+    // Build compact data string: product~color~size~qty joined by * for rows
+    // ~ and * are NOT encoded by encodeURIComponent, keeping URLs short
+    let dataStr = data.map(r => r.join('~')).join('*');
+    let sep = scriptUrl.includes('?') ? '&' : '?';
+    let url = scriptUrl + sep + 'action=sync&s=' + fromNum + '&n=' + orderCount + '&q=' + grandTotal + '&d=' + encodeURIComponent(dataStr);
 
-    // Use no-cors fetch POST (same as AA34 — proven to work with Google Apps Script)
-    fetch(scriptUrl, {
-        method: 'POST',
-        body: payloadStr,
-        mode: 'no-cors'
+    console.log('[SYNC] orders:', orderCount, '| rows:', data.length, '| qty:', grandTotal, '| URL:', url.length, 'chars');
+
+    // GET-based sync — no CORS issues, no 302 redirect body loss
+    fetch(url, { redirect: 'follow' })
+    .then(res => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
     })
-    .then(() => console.log('[SYNC DEBUG] no-cors POST sent OK (response opaque)'))
+    .then(d => console.log('[SYNC] OK:', JSON.stringify(d)))
     .catch(err => {
-        console.error('[SYNC DEBUG] POST FAILED:', err.message);
-        snackbar('Sync POST failed', 3000);
-    });
-    console.log('[SYNC DEBUG] POST sent to:', scriptUrl.substring(0, 60) + '...');
-
-    // Verify the script URL is valid with a GET after a short delay
-    setTimeout(() => {
-        let sep = scriptUrl.includes('?') ? '&' : '?';
-        fetch(scriptUrl + sep + 'sheet=Live%20Website', { redirect: 'follow' })
-        .then(res => {
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            return res.json();
-        })
-        .then(d => console.log('[SYNC DEBUG] Verify GET response:', JSON.stringify(d)))
-        .catch(err => {
-            console.error('[SYNC DEBUG] VERIFY FAILED:', err.message);
-            snackbar('Sync FAILED: Script URL invalid', 3000);
-        });
-    }, 2000);
-}
-
-// Send JSON payload to Apps Script via no-cors POST
-function postToAppsScript(scriptUrl, data) {
-    let jsonStr = JSON.stringify(data);
-    console.log('[SYNC DEBUG] postToAppsScript — payload size:', jsonStr.length, 'chars');
-    return fetch(scriptUrl, {
-        method: 'POST',
-        body: jsonStr,
-        mode: 'no-cors'
-    }).then(() => {
-        console.log('[SYNC DEBUG] postToAppsScript sent OK');
-    }).catch(err => {
-        console.error('[SYNC DEBUG] postToAppsScript FAILED:', err.message);
+        console.error('[SYNC] FAILED:', err);
+        snackbar('Sync failed', 3000);
     });
 }
+
 
 function openSyncSettings() {
     document.getElementById('syncScriptUrl').value = localStorage.getItem('liveWebSheetScriptUrl') || '';
@@ -826,7 +773,7 @@ function saveSyncSettings() {
     statusEl.textContent = 'Testing connection...';
 
     let sep = url.includes('?') ? '&' : '?';
-    fetch(url + sep + 'sheet=Live%20Website', { redirect: 'follow' })
+    fetch(url + sep + 'action=status&sheet=Live+Website', { redirect: 'follow' })
     .then(res => {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         return res.json();

@@ -1,157 +1,102 @@
 // ============================================================
-// Google Apps Script — Dashboard Order Handlers
+// Google Apps Script — Dashboard → Live Website Sheet (GET-only)
 // Deploy as Web App (Execute as: Me, Access: Anyone)
-// After deploying, save the URL in your browser:
-//   localStorage.setItem('liveWebSheetScriptUrl', 'YOUR_DEPLOYED_URL')
 //
-// This script handles:
-// - Sync: writes aggregated order data to Live Website / Live Offline sheet
-// - deleteOrder: records deleted orders in DeletedOrders tab
-// - doGet: returns starting order number from sheet cell B1
+// WHY GET instead of POST:
+//   Google Apps Script uses 302 redirects which change POST→GET,
+//   losing the POST body. GET requests work reliably.
+//
+// Data format (compact, URL-safe):
+//   product~color~size~qty  joined by  *  for rows
+//   Example: Oversize 240gsm~Brown~M~9*Oversize 240gsm~Off-white~S~3
+//
+// Endpoints (all via doGet):
+//   ?action=sync&s=START_OD&n=ORDER_COUNT&q=TOTAL_QTY&d=DATA
+//   ?action=status&sheet=Live+Website  (returns startOd from B1)
+//   (no action) → same as status with default sheet
 // ============================================================
 
 var SHEET_ID = '1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0';
 
-function doPost(e) {
-  // Debug: log what we received
-  console.log('doPost called');
-  console.log('e.parameter keys:', e.parameter ? Object.keys(e.parameter) : 'none');
-  console.log('e.parameter.payload exists:', !!(e.parameter && e.parameter.payload));
-  console.log('e.postData type:', e.postData ? e.postData.type : 'none');
-  console.log('e.postData.contents (first 300):', e.postData && e.postData.contents ? e.postData.contents.substring(0, 300) : 'none');
+function doGet(e) {
+  var p = (e && e.parameter) || {};
+  var action = p.action || 'status';
 
-  // Support both form submission (e.parameter.payload) and JSON POST (e.postData.contents)
-  var raw;
-  if (e.parameter && e.parameter.payload) {
-    raw = e.parameter.payload;
-    console.log('Using e.parameter.payload, length:', raw.length);
-  } else if (e.postData && e.postData.contents) {
-    raw = e.postData.contents;
-    console.log('Using e.postData.contents, length:', raw.length);
-  } else {
-    console.log('ERROR: No payload found! e.parameter:', JSON.stringify(e.parameter), 'e.postData:', JSON.stringify(e.postData));
-    return ContentService.createTextOutput(
-      JSON.stringify({ status: "error", message: "No payload received" })
-    ).setMimeType(ContentService.MimeType.JSON);
-  }
-
-  var payload;
   try {
-    payload = JSON.parse(raw);
+    if (action === 'sync') return handleSync(p);
+    return handleStatus(p);
   } catch (err) {
-    console.log('ERROR parsing JSON:', err.message, 'raw (first 200):', raw.substring(0, 200));
-    return ContentService.createTextOutput(
-      JSON.stringify({ status: "error", message: "JSON parse error: " + err.message })
-    ).setMimeType(ContentService.MimeType.JSON);
+    return json({ status: 'error', message: err.message });
   }
-
-  console.log('Parsed payload — action:', payload.action || 'sync', 'dataRows:', payload.data ? payload.data.length : 0, 'totalQty:', payload.totalQty, 'orderCount:', payload.orderCount, 'sheet:', payload.sheetName);
-
-  if (payload.action === 'deleteOrder') {
-    return handleDeleteOrder(payload);
-  }
-
-  // ===== Sync handler =====
-  return handleSync(payload);
 }
 
-// ===== handleSync =====
-function handleSync(payload) {
-  var data = payload.data;       // [[product, color, size, qty], ...]
-  var totalQty = payload.totalQty;
-  var orderCount = payload.orderCount;
-  var timestamp = payload.timestamp;
-  var startOd = payload.startOd;
-  var sheetName = payload.sheetName || "Live Offline";
+// ===== Sync: write aggregated data to sheet =====
+function handleSync(p) {
+  var dataStr    = p.d || '';
+  var orderCount = Number(p.n) || 0;
+  var totalQty   = Number(p.q) || 0;
+  var startOd    = p.s || '';
+  var sheetName  = 'Live Website';
+  var timestamp  = new Date().toISOString();
+
+  // Parse compact data: product~color~size~qty separated by *
+  var data = [];
+  if (dataStr) {
+    var rows = dataStr.split('*');
+    for (var i = 0; i < rows.length; i++) {
+      var f = rows[i].split('~');
+      if (f.length >= 4) {
+        data.push([f[0], f[1], f[2], Number(f[3])]);
+      }
+    }
+  }
 
   var ss = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheetByName(sheetName);
-  if (!sheet) {
-    sheet = ss.insertSheet(sheetName);
-  }
+  if (!sheet) sheet = ss.insertSheet(sheetName);
 
-  // Row 1: NEVER touch B1 — user's starting order number lives there
-  // Set label only if A1 is empty (first time)
+  // Row 1: label + stats (NEVER touch B1 — user's starting order number)
   if (!sheet.getRange(1, 1).getValue()) {
-    sheet.getRange(1, 1).setValue("Start Order:");
+    sheet.getRange(1, 1).setValue('Start Order:');
   }
-  // Update stats in row 1 (columns C, D, E) — but NEVER touch B1
-  sheet.getRange(1, 3).setValue("Orders: " + orderCount);
-  sheet.getRange(1, 4).setValue("Qty: " + totalQty);
-  sheet.getRange(1, 5).setValue("Updated: " + timestamp);
+  sheet.getRange(1, 3).setValue('Orders: ' + orderCount);
+  sheet.getRange(1, 4).setValue('Qty: ' + totalQty);
+  sheet.getRange(1, 5).setValue('Updated: ' + timestamp);
 
-  // Clear from row 2 onward (keep row 1 untouched)
+  // Clear rows 2+ (keep row 1)
   var lastRow = sheet.getLastRow();
   if (lastRow >= 2) {
     sheet.getRange(2, 1, lastRow - 1, 5).clearContent();
   }
 
-  // Row 2: Column headers
-  sheet.getRange(2, 1).setValue("Product");
-  sheet.getRange(2, 2).setValue("Color");
-  sheet.getRange(2, 3).setValue("Size");
-  sheet.getRange(2, 4).setValue("Qty");
+  // Row 2: headers
+  sheet.getRange(2, 1, 1, 4).setValues([['Product', 'Color', 'Size', 'Qty']]);
 
-  // Row 3+: Data rows
+  // Row 3+: data
   if (data.length > 0) {
-    var range = sheet.getRange(3, 1, data.length, 4);
-    range.setValues(data);
+    sheet.getRange(3, 1, data.length, 4).setValues(data);
   }
 
-  // Total row at the end
+  // Total row
   var totalRow = data.length + 3;
-  sheet.getRange(totalRow, 1).setValue("TOTAL");
+  sheet.getRange(totalRow, 1).setValue('TOTAL');
   sheet.getRange(totalRow, 4).setValue(totalQty);
 
-  return ContentService.createTextOutput(
-    JSON.stringify({ status: "ok", rows: data.length, totalQty: totalQty, sheet: sheetName })
-  ).setMimeType(ContentService.MimeType.JSON);
+  return json({ status: 'ok', rows: data.length, totalQty: totalQty });
 }
 
-// ===== handleDeleteOrder =====
-function handleDeleteOrder(payload) {
-  var orderIds = payload.orderIds;
-  if (!orderIds || !orderIds.length) {
-    return ContentService.createTextOutput(
-      JSON.stringify({ status: "error", message: "No orderIds provided" })
-    ).setMimeType(ContentService.MimeType.JSON);
-  }
-
-  var ss = SpreadsheetApp.openById(SHEET_ID);
-  var sheet = ss.getSheetByName("DeletedOrders");
-  if (!sheet) {
-    sheet = ss.insertSheet("DeletedOrders");
-    sheet.getRange(1, 1).setValue("OrderID");
-    sheet.getRange(1, 2).setValue("DeletedAt");
-  }
-
-  var timestamp = new Date().toISOString();
-  var rows = orderIds.map(function(id) {
-    return [id, timestamp];
-  });
-
-  var lastRow = sheet.getLastRow();
-  sheet.getRange(lastRow + 1, 1, rows.length, 2).setValues(rows);
-
-  return ContentService.createTextOutput(
-    JSON.stringify({ status: "ok", deleted: orderIds.length })
-  ).setMimeType(ContentService.MimeType.JSON);
-}
-
-// ===== doGet — returns starting order number from cell B1 =====
-// Pass ?sheet=Live%20Website to read from Live Website sheet
-function doGet(e) {
-  var sheetName = (e && e.parameter && e.parameter.sheet) || "Live Offline";
+// ===== Status: return startOd from B1 =====
+function handleStatus(p) {
+  var sheetName = p.sheet || 'Live Website';
   var ss = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheetByName(sheetName);
-  if (!sheet) {
-    return ContentService.createTextOutput(
-      JSON.stringify({ status: "ok", startOd: null })
-    ).setMimeType(ContentService.MimeType.JSON);
-  }
+  if (!sheet) return json({ status: 'ok', startOd: null });
 
-  var startOd = sheet.getRange(1, 2).getValue(); // Cell B1
-  return ContentService.createTextOutput(
-    JSON.stringify({ status: "ok", startOd: startOd || null })
-  ).setMimeType(ContentService.MimeType.JSON);
+  var startOd = sheet.getRange(1, 2).getValue();
+  return json({ status: 'ok', startOd: startOd || null });
+}
+
+function json(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
 }
