@@ -507,3 +507,165 @@ ul#m1list li {
 ul#plist li {
   position: relative;
 }
+
+/* ===== iPhone-specific optimizations (max-width: 428px) ===== */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  #snackbar {
+    bottom: calc(45px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+@media screen and (max-width: 428px) {
+  /* Product table: shrink cells to fit iPhone width */
+  td {
+    width: 44px;
+  }
+
+  #html33 td input {
+    padding: 4px 2px !important;
+    font-size: 14px;
+    min-height: 36px;
+  }
+
+  #html33 th {
+    padding: 4px 2px !important;
+    font-size: 13px;
+  }
+
+  /* Table horizontal scroll for tables with many columns */
+  #html33 .g,
+  #tbldiv {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Bigger touch targets for checkboxes and radio buttons */
+  #bnm7 .w3-check,
+  #bnm7 .w3-radio {
+    width: 28px;
+    height: 28px;
+  }
+
+  #bnm7 label {
+    padding: 8px 5px;
+    font-size: 14px;
+  }
+
+  /* Order list items: bigger tap targets */
+  #oderli li {
+    padding: 10px 8px;
+    min-height: 44px;
+  }
+
+  #oderli li span[onclick="opodli(this)"] {
+    padding: 12px;
+  }
+
+  /* Sidebar: wider on iPhone for easier tapping */
+  #mySidebar {
+    width: 70% !important;
+  }
+
+  #mySidebar .w3-bar-item {
+    padding: 12px 16px !important;
+    font-size: 15px;
+  }
+
+  /* Customer form inputs: comfortable size */
+  #bnm7 .w3-input {
+    padding: 10px 8px;
+    font-size: 16px;
+  }
+
+  #bnm7 textarea {
+    font-size: 16px;
+  }
+
+  /* Party search list: bigger touch targets */
+  ul#plist li,
+  ul#m1list li {
+    padding: 10px 12px;
+    font-size: 15px;
+  }
+
+  /* Header bar buttons */
+  .w3-panel .w3-button {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+
+  /* Product type tabs */
+  #pdbtn .w3-button {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  /* Export bar inputs */
+  #exportFromOd,
+  #exportToOd {
+    width: 100px !important;
+    padding: 8px 4px !important;
+    font-size: 14px;
+  }
+
+  /* Live sheet inputs */
+  #liveStartOd,
+  #liveWebStartOd {
+    width: 100px !important;
+    font-size: 13px !important;
+  }
+
+  /* Courier settings modal: full width on iPhone */
+  #courierSettingsModal .w3-modal-content {
+    max-width: 100% !important;
+    margin: 0 8px;
+  }
+
+  #courierSettingsModal .w3-check {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* Godown select and bulk checkbox */
+  #gsel {
+    padding: 8px 4px;
+    font-size: 14px;
+  }
+
+  /* Transport/Other/Discount inputs */
+  #tch, #och, #dis {
+    padding: 8px 4px;
+    font-size: 14px;
+  }
+
+  /* Order summary table */
+  #ctm5 th,
+  #ctm5 td,
+  #ctm9 th,
+  #ctm9 td {
+    padding: 6px 4px !important;
+    font-size: 13px;
+  }
+
+  /* Smooth scrolling for all scrollable areas */
+  .w3-modal-content,
+  #oderli {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Next/Save/Create buttons: comfortable tap size */
+  #cnm0, #cnm1, #cnm2, #cnm3,
+  #btn_convert,
+  #upd5,
+  #cor1 {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
