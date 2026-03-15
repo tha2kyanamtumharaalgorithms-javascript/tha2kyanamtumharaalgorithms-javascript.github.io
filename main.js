@@ -654,6 +654,11 @@ function syncOrdersToLiveWeb() {
     let changed = false;
     let skipped = 0, added = 0;
 
+    // Purge stale cache entries below startOd
+    for (let id in cache) {
+        if (Number(id) < fromNum) { delete cache[id]; changed = true; }
+    }
+
     console.log('syncOrdersToLiveWeb: startOd =', fromNum, 'ods keys sample:', Object.keys(ods).slice(0, 3));
 
     // Add/update orders from current dashboard data
@@ -760,6 +765,11 @@ function saveSyncSettings() {
     let url = document.getElementById('syncScriptUrl').value.trim();
     let startOd = document.getElementById('syncStartOd').value.trim();
     if (url) localStorage.setItem('liveWebSheetScriptUrl', url);
+    // Clear cache when startOd changes
+    let oldStartOd = localStorage.getItem('liveWebSheetStartOd');
+    if (startOd && startOd !== oldStartOd) {
+        localStorage.removeItem('liveWebOrders');
+    }
     if (startOd) localStorage.setItem('liveWebSheetStartOd', startOd);
     document.getElementById('syncModal').style.display = 'none';
     syncOrdersToLiveWeb();
