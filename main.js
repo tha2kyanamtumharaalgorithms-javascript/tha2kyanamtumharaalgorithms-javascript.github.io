@@ -658,8 +658,8 @@ function syncOrdersToLiveWeb() {
 
     // Add/update orders from current dashboard data
     for (let id in ods) {
-        let orderNum = Number(id.slice(6, 13));
-        if (added === 0 && skipped === 0) console.log('First order:', id, 'extracted num:', orderNum, 'fromNum:', fromNum, 'has .od:', !!ods[id].od);
+        let orderNum = Number(id);
+        if (added === 0 && skipped === 0) console.log('First order:', id, 'orderNum:', orderNum, 'fromNum:', fromNum, 'has .od:', !!ods[id].od);
         if (orderNum < fromNum) { skipped++; continue; }
         let odData = ods[id].od;
         if (!odData || typeof odData !== 'object') { console.log('Sync skip order (no .od):', id, typeof ods[id].od, Object.keys(ods[id])); skipped++; continue; }
