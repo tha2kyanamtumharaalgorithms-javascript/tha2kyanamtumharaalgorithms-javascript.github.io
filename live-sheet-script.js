@@ -61,7 +61,7 @@ function doSync(p) {
   var n = Number(p.n) || 0;   // order count
   var q = Number(p.q) || 0;   // total quantity
   var d = p.d || '';           // compact data string
-  var ts = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+  var ts = 'Updated: ' + new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
 
   // Parse: product~color~size~qty rows separated by *
   var rows = [];
