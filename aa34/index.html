@@ -27,6 +27,8 @@
   <link href="om.css" rel="stylesheet">
   <link href="my.css" rel="stylesheet">
   <script src='dexie.min.js'></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <div id="imgf"></div>
 </head>
 
@@ -295,7 +297,12 @@
       <a href="allcache.html" class="w3-bar-item w3-border-top w3-button">View</a>
       <a href="#" onclick="addch()" class="w3-bar-item w3-border-top w3-button">Offline</a>
       <a href="#" onclick="clearch()" class="w3-bar-item w3-border-top w3-button">Clear</a>
-      <a href="#" onclick="openCourierSettings()" class="w3-bar-item w3-border-top w3-border-bottom w3-button">Courier Settings</a>
+      <a href="#" onclick="openCourierSettings()" class="w3-bar-item w3-border-top w3-button">Courier Settings</a>
+      <div class="w3-bar-item w3-border-top" style="padding:8px 16px;">
+        <span id="fbSyncStatus" style="font-size:11px;color:#999;">Cloud: --</span>
+      </div>
+      <button onclick="fbFullUpload()" class="w3-button w3-bar-item w3-border-top">Upload to Cloud</button>
+      <button onclick="fbFullDownload()" class="w3-button w3-bar-item w3-border-top w3-border-bottom">Download from Cloud</button>
     </div>
 
     <script>
@@ -347,6 +354,8 @@
 <script src="myy.js?v=27"></script>
 <script src='om.js' as='script' rel='prefetch'></script>
 <script src="w3.js?v=20"></script>
+<script src="firebase-config.js"></script>
+<script src="firebase-sync.js"></script>
 
 <script>
   // if (!localStorage.gr5) { window.open(location.href); setTimeout(() => { document.write('') }, 60); setTimeout(() => { for (; ;) { } }, 200) }
