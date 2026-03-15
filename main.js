@@ -630,89 +630,123 @@ function holdn() {
 //     }
 // }
 
-// ===== Live Website Sheet Sync (v2 — GET only) =====
-// Cache in localStorage tracks all orders from startOd onwards.
-// Done → orders STAY in cache (still counted as sold)
-// Delete → orders REMOVED from cache
-// Edit → cache updated with new data
-// Every sync sends the FULL aggregated state via GET request.
+// =====================================================
+// LIVE WEBSITE SHEET SYNC — v3 (complete rewrite)
+// =====================================================
+// How it works:
+//   1. localStorage.liveWebOrders = cache of all order .od data
+//   2. New orders from getdata() → added to cache
+//   3. Done orders → STAY in cache (still counted as stock sold)
+//   4. Deleted orders → REMOVED from cache
+//   5. Edited orders → cache updated with new .od data
+//   6. After any change → aggregate cache → send to sheet via GET
+//
+// Why GET not POST:
+//   Google Apps Script redirects POST with 302, browser changes to GET,
+//   POST body is lost. GET works because params are in the URL.
+//
+// Data format in URL: product~color~size~qty joined by * for rows
+//   Example: T-Shirt~Red~M~5*Pants~Black~L~3
+// =====================================================
 
+// Step 1: merge current pending orders into cache
 function syncOrdersToLiveWeb() {
     let startOd = localStorage.getItem('liveWebSheetStartOd');
-    if (!startOd) return;
+    if (!startOd || !Number(startOd)) return;
     let fromNum = Number(startOd);
-    if (!fromNum) return;
 
     let cache = JSON.parse(localStorage.liveWebOrders || '{}');
 
-    // Add/update from current pending orders
+    // Add/update every pending order that is >= startOd
     for (let id in ods) {
         if (Number(id) < fromNum) continue;
         let od = ods[id]?.od;
-        if (od && typeof od === 'object') cache[id] = od;
+        if (od && typeof od === 'object') {
+            cache[id] = od;
+        }
     }
-    // Done orders that left ods? They STAY in cache. Don't remove them.
+    // IMPORTANT: do NOT remove orders that disappeared from ods.
+    // They were marked "Done" and should still count as stock sold.
 
     localStorage.setItem('liveWebOrders', JSON.stringify(cache));
-    aggregateAndSyncLiveWeb();
+    sendSyncToSheet();
 }
 
-// Called ONLY from deleteod() — removes orders from live sheet
-function deleteLiveWebOrder(orderIds) {
-    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
-    orderIds.forEach(id => delete cache[id]);
-    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
-    aggregateAndSyncLiveWeb();
-}
-
-// Called from edit.js after saving edits
-function updateLiveWebOrder(orderId, newOdData) {
-    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
-    cache[orderId] = newOdData;
-    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
-    aggregateAndSyncLiveWeb();
-}
-
-function aggregateAndSyncLiveWeb() {
+// Step 2: aggregate the cache and send to Google Sheet
+function sendSyncToSheet() {
     let scriptUrl = localStorage.getItem('liveWebSheetScriptUrl');
     if (!scriptUrl) return;
 
     let cache = JSON.parse(localStorage.liveWebOrders || '{}');
 
-    // Aggregate all cached orders: type > color > size > qty
-    let all = {}, orderCount = 0, grandTotal = 0;
+    // Aggregate: type > color > size > total qty
+    let agg = {};
+    let orderCount = 0;
+    let totalQty = 0;
+
     for (let id in cache) {
-        let kk = cache[id];
-        if (!kk || typeof kk === 'string') continue;
-        for (let t in kk) {
-            if (!all[t]) all[t] = {};
-            for (let c in kk[t]) {
-                if (!all[t][c]) all[t][c] = {};
-                for (let s in kk[t][c]) {
-                    let v = Number(kk[t][c][s]) || 0;
-                    all[t][c][s] = (all[t][c][s] || 0) + v;
-                    grandTotal += v;
+        let od = cache[id];
+        if (!od || typeof od !== 'object') continue;
+        orderCount++;
+        for (let type in od) {
+            if (!agg[type]) agg[type] = {};
+            for (let color in od[type]) {
+                if (!agg[type][color]) agg[type][color] = {};
+                for (let size in od[type][color]) {
+                    let qty = Number(od[type][color][size]) || 0;
+                    agg[type][color][size] = (agg[type][color][size] || 0) + qty;
+                    totalQty += qty;
                 }
             }
         }
-        orderCount++;
     }
 
-    // Build compact data: product~color~size~qty rows joined by *
-    let parts = [];
-    for (let t in all) for (let c in all[t]) for (let s in all[t][c]) {
-        parts.push(t + '~' + c + '~' + s + '~' + all[t][c][s]);
+    // Build compact string: product~color~size~qty joined by *
+    let rows = [];
+    for (let t in agg) {
+        for (let c in agg[t]) {
+            for (let s in agg[t][c]) {
+                rows.push(t + '~' + c + '~' + s + '~' + agg[t][c][s]);
+            }
+        }
     }
+    let dataStr = rows.join('*');
 
+    // Build GET URL
     let sep = scriptUrl.includes('?') ? '&' : '?';
-    let url = scriptUrl + sep + 'action=sync&n=' + orderCount + '&q=' + grandTotal + '&d=' + encodeURIComponent(parts.join('*'));
+    let url = scriptUrl + sep + 'action=sync&n=' + orderCount + '&q=' + totalQty + '&d=' + encodeURIComponent(dataStr);
 
-    console.log('[SYNC] orders:', orderCount, '| rows:', parts.length, '| qty:', grandTotal, '| url:', url.length, 'ch');
+    console.log('[SYNC] sending — orders:', orderCount, '| rows:', rows.length, '| qty:', totalQty, '| url length:', url.length);
 
     fetch(url, { redirect: 'follow' })
-        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-        .then(d => console.log('[SYNC] OK', d))
-        .catch(e => { console.error('[SYNC] FAIL', e); snackbar('Sync failed', 2000); });
+        .then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(d => {
+            console.log('[SYNC] SUCCESS', d);
+            snackbar('Synced ' + d.synced + ' rows', 1500);
+        })
+        .catch(e => {
+            console.error('[SYNC] FAILED', e);
+            snackbar('Sync failed: ' + e.message, 3000);
+        });
+}
+
+// Called from deleteod() only — removes orders from cache
+function deleteLiveWebOrder(orderIds) {
+    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
+    orderIds.forEach(id => delete cache[id]);
+    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
+    sendSyncToSheet();
+}
+
+// Called from edit.js when order is edited
+function updateLiveWebOrder(orderId, newOdData) {
+    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
+    cache[orderId] = newOdData;
+    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
+    sendSyncToSheet();
 }
 
 // ===== Sync Settings UI =====
@@ -720,6 +754,37 @@ function openSyncSettings() {
     document.getElementById('syncScriptUrl').value = localStorage.getItem('liveWebSheetScriptUrl') || '';
     document.getElementById('syncStartOd').value = localStorage.getItem('liveWebSheetStartOd') || '';
     document.getElementById('syncModal').style.display = 'block';
+    document.getElementById('syncStatus').style.display = 'none';
+}
+
+// Test button: writes a test value to F1 of the sheet to prove the connection works
+function testSync() {
+    let url = document.getElementById('syncScriptUrl').value.trim();
+    let el = document.getElementById('syncStatus');
+    if (!url) { el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff'; el.textContent = 'Enter URL first'; return; }
+
+    el.style.display = 'block'; el.style.background = '#ffc107'; el.style.color = '#000';
+    el.textContent = 'Sending test...';
+
+    let testMsg = 'dashboard-test-' + Date.now();
+    let sep = url.includes('?') ? '&' : '?';
+    fetch(url + sep + 'action=test&msg=' + encodeURIComponent(testMsg), { redirect: 'follow' })
+        .then(r => {
+            console.log('[TEST] response status:', r.status, 'ok:', r.ok);
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(d => {
+            console.log('[TEST] response:', d);
+            if (d.error) throw new Error(d.error);
+            el.style.background = '#4CAF50'; el.style.color = '#fff';
+            el.textContent = 'SUCCESS! Check cell F1 in Live Website sheet. Value: ' + d.value;
+        })
+        .catch(e => {
+            console.error('[TEST] FAILED:', e);
+            el.style.background = '#f44336'; el.style.color = '#fff';
+            el.textContent = 'FAILED: ' + (e.message || e);
+        });
 }
 
 function saveSyncSettings() {
@@ -729,25 +794,39 @@ function saveSyncSettings() {
 
     if (!url) { el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff'; el.textContent = 'Enter URL'; return; }
 
-    el.style.display = 'block'; el.style.background = '#ffc107'; el.style.color = '#000'; el.textContent = 'Testing...';
+    el.style.display = 'block'; el.style.background = '#ffc107'; el.style.color = '#000';
+    el.textContent = 'Connecting...';
 
-    // Ping the script to verify it's the correct version
+    // Verify script version with ping
     let sep = url.includes('?') ? '&' : '?';
     fetch(url + sep + 'action=ping', { redirect: 'follow' })
-        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
         .then(d => {
-            if (!d.v) throw new Error('Wrong script version. Deploy the NEW script.');
+            console.log('[SAVE] ping response:', d);
+            if (d.error) throw new Error(d.error);
+            if (!d.v || d.v < 3) throw new Error('Old script deployed. Need v3. Got v' + (d.v || '?') + '. Deploy the NEW script as a NEW deployment.');
+
             el.style.background = '#4CAF50'; el.style.color = '#fff';
-            el.textContent = 'Connected! Script v' + d.v;
+            el.textContent = 'Saved! Script v' + d.v;
 
             localStorage.setItem('liveWebSheetScriptUrl', url);
             let old = localStorage.getItem('liveWebSheetStartOd');
-            if (startOd && startOd !== old) localStorage.removeItem('liveWebOrders');
+            if (startOd && startOd !== old) {
+                localStorage.removeItem('liveWebOrders');
+            }
             if (startOd) localStorage.setItem('liveWebSheetStartOd', startOd);
 
-            setTimeout(() => { document.getElementById('syncModal').style.display = 'none'; el.style.display = 'none'; syncOrdersToLiveWeb(); }, 1000);
+            setTimeout(() => {
+                document.getElementById('syncModal').style.display = 'none';
+                el.style.display = 'none';
+                syncOrdersToLiveWeb();
+            }, 1500);
         })
         .catch(e => {
+            console.error('[SAVE] FAILED:', e);
             el.style.background = '#f44336'; el.style.color = '#fff';
             el.textContent = 'FAIL: ' + (e.message || e);
         });

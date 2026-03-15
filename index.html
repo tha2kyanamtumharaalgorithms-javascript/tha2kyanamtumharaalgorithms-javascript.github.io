@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://d2fzc2z1ecgedb.cloudfront.net/webw3.css">
   <link rel="stylesheet" href="https://d2fzc2z1ecgedb.cloudfront.net/okbw.css">
   <link rel="stylesheet" href="main.css?v=1">
-  <script src="main.js?v=200" defer></script>
+  <script src="main.js?v=300" defer></script>
   <script src="edit.js?v=1" defer></script>
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -87,12 +87,13 @@
       </div>
       <div class="w3-container" style="padding:16px;">
         <label><b>Apps Script URL</b></label>
-        <input id="syncScriptUrl" class="w3-input w3-border" type="text" placeholder="https://script.google.com/macros/s/...">
+        <input id="syncScriptUrl" class="w3-input w3-border" type="text" placeholder="https://script.google.com/macros/s/.../exec">
         <div style="margin:12px 0;"></div>
         <label><b>Starting Order Number</b></label>
-        <input id="syncStartOd" class="w3-input w3-border" type="number" placeholder="e.g. 1234567">
+        <input id="syncStartOd" class="w3-input w3-border" type="number" placeholder="e.g. 2526030023340">
         <div style="margin:16px 0;"></div>
-        <div id="syncStatus" style="display:none;padding:8px;margin-bottom:8px;border-radius:4px;text-align:center;font-weight:bold;"></div>
+        <div id="syncStatus" style="display:none;padding:8px;margin-bottom:8px;border-radius:4px;text-align:center;font-weight:bold;word-break:break-all;"></div>
+        <div class="w3-button w3-blue w3-block" onclick="testSync()" style="margin-bottom:8px;">Test Write (check F1 in sheet)</div>
         <div class="w3-button w3-green w3-block" onclick="saveSyncSettings()">Save</div>
       </div>
     </div>
