@@ -25,6 +25,7 @@ async function delod() {
     sendd(urli, shod11, 'del order');
 
     await oddb.od.put(shod11.od, Number(odno));
+    fbPutOrder(selg.slice(-1) + odno.slice(0, 6), shod11.od);
     debounceSyncLiveSheet();
     selod5 = {};
     document.querySelector(`[name=${selg}]`).click();//await bulkdb.bk.delete(shod11.od.id);
@@ -207,6 +208,7 @@ function creatod(eid) {
     // }
     console.log(ptd);
     await db.pt.put(ptd, ptd.id);
+    fbPutParty(ptd);
     // if (!oldid) {
     //   // save party details
     //   await db.pt.add(ptd);
@@ -228,11 +230,13 @@ function creatod(eid) {
     await mthdb(gd.slice(-1) + odid.toString().slice(0, 6));
     await oddb.od.add(shod0.od, odid).then((res) => {
       console.log(res, 'added');
+      fbPutOrder(gd.slice(-1) + odid.toString().slice(0, 6), shod0.od);
       selgo(gd);//  pinloc
       let paz = JSON.parse(pinloc);
       paz['ods' + shod0.od.id] = 'Pending';
       selpin(gd);//pinz
       localStorage.setItem(pinz, JSON.stringify(paz));
+      fbSyncLS(pinz, JSON.stringify(paz));
       debounceSyncLiveSheet();
     }).catch((error) => {
       console.log('error add order fn-', error);
@@ -334,6 +338,7 @@ async function updateod(myz, eid) {
     await mthdb(selg.slice(-1) + String(pk8).slice(0, 6));
     await oddb.od.put(shod1.od, pk8)
       .then(async () => {
+        fbPutOrder(selg.slice(-1) + String(pk8).slice(0, 6), shod1.od);
         debounceSyncLiveSheet();
         shod1.pcwt = odwt;
         // console.log(pctt);
@@ -390,6 +395,7 @@ async function moveod(gf, gt, idf) {
   // await st.collection(gt).doc(idf).set(docft);
   await mthdb(gt.slice(-1) + idfs);
   await oddb.od.put(docft, idf);
+  fbPutOrder(gt.slice(-1) + idfs, docft);
 }
 
 // document.getElementById('alltab').onclick=function() {
@@ -446,6 +452,7 @@ async function saveinst(v) {
   //  }
   //  console.log('incv',v);
   await instdb.inst.put(pkx);
+  fbPutInst(pkx);
   await sendd(urli, { "p": "5", "g": "inst", "od": { ...pkx } }, 'in stock');
   newc();
   if (v === 0) {
@@ -668,6 +675,7 @@ document.getElementById('plist').addEventListener('click', function (e) {
 async function deleteItem(id) {
   try {
     await db.pt.delete(id);
+    fbDeleteParty(id);
   } catch (error) {
     console.error('Error deleting item:', error);
   }
@@ -769,9 +777,10 @@ function sptd(v) {
 // save party details and gen. id
 async function svptd() {
   // let oldid = ptd.id;
-  ptd.id = ptid //|| genid(ptcounter(), 1); 
+  ptd.id = ptid //|| genid(ptcounter(), 1);
   console.log('save party details', ptd);
   await db.pt.put(ptd, ptd.id);
+  fbPutParty(ptd);
   // if (!oldid) {
   //   // save party details
   //   await db.pt.add(ptd);
@@ -1549,6 +1558,7 @@ async function dlfn(v, id) {
   }
   new Promise(async (rez) => {
     await dldb.dl.put(dlid, dlid.id);
+    fbPutDelivery(dlid);
     await stockm();
     await snackbar("Booking your order", 1000);
     setTimeout(rez(), 300);
@@ -1589,6 +1599,7 @@ worker.addEventListener('message', event => {
   new Promise(async (rez) => {
     await snackbar(mysms, 1000);
     await dldb.dl.put(dlid, dlid.id);
+    fbPutDelivery(dlid);
     setTimeout(rez(), 100);
   })
 });

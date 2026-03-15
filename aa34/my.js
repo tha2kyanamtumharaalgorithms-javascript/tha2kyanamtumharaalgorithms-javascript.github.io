@@ -588,6 +588,7 @@ function pmtdf(d) {
   lv[id] = [in1, in2];
   console.log(lv);
   localStorage.setItem('trp', JSON.stringify({ ...lv }));
+  fbSyncLS('trp', JSON.stringify({ ...lv }));
 }
 
 let x1 = { 'XS': 0, 'S': 1, 'M': 2, 'L': 3, 'XL': 4, 'XXL': 5 };
@@ -733,6 +734,7 @@ async function chnot(b, v) {
     });
     selpin(selg);
     localStorage.setItem(pinz, JSON.stringify(op5));
+    fbSyncLS(pinz, JSON.stringify(op5));
     let vkz5 = { p: "3", "g": selg, od: { ...op5 } };
     if (secid.match(/\w\d{3}/g)) {
       await indb({ name: selg }).then(() => document.getElementById('st92').classList.toggle('w3-show'));
@@ -793,6 +795,7 @@ function unpin() {
     }
     selpin(selg);
     localStorage.setItem(pinz, JSON.stringify(mk5));
+    fbSyncLS(pinz, JSON.stringify(mk5));
     selod5 = {};
     let vkz6 = { p: "3", "g": selg, od: { ...mk5 } };
     if (paypending) {
@@ -833,6 +836,7 @@ function unpingen() {
       if (!ord.pdf) {
         delete mk5[t]; selpin(selg);
         localStorage.setItem(pinz, JSON.stringify(mk5));
+        fbSyncLS(pinz, JSON.stringify(mk5));
         for (let u in selod5) { document.getElementById(u).checked = false; } selod5 = {};
         if (ord.tot && !ord?.eid) {
           if (localStorage.gre === '555') { } else {
@@ -845,6 +849,7 @@ function unpingen() {
         if (res && res?.pdf) {
           ord.pdf = res.pdf;
           await oddb.od.put(ord, ord.id); //(Number(d));
+          fbPutOrder(selg.slice(-1) + String(ord.id).slice(0, 6), ord);
         }
         snackbar('Unpined and E-invoice Generated', 1300);
       } else {
