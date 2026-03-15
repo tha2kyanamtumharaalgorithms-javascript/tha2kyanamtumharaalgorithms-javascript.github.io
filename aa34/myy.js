@@ -140,14 +140,26 @@ const delay = t => new Promise(r => setTimeout(r, t));
 //   return ((mth < 3) ? ((y - 1) + "" + y1).slice(2) : y1 + ("" + (y + 1)).slice(2)) + th + dtt;
 // }
 
-function odcount() { // numb.slice(4, 6) + Number(numb.slice(-7));
+async function odcount() { // numb.slice(4, 6) + Number(numb.slice(-7));
   let d = new Date(); let st = localStorage;
   const mth = (d.getMonth() + 1), y = d.getFullYear(), y1 = ("" + d.getFullYear()).slice(2);
-  if (st.m != mth) { st.m = mth; st.clickcount = 0; }
   let th = String(mth).padStart(2, 0);
-  let idf = Number(st.clickcount) + 1;
-  st.clickcount = idf;
-  return ((mth < 4) ? ((y - 1) + "" + y1).slice(2) : y1 + ("" + (y + 1)).slice(2)) + th + String(idf).padStart(7, 0);
+  let fy = ((mth < 4) ? ((y - 1) + "" + y1).slice(2) : y1 + ("" + (y + 1)).slice(2));
+  let counterKey = 'counter_' + fy + th;
+  let idf;
+  try {
+    // Use Firebase transaction for unique counter across all devices
+    const counterRef = fbDb.ref('data/counters/' + counterKey);
+    const result = await counterRef.transaction((current) => (current || 0) + 1);
+    idf = result.snapshot.val();
+    st.clickcount = idf;
+  } catch (e) {
+    // Fallback to local counter if Firebase is unavailable
+    if (st.m != mth) { st.m = mth; st.clickcount = 0; }
+    idf = Number(st.clickcount) + 1;
+    st.clickcount = idf;
+  }
+  return fy + th + String(idf).padStart(7, 0);
 }
 
 function creatod(eid) {
@@ -155,7 +167,7 @@ function creatod(eid) {
     let gd = document.getElementById("gsel").value;
     await viewtotal();
     // await delay(1000);
-    let odid = Number(odcount());
+    let odid = Number(await odcount());
     document.querySelector('#tot table thead span').innerText = '#' + Number(String(odid).slice(-7));
     if (odid === "no data") {
       return alert('Error in get order id fn-');
