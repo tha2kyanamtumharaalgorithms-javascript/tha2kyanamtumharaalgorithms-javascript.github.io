@@ -324,10 +324,14 @@ function appLogin() {
       storedPass = pass;
     }
     if (pass === storedPass) {
+      let firstLogin = localStorage.getItem('appAuth') !== '1';
       localStorage.setItem('appAuth', '1');
       localStorage.setItem('appUser', user);
       document.getElementById('loginScreen').style.display = 'none';
       console.log('Login success:', user);
+      if (firstLogin) {
+        fbFullDownload();
+      }
     } else {
       document.getElementById('loginError').style.display = 'block';
       document.getElementById('loginPass').value = '';
