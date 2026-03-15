@@ -441,33 +441,8 @@ function debounceSyncLiveWebSheet() {
 }
 
 // Dashboard Google Sheet that receives all website orders
-var _liveWebSheetBase = 'https://docs.google.com/spreadsheets/d/1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0/gviz/tq?tqx=out:csv&sheet=';
-var _liveWebSheetUrl = _liveWebSheetBase + 'PendingOrder';
-var _liveWebNotCapturedUrl = _liveWebSheetBase + 'NotCapturedYet';
+var _liveWebSheetUrl = 'https://docs.google.com/spreadsheets/d/1qgd56MEzSTLstp_sOPnKTp0eWA1pIkJHOp3DEPrlsM0/gviz/tq?tqx=out:csv&sheet=PendingOrder';
 var _liveWebPollTimer = null;
-
-// Parse CSV lines into { orderId, orderData } objects, filtering by fromNum
-function _parseLiveWebCsv(csvText, fromNum) {
-  let results = [];
-  let lines = csvText.split('\n');
-  for (let line of lines) {
-    line = line.trim();
-    if (!line) continue;
-    let idMatch = line.match(/^"(\d+)\|\|/);
-    if (!idMatch) continue;
-    let orderId = idMatch[1];
-    if (Number(orderId) < fromNum) continue;
-    let jsonStart = line.indexOf('","');
-    if (jsonStart === -1) continue;
-    let jsonStr = line.slice(jsonStart + 3);
-    if (jsonStr.endsWith('"')) jsonStr = jsonStr.slice(0, -1);
-    jsonStr = jsonStr.replace(/""/g, '"');
-    let orderData;
-    try { orderData = JSON.parse(jsonStr); } catch (e) { continue; }
-    results.push({ orderId, orderData });
-  }
-  return results;
-}
 
 async function syncLiveWebSheet() {
   let startOd = localStorage.getItem('liveWebSheetStartOd');
@@ -485,40 +460,45 @@ async function syncLiveWebSheet() {
   if (statusEl) statusEl.textContent = 'Fetching...';
 
   try {
-    // Fetch PendingOrder + NotCapturedYet in parallel
-    let [pendingRes, notCapturedRes] = await Promise.all([
-      fetch(_liveWebSheetUrl).then(r => r.text()),
-      fetch(_liveWebNotCapturedUrl).then(r => r.text()).catch(() => '')
-    ]);
+    // Fetch live order data from the external dashboard Google Sheet
+    let res = await fetch(_liveWebSheetUrl);
+    let csvText = await res.text();
 
-    let pendingOrders = _parseLiveWebCsv(pendingRes, fromNum);
-    let notCapturedOrders = _parseLiveWebCsv(notCapturedRes, fromNum);
-
-    // Merge: deduplicate by orderId (PendingOrder takes priority)
-    let seen = {};
-    let mergedOrders = [];
-    for (let o of pendingOrders) {
-      if (!seen[o.orderId]) {
-        seen[o.orderId] = true;
-        mergedOrders.push(o);
-      }
-    }
-    for (let o of notCapturedOrders) {
-      if (!seen[o.orderId]) {
-        seen[o.orderId] = true;
-        mergedOrders.push(o);
-      }
-    }
-
-    // Aggregate: type > color > size > qty
+    // Parse CSV rows - each row: "orderID||Pending","JSON_data"
     let all = {};
     let orderCount = 0;
-    let capturedIds = [];
+    let lines = csvText.split('\n');
 
-    for (let { orderId, orderData } of mergedOrders) {
+    for (let line of lines) {
+      line = line.trim();
+      if (!line) continue;
+
+      // Extract order ID from first field: "2526030023270||Pending"
+      let idMatch = line.match(/^"(\d+)\|\|/);
+      if (!idMatch) continue;
+      let orderId = Number(idMatch[1]);
+
+      // Filter: only orders >= startOd
+      if (orderId < fromNum) continue;
+
+      // Extract JSON from second field
+      let jsonStart = line.indexOf('","');
+      if (jsonStart === -1) continue;
+      let jsonStr = line.slice(jsonStart + 3); // skip ","
+      if (jsonStr.endsWith('"')) jsonStr = jsonStr.slice(0, -1);
+      // Unescape CSV double-quotes
+      jsonStr = jsonStr.replace(/""/g, '"');
+
+      let orderData;
+      try { orderData = JSON.parse(jsonStr); } catch (e) { continue; }
+
+      // Skip orders with hold status
+      // if (orderData.hold) continue;
+
       let kk = orderData.od;
       if (!kk || typeof kk !== 'object') continue;
 
+      // Aggregate: type > color > size > qty
       for (let t in kk) {
         all[t] = all[t] || {};
         for (let c in kk[t]) {
@@ -529,7 +509,6 @@ async function syncLiveWebSheet() {
         }
       }
       orderCount++;
-      capturedIds.push(orderId);
     }
 
     // Build data array for the sheet
@@ -560,18 +539,6 @@ async function syncLiveWebSheet() {
       mode: 'no-cors'
     });
     console.log('Live web sheet POST sent (no-cors)');
-
-    // Cleanup: remove captured orders from NotCapturedYet
-    if (capturedIds.length) {
-      let liveWebScriptUrl = localStorage.getItem('liveWebScriptUrl');
-      if (liveWebScriptUrl) {
-        fetch(liveWebScriptUrl, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'cleanupCaptured', capturedIds: capturedIds }),
-          mode: 'no-cors'
-        });
-      }
-    }
 
     let syncTime = new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: true });
     if (statusEl) statusEl.textContent = orderCount + ' orders | ' + grandTotal + ' pcs | ' + syncTime;
