@@ -179,6 +179,7 @@ async function exportSold() {
   // 5. Auto-fill From input with maxId for next export
   inpFrom.value = maxId;
   localStorage.setItem('lastExportedOdNum', String(maxId));
+  fbSyncLS('lastExportedOdNum', String(maxId));
   alert('Exported ' + orderCount + ' orders (' + grandTotal + ' total qty)');
 }
 
