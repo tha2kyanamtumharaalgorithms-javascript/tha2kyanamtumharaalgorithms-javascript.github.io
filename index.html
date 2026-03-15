@@ -44,7 +44,7 @@
             <div class="w3-button w3-blue-gray w3-padding-large" onclick="dlbill()">Bill</div>
             <div class="w3-button w3-blue-gray w3-padding-large" onclick="done()">Done</div>
             <div class="w3-button w3-blue-gray w3-padding-large" onclick="printadd()">Slip</div>
-
+            <div class="w3-button w3-blue-gray w3-padding-large" onclick="openSyncSettings()">Sync</div>
           </div>
           <div style="margin: 4px;"></div>
           <div id="orders">
@@ -78,6 +78,23 @@
       </div>
     </div>
   </div>
+  </div>
+  <div id="syncModal" class="w3-modal" style="display:none;">
+    <div class="w3-modal-content w3-card-4" style="max-width:500px;margin:10% auto;">
+      <div class="w3-container w3-yellow">
+        <span onclick="document.getElementById('syncModal').style.display='none'" class="w3-button w3-display-topright">&times;</span>
+        <h3>Sync Settings</h3>
+      </div>
+      <div class="w3-container" style="padding:16px;">
+        <label><b>Apps Script URL</b></label>
+        <input id="syncScriptUrl" class="w3-input w3-border" type="text" placeholder="https://script.google.com/macros/s/...">
+        <div style="margin:12px 0;"></div>
+        <label><b>Starting Order Number</b></label>
+        <input id="syncStartOd" class="w3-input w3-border" type="number" placeholder="e.g. 1234567">
+        <div style="margin:16px 0;"></div>
+        <div class="w3-button w3-green w3-block" onclick="saveSyncSettings()">Save</div>
+      </div>
+    </div>
   </div>
 </body>
 

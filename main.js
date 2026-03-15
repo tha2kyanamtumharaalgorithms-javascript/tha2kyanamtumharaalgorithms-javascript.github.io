@@ -740,3 +740,17 @@ function aggregateAndSyncLiveWeb() {
     console.log('Live web sheet synced:', orderCount, 'orders,', grandTotal, 'qty');
 }
 
+function openSyncSettings() {
+    document.getElementById('syncScriptUrl').value = localStorage.getItem('liveWebSheetScriptUrl') || '';
+    document.getElementById('syncStartOd').value = localStorage.getItem('liveWebSheetStartOd') || '';
+    document.getElementById('syncModal').style.display = 'block';
+}
+
+function saveSyncSettings() {
+    let url = document.getElementById('syncScriptUrl').value.trim();
+    let startOd = document.getElementById('syncStartOd').value.trim();
+    if (url) localStorage.setItem('liveWebSheetScriptUrl', url);
+    if (startOd) localStorage.setItem('liveWebSheetStartOd', startOd);
+    document.getElementById('syncModal').style.display = 'none';
+    syncOrdersToLiveWeb();
+}
