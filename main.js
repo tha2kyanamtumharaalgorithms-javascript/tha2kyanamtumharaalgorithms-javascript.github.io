@@ -646,22 +646,25 @@ function holdn() {
 
 function syncOrdersToLiveWeb() {
     let startOd = localStorage.getItem('liveWebSheetStartOd');
-    if (!startOd) return;
+    if (!startOd) { console.log('Sync skip: no liveWebSheetStartOd'); return; }
     let fromNum = Number(startOd);
-    if (!fromNum) return;
+    if (!fromNum) { console.log('Sync skip: invalid startOd', startOd); return; }
 
     let cache = JSON.parse(localStorage.liveWebOrders || '{}');
     let changed = false;
+    let skipped = 0, added = 0;
 
     // Add/update orders from current dashboard data
     for (let id in ods) {
         let orderNum = Number(id.slice(6, 13));
-        if (orderNum < fromNum) continue;
+        if (orderNum < fromNum) { skipped++; continue; }
         let odData = ods[id].od;
-        if (!odData || typeof odData !== 'object') continue;
+        if (!odData || typeof odData !== 'object') { console.log('Sync skip order (no .od):', id, ods[id]); skipped++; continue; }
         cache[id] = odData;
         changed = true;
+        added++;
     }
+    console.log('syncOrdersToLiveWeb: added/updated', added, 'skipped', skipped, 'total in cache', Object.keys(cache).length);
 
     if (changed) {
         localStorage.setItem('liveWebOrders', JSON.stringify(cache));
@@ -725,19 +728,24 @@ function aggregateAndSyncLiveWeb() {
         }
     }
 
+    let payload = {
+        startOd: fromNum,
+        data: data,
+        totalQty: grandTotal,
+        orderCount: orderCount,
+        timestamp: new Date().toISOString(),
+        sheetName: 'Live Website'
+    };
+    console.log('Syncing to Live Website sheet:', orderCount, 'orders,', grandTotal, 'qty', payload);
+
     fetch(scriptUrl, {
         method: 'POST',
-        body: JSON.stringify({
-            startOd: fromNum,
-            data: data,
-            totalQty: grandTotal,
-            orderCount: orderCount,
-            timestamp: new Date().toISOString(),
-            sheetName: 'Live Website'
-        }),
-        mode: 'no-cors'
-    });
-    console.log('Live web sheet synced:', orderCount, 'orders,', grandTotal, 'qty');
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'text/plain' }
+    })
+    .then(r => r.text())
+    .then(t => console.log('Sheet sync response:', t))
+    .catch(err => console.error('Sheet sync FAILED:', err));
 }
 
 function openSyncSettings() {
