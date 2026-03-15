@@ -20,7 +20,7 @@ function doPost(e) {
   var data = payload.data;       // [[product, color, size, qty], ...]
   var totalQty = payload.totalQty;
   var orderCount = payload.orderCount;
-  var timestamp = payload.timestamp;
+  var timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
   var startOd = payload.startOd;
   var sheetName = payload.sheetName || "Live Offline";
 
