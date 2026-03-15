@@ -169,7 +169,7 @@ async function getdata() {
     });
 };
 
-(async () => { await getdata(); await getbookedlabel(); })();
+(async () => { checkPendingSync(); await getdata(); await getbookedlabel(); })();
 
 async function getbookedlabel() {
     await fetch('https://docs.google.com/spreadsheets/d/1RErftkKVUQWwCC6FqQJJqzGLY3niMwVv2s-ThdtFfRU/gviz/tq?tqx=out:csv').then(v => v.text()).then((t) => {
@@ -631,7 +631,7 @@ function holdn() {
 // }
 
 // =====================================================
-// LIVE WEBSITE SHEET SYNC — v3 (complete rewrite)
+// LIVE WEBSITE SHEET SYNC — v3.1 (with retry + failed sync tracking)
 // =====================================================
 // How it works:
 //   1. startOd comes from cell B1 in the Google Sheet (source of truth)
@@ -641,6 +641,7 @@ function holdn() {
 //   5. Deleted orders → REMOVED from cache via deleteLiveWebOrder()
 //   6. Edited orders → UPDATED in cache via updateLiveWebOrder()
 //   7. After any change → aggregate cache → send to sheet via GET
+//   8. Failed syncs → auto-retry 3 times, then show red indicator
 //
 // Why GET not POST:
 //   Google Apps Script redirects POST with 302, browser changes to GET,
@@ -649,6 +650,38 @@ function holdn() {
 // Data format in URL: product~color~size~qty joined by * for rows
 //   Example: T-Shirt~Red~M~5*Pants~Black~L~3
 // =====================================================
+
+// Failed sync tracking
+let syncRetryCount = 0;
+let syncRetryTimer = null;
+const SYNC_MAX_RETRIES = 3;
+
+function updateSyncIndicator(status, msg) {
+    let el = document.getElementById('syncIndicator');
+    if (!el) return;
+    if (status === 'ok') {
+        el.style.display = 'none';
+        localStorage.removeItem('syncFailed');
+    } else if (status === 'retrying') {
+        el.style.display = 'block';
+        el.style.background = '#ff9800';
+        el.textContent = '⟳ Sync retry ' + syncRetryCount + '/' + SYNC_MAX_RETRIES + '...';
+    } else if (status === 'failed') {
+        el.style.display = 'block';
+        el.style.background = '#f44336';
+        el.textContent = '✗ Sync failed — tap to retry';
+        localStorage.setItem('syncFailed', Date.now());
+    }
+}
+
+// Check on page load if there was a previous failed sync
+function checkPendingSync() {
+    let failed = localStorage.getItem('syncFailed');
+    if (failed) {
+        updateSyncIndicator('failed');
+    }
+}
+
 
 // Fetch startOd from sheet B1 (source of truth), then sync
 function syncOrdersToLiveWeb() {
@@ -758,6 +791,9 @@ function sendSyncToSheet() {
         })
         .then(d => {
             console.log('[SYNC] SUCCESS', d);
+            syncRetryCount = 0;
+            if (syncRetryTimer) { clearTimeout(syncRetryTimer); syncRetryTimer = null; }
+            updateSyncIndicator('ok');
             snackbar('Synced ' + d.synced + ' rows', 1500);
             // Update cached startOd from sheet B1 if it changed
             if (d.startOd) {
@@ -773,7 +809,19 @@ function sendSyncToSheet() {
         })
         .catch(e => {
             console.error('[SYNC] FAILED', e);
-            snackbar('Sync failed: ' + e.message, 3000);
+            syncRetryCount++;
+            if (syncRetryCount <= SYNC_MAX_RETRIES) {
+                let delay = syncRetryCount * 3000; // 3s, 6s, 9s
+                console.log('[SYNC] Retrying in ' + delay + 'ms (attempt ' + syncRetryCount + ')');
+                updateSyncIndicator('retrying');
+                snackbar('Sync failed, retrying in ' + (delay / 1000) + 's...', 2000);
+                syncRetryTimer = setTimeout(() => sendSyncToSheet(), delay);
+            } else {
+                console.error('[SYNC] All retries failed');
+                updateSyncIndicator('failed');
+                snackbar('Sync failed after ' + SYNC_MAX_RETRIES + ' retries!', 4000);
+                syncRetryCount = 0;
+            }
         });
 }
 
