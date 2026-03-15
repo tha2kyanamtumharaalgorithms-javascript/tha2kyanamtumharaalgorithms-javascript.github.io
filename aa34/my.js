@@ -488,8 +488,8 @@ function newocb() {
 
 document.getElementById('tbldiv').addEventListener('input', function (event) {
   let tg = event.target;
-  if (tg.tagName !== 'INPUT' || tg.type !== 'number') return;
-  const v = tg.valueAsNumber || 0;
+  if (tg.tagName !== 'INPUT' || (tg.type !== 'number' && tg.type !== 'text')) return;
+  const v = Number(tg.value) || 0;
   const s = tg.name;
   const c = tg.closest('tr').getAttribute('title');
   const t = tg.closest('table').getAttribute('title');
@@ -869,19 +869,19 @@ var pinloc = '{}';
 function selgo(g) {
   switch (g) {
     case 'ods':
-      pinloc = localStorage.pin;
+      pinloc = localStorage.pin || '{}';
       break;
     case 'odt':
-      pinloc = localStorage.pint;
+      pinloc = localStorage.pint || '{}';
       break;
     case 'odk':
-      pinloc = localStorage.pink;
+      pinloc = localStorage.pink || '{}';
       break;
     case 'odpd':
-      pinloc = localStorage.pinpd;
+      pinloc = localStorage.pinpd || '{}';
       break;
     case 'inst':
-      pinloc = localStorage.inst;
+      pinloc = localStorage.inst || '{}';
       break;
   }
 }
