@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="https://d2fzc2z1ecgedb.cloudfront.net/webw3.css">
+  <link rel="stylesheet" href="https://d2fzc2z1ecgedb.cloudfront.net/okbw.css">
+  <link rel="stylesheet" href="main.css?v=2">
+  <script src="main.js?v=301" defer></script>
+  <script src="edit.js?v=1" defer></script>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Dashboard">
+  <link rel="apple-touch-icon" href="/icon/152.png">
+  <link rel="manifest" href="/manifest.json">
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="pdf.js"></script>
+  <script src="https://d2fzc2z1ecgedb.cloudfront.net/pc.js"></script>
+  <!-- <script src='https://cdnjs.cloudflare.com/ajax/libs/dexie/4.0.8/dexie.min.js'></script> -->
+</head>
+
+<body class="w3-card-4 w3-content">
+  <div class="w3-center">
+    <div id="modal" class="w3-modal" style="padding-top: 10px;display: block;">
+      <div class="w3-modal-content w3-card-4 b1 b2 b3 b4" style="height: 96vh;background: #a7a7a7;position:relative;">
+        <div id="fnc1" class="w3-pale-red b1 b2 fx bod1 btn-row">
+          <div class="w3-button w3-blue-grey b1 w3-red" onclick="book()">Book</div>
+          <div class="w3-button w3-blue-grey w3-white" onclick="holdn()">Hold</div>
+          <div class="w3-button w3-blue-grey w3-red" onclick="printMergedPDFs()">PLabel</div>
+          <div class="w3-button w3-blue-grey w3-red" onclick="edit()">Edit</div>
+          <div class="w3-dropdown-hover" style="position:relative;">
+            <div class="w3-button w3-blue-grey w3-dark-grey" style="padding:8px 12px;">More</div>
+            <div class="w3-dropdown-content w3-bar-block w3-card-4" style="right:0;min-width:120px;z-index:10;">
+              <div class="w3-bar-item w3-button" onclick="getdata()">Refresh</div>
+              <div class="w3-bar-item w3-button" onclick="openSyncSettings()">Sync</div>
+              <div class="w3-bar-item w3-button" onclick="openExportModal()">Export</div>
+              <div class="w3-bar-item w3-button" onclick="getbookedlabel()">Label</div>
+              <div class="w3-bar-item w3-button w3-pale-red" onclick="deleteod()">Delete</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin: 6px;"></div>
+        <!-- <hr class="m5" style="border-top: 1px solid #a0a0a0;"> -->
+        <div style="font-size: 16px;">
+          <div id="fnc2" class="fx bod1 btn-row">
+            <div class="w3-button w3-blue-gray" onclick="omprint()">Order</div>
+            <div class="w3-button w3-blue-gray" onclick="dlbill()">Bill</div>
+            <div class="w3-button w3-blue-gray" onclick="done()">Done</div>
+            <div class="w3-button w3-blue-gray" onclick="printadd()">Slip</div>
+          </div>
+          <div style="margin: 4px;"></div>
+          <div id="orders">
+            <div class="load">
+              <div id="loadx"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="edit">
+      <div class="edit1"></div>
+      <div id="my56" class="w3-centered"></div>
+    </div>
+  </div>
+  <div id="syncIndicator" onclick="syncRetryCount=0;sendSyncToSheet();" style="display:none;position:fixed;top:0;left:0;right:0;z-index:100;color:#fff;text-align:center;padding:6px;font-weight:bold;font-size:14px;cursor:pointer;"></div>
+  <div id="snackbar" class="w3-indigo w3-button w3-display-bottommiddle w3-round-xlarge"
+    style="z-index:5;bottom: 45px;display:none;">...</div>
+  <audio id="audio" style="display: none;" autoplay>
+    <source
+      src="https://cdn.jsdelivr.net/gh/tha2kyanamtumharaalgorithms-javascript/tha2kyanamtumharaalgorithms-javascript.github.io@main/a12.aac"
+      type="audio/aac">
+    Your browser does not support the audio element.
+  </audio>
+  <button onclick="playAudio()"></button>
+  <iframe id="ply" src="" frameborder="0"></iframe>
+  <div id="id01" class="w3-modal" style="display: none;">
+    <div class="fxc w3-modal-content w3-display-bottommiddle" style="height: 50%;width: 100%!important">
+      <div class="w3-container">
+        <span onclick="document.getElementById('id01').style.display='none'"
+          class="w3-button w3-red w3-jumbo">Close</span>
+      </div>
+    </div>
+  </div>
+  </div>
+  <div id="syncModal" class="w3-modal" style="display:none;">
+    <div class="w3-modal-content w3-card-4" style="max-width:500px;margin:10% auto;">
+      <div class="w3-container w3-yellow">
+        <span onclick="document.getElementById('syncModal').style.display='none'" class="w3-button w3-display-topright">&times;</span>
+        <h3>Sync Settings</h3>
+      </div>
+      <div class="w3-container" style="padding:16px;">
+        <label><b>Apps Script URL</b></label>
+        <input id="syncScriptUrl" class="w3-input w3-border" type="text" placeholder="https://script.google.com/macros/s/.../exec">
+        <p style="margin:8px 0;color:#666;font-size:13px;">Starting order number is read from cell B1 in the sheet</p>
+        <div style="margin:16px 0;"></div>
+        <div id="syncStatus" style="display:none;padding:8px;margin-bottom:8px;border-radius:4px;text-align:center;font-weight:bold;word-break:break-all;"></div>
+        <div class="w3-button w3-blue w3-block" onclick="testSync()" style="margin-bottom:8px;">Test Write (check F1 in sheet)</div>
+        <div class="w3-button w3-green w3-block" onclick="saveSyncSettings()">Save</div>
+      </div>
+    </div>
+  </div>
+  <div id="exportModal" class="w3-modal" style="display:none;">
+    <div class="w3-modal-content w3-card-4" style="max-width:500px;margin:10% auto;">
+      <div class="w3-container w3-teal">
+        <span onclick="document.getElementById('exportModal').style.display='none'" class="w3-button w3-display-topright">&times;</span>
+        <h3>Live Export (From-To)</h3>
+      </div>
+      <div class="w3-container" style="padding:16px;">
+        <label><b>From Order No.</b></label>
+        <input id="exportFrom" class="w3-input w3-border" type="number" placeholder="e.g. 1234567">
+        <div style="margin:8px;"></div>
+        <label><b>To Order No.</b></label>
+        <input id="exportTo" class="w3-input w3-border" type="number" placeholder="e.g. 1234599">
+        <div style="margin:12px;"></div>
+        <div id="exportResult" style="display:none;padding:12px;border-radius:4px;text-align:center;font-weight:bold;font-size:16px;word-break:break-all;"></div>
+        <div class="w3-button w3-teal w3-block" onclick="liveExportFromTo()" style="margin-bottom:8px;">Export</div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

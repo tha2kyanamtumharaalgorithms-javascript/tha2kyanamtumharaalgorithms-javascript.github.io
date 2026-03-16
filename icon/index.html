@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Remove GSTIN from PDF</title>
+</head>
+<body>
+    <h2>Remove GSTIN from PDF</h2>
+    <input type="file" id="pdfInput" accept=".pdf">
+    <button id="processBtn">Remove GSTIN</button>
+    <br><br>
+    <a id="downloadLink" style="display:none">Download Modified PDF</a>
+
+    <!-- Load pdf-lib from CDN -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    
+    <script>
+        const { PDFDocument, rgb } = PDFLib;
+
+        async function removeGSTINFromPDF(file) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(arrayBuffer);
+                
+                const pages = pdfDoc.getPages();
+                
+                pages.forEach(page => {
+                    const { height,width } = page.getSize();
+                    
+                    // Cover GSTIN line with white rectangle
+                    // Adjust coordinates as needed
+                    console.log('height', height,height - 1160,width);
+                    page.drawRectangle({
+                        x: 7.6,
+                        y: 55,
+                        width: 200,
+                        height: 13,
+                        color: rgb(1, 1, 1),
+                    });
+                    // page.drawText('GSTIN', {
+                    //     x: 23,
+                    //     y: height - 1160,
+                    //     size: 15,
+                    //     color: rgb(0, 0, 0),
+                    // });
+                });
+                
+                const pdfBytes = await pdfDoc.save();
+                return new Blob([pdfBytes], { type: 'application/pdf' });
+            } catch (error) {
+                console.error('Error processing PDF:', error);
+                alert('Error processing PDF: ' + error.message);
+            }
+        }
+
+        document.getElementById('processBtn').addEventListener('click', async () => {
+            const fileInput = document.getElementById('pdfInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a PDF file first!');
+                return;
+            }
+            
+            console.log('Processing PDF...');
+            const modifiedBlob = await removeGSTINFromPDF(file);
+            
+            if (modifiedBlob) {
+                // Create download link
+                const url = URL.createObjectURL(modifiedBlob);
+                const downloadLink = document.getElementById('downloadLink');
+                downloadLink.href = url;
+                downloadLink.download = 'modified_' + file.name;
+                downloadLink.style.display = 'inline';
+                downloadLink.textContent = 'Download Modified PDF';
+                console.log('PDF processed successfully!');
+            }
+        });
+    </script>
+</body>
+</html>
