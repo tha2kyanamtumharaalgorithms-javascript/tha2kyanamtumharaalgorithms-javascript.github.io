@@ -557,10 +557,12 @@
         let lastsel = sel[sel.length - 1]
         let m = await getcd(lastsel);
         if (sd === 'nbill') { delete m[0].gst; m[0].eid = m[0].id }
+        // start getnmm early: if PrintGen + has total + has GST + no pdf + no eid, we know it will be needed
+        let eidP = (!sd && m[0].tot && m[0].gst && !m[0].pdf && !m[0].eid && localStorage.gre !== '555') ? getnmm() : null;
         // console.log(c, i, m);
         sel.forEach(v => { document.getElementById(v).checked = false; delete selod5[v]; })
         selod5 = {};
-        let res = await bill(m, lastsel);
+        let res = await bill(m, lastsel, eidP);
         // console.log('res', res);
         if (res != 2) {
           let temp1 = zz('#tembillx #tembill').cloneNode(true); pk.body.append(temp1);
@@ -590,7 +592,7 @@
       })
     }
 
-    function unpingen(y, ord, pt) {
+    function unpingen(y, ord, pt, eidP) {
       return new Promise(async (rez, rej) => {
         // let sel = y;// Object.keys(selod5);
         if (y) {
@@ -610,7 +612,7 @@
           }
           if (ord.tot && !ord?.eid) {
             if (localStorage.gre === '555') { } else {
-              let m = await getnmm();
+              let m = await (eidP || getnmm());
               ord.eid = String(m); await oddb.od.put(ord, ord.id);
             }
           }
@@ -651,14 +653,14 @@
     bdoc.head.innerHTML = '<meta name="format-detection" content="telephone=no, email=no, address=no" />';
     let temp0 = zz('#tembillx style').cloneNode(true); bdoc.head.append(temp0);
 
-    async function bill(x, y) {
+    async function bill(x, y, eidP) {
       let qt = 0; let amt = 0;
       console.log(x);
       let ods = x[0]; let pt = x[1];
 
       if (ods.tot && ods.gst) {
         if (!ods?.pdf) {
-          let res = await unpingen(y, ods, pt);
+          let res = await unpingen(y, ods, pt, eidP);
           if (res) {
             ods.pdf = res; console.log('res', res);
           } else { alert('Error in unpingen') }
