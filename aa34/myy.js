@@ -108,15 +108,17 @@ async function editod(tp) {
 
   let d = oldod.od;
   let d1 = Object.keys(d);
-  let inx = (navigator.platform === 'iPhone') ? 'text' : 'number';
+  let isIphone = (navigator.platform === 'iPhone');
   // let m={};
   d1.forEach(t => {// m[t]=0;
     Object.keys(d[t]).forEach(c => {
       Object.keys(d[t][c]).forEach(s => { // console.log( t,c,s, d[t][c][s]);
         let tin = document.querySelector(`.city [title='${t}'] tr[title='${c}'] [name='${s}']`);
+        if (!tin) return;
         if (tin.type === 'button' && d[t][c][s]) {
-          tin.setAttribute('type', inx);
           tin.removeAttribute('onclick');
+          if (isIphone) { tin.setAttribute('pattern', '[0-9]*'); tin.setAttribute('type', 'text'); }
+          else { tin.setAttribute('type', 'number'); }
         }
         tin.value = d[t][c][s]; triggerInput(tin);//m[t]+=1;
       });
