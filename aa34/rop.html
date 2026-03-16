@@ -590,7 +590,7 @@
       })
     }
 
-    function unpingen(y) {
+    function unpingen(y, ord, pt) {
       return new Promise(async (rez, rej) => {
         // let sel = y;// Object.keys(selod5);
         if (y) {
@@ -603,9 +603,11 @@
           // delete mk5[y];
           // selpin(selg);
           // localStorage.setItem('pin', JSON.stringify(mk5));
-          let d = y.slice(3);
-          await mthdb(selg.slice(-1) + d.slice(0, 6));
-          let ord = await oddb.od.get(Number(d)); let pt = await db.pt.get(ord.pt);
+          if (!ord || !pt) {
+            let d = y.slice(3);
+            await mthdb(selg.slice(-1) + d.slice(0, 6));
+            ord = await oddb.od.get(Number(d)); pt = await db.pt.get(ord.pt);
+          }
           if (ord.tot && !ord?.eid) {
             if (localStorage.gre === '555') { } else {
               let m = await getnmm();
@@ -656,7 +658,7 @@
 
       if (ods.tot && ods.gst) {
         if (!ods?.pdf) {
-          let res = await unpingen(y);
+          let res = await unpingen(y, ods, pt);
           if (res) {
             ods.pdf = res; console.log('res', res);
           } else { alert('Error in unpingen') }
