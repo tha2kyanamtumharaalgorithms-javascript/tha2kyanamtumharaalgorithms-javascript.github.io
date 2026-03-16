@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://d2fzc2z1ecgedb.cloudfront.net/webw3.css">
   <link rel="stylesheet" href="https://d2fzc2z1ecgedb.cloudfront.net/okbw.css">
   <link rel="stylesheet" href="main.css?v=2">
-  <script src="main.js?v=305" defer></script>
+  <script src="main.js?v=304" defer></script>
   <script src="edit.js?v=1" defer></script>
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,9 +18,7 @@
   <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <script src="pdf.js"></script>
   <script src="https://d2fzc2z1ecgedb.cloudfront.net/pc.js"></script>
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <!-- <script src='https://cdnjs.cloudflare.com/ajax/libs/dexie/4.0.8/dexie.min.js'></script> -->
 </head>
 
 <body class="w3-card-4 w3-content">
@@ -93,23 +91,12 @@
         <h3>Sync Settings</h3>
       </div>
       <div class="w3-container" style="padding:16px;">
-        <label><b>Firebase Database URL</b></label>
-        <input id="syncFirebaseUrl" class="w3-input w3-border" type="text" placeholder="https://your-project.firebaseio.com">
-        <p style="margin:4px 0;color:#666;font-size:12px;">Firebase Realtime Database URL (shared across all devices)</p>
-        <div style="margin:8px 0;"></div>
-        <label><b>Firebase API Key</b></label>
-        <input id="syncFirebaseKey" class="w3-input w3-border" type="text" placeholder="AIzaSy...">
-        <div style="margin:8px 0;"></div>
-        <label><b>Starting Order No.</b></label>
-        <input id="syncStartOd" class="w3-input w3-border" type="number" placeholder="e.g. 23358">
-        <p style="margin:4px 0;color:#666;font-size:12px;">Orders from this number onward will be tracked</p>
-        <div style="margin:8px 0;"></div>
-        <label><b>Apps Script URL</b> (optional, for sheet sync)</label>
+        <label><b>Apps Script URL</b></label>
         <input id="syncScriptUrl" class="w3-input w3-border" type="text" placeholder="https://script.google.com/macros/s/.../exec">
+        <p style="margin:8px 0;color:#666;font-size:13px;">Starting order number is read from cell B1 in the sheet</p>
         <div style="margin:16px 0;"></div>
         <div id="syncStatus" style="display:none;padding:8px;margin-bottom:8px;border-radius:4px;text-align:center;font-weight:bold;word-break:break-all;"></div>
-        <div class="w3-button w3-orange w3-block" onclick="testFirebase()" style="margin-bottom:8px;">Test Firebase</div>
-        <div class="w3-button w3-blue w3-block" onclick="testSync()" style="margin-bottom:8px;">Test Sheet Write (F1)</div>
+        <div class="w3-button w3-blue w3-block" onclick="testSync()" style="margin-bottom:8px;">Test Write (check F1 in sheet)</div>
         <div class="w3-button w3-green w3-block" onclick="saveSyncSettings()">Save</div>
       </div>
     </div>

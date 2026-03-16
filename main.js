@@ -169,7 +169,7 @@ async function getdata() {
     });
 };
 
-(async () => { initFirebase(); checkPendingSync(); await getdata(); await getbookedlabel(); })();
+(async () => { checkPendingSync(); await getdata(); await getbookedlabel(); })();
 
 async function getbookedlabel() {
     await fetch('https://docs.google.com/spreadsheets/d/1RErftkKVUQWwCC6FqQJJqzGLY3niMwVv2s-ThdtFfRU/gviz/tq?tqx=out:csv').then(v => v.text()).then((t) => {
@@ -631,48 +631,41 @@ function holdn() {
 // }
 
 // =====================================================
-// FIREBASE + LIVE WEBSITE SHEET SYNC
+// LIVE WEBSITE SHEET SYNC — v3.1 (with retry + failed sync tracking)
 // =====================================================
-// Firebase Realtime Database = shared source of truth for ALL devices.
-// Each order stored under /orders/{orderId} — duplicate-proof.
+// How it works:
+//   1. startOd comes from cell B1 in the Google Sheet (source of truth)
+//   2. localStorage.liveWebOrders = cache of all orders from startOd onwards
+//   3. New orders from getdata() → added to cache (keeps growing)
+//   4. Done orders → STAY in cache (stock already sold, keeps counting)
+//   5. Deleted orders → REMOVED from cache via deleteLiveWebOrder()
+//   6. Edited orders → UPDATED in cache via updateLiveWebOrder()
+//   7. After any change → aggregate cache → send to sheet via GET
+//   8. Failed syncs → auto-retry 3 times, then show red indicator
 //
-// Flow:
-//   1. Dashboard loads pending orders → writes each to Firebase
-//   2. Done orders → already in Firebase (stay there)
-//   3. Deleted orders → removed from Firebase
-//   4. Edited orders → updated in Firebase
-//   5. Sheet sync (optional) → reads from Firebase, writes to sheet
+// Why GET not POST:
+//   Google Apps Script redirects POST with 302, browser changes to GET,
+//   POST body is lost. GET works because params are in the URL.
+//
+// Data format in URL: product~color~size~qty joined by * for rows
+//   Example: T-Shirt~Red~M~5*Pants~Black~L~3
 // =====================================================
 
-let fbDb = null;
-let fbStartOd = 0;
+// Failed sync tracking
 let syncRetryCount = 0;
+let syncRetryTimer = null;
+const SYNC_MAX_RETRIES = 3;
 
-// Initialize Firebase from saved settings
-function initFirebase() {
-    let dbUrl = localStorage.getItem('fbDbUrl');
-    let apiKey = localStorage.getItem('fbApiKey');
-    fbStartOd = Number(localStorage.getItem('fbStartOd')) || 0;
-    if (!dbUrl || !apiKey) return;
-
-    try {
-        if (!firebase.apps.length) {
-            firebase.initializeApp({ apiKey: apiKey, databaseURL: dbUrl });
-        }
-        fbDb = firebase.database();
-        console.log('[FB] Initialized:', dbUrl, '| startOd:', fbStartOd);
-    } catch (e) {
-        console.error('[FB] Init failed:', e);
-    }
-}
-
-// Sync indicator
-function updateSyncIndicator(status) {
+function updateSyncIndicator(status, msg) {
     let el = document.getElementById('syncIndicator');
     if (!el) return;
     if (status === 'ok') {
         el.style.display = 'none';
         localStorage.removeItem('syncFailed');
+    } else if (status === 'retrying') {
+        el.style.display = 'block';
+        el.style.background = '#ff9800';
+        el.textContent = '⟳ Sync retry ' + syncRetryCount + '/' + SYNC_MAX_RETRIES + '...';
     } else if (status === 'failed') {
         el.style.display = 'block';
         el.style.background = '#f44336';
@@ -681,70 +674,281 @@ function updateSyncIndicator(status) {
     }
 }
 
+// Check on page load if there was a previous failed sync
 function checkPendingSync() {
     let failed = localStorage.getItem('syncFailed');
-    if (failed) updateSyncIndicator('failed');
+    if (failed) {
+        updateSyncIndicator('failed');
+    }
 }
 
-// Write all current pending orders to Firebase (called after getdata)
-function fbSyncOrders() {
-    if (!fbDb || !fbStartOd) return;
-    let updates = {};
-    let count = 0;
-    for (let key in ods) {
-        let shortId = Number(key.slice(6, 13));
-        if (shortId < fbStartOd) continue;
-        let od = ods[key]?.od;
+
+// Fetch startOd from sheet B1 (source of truth), then sync
+function syncOrdersToLiveWeb() {
+    let scriptUrl = localStorage.getItem('liveWebSheetScriptUrl');
+    if (!scriptUrl) return;
+
+    // If we already have a cached startOd, sync immediately with it
+    let cached = localStorage.getItem('liveWebSheetStartOd');
+    if (cached && Number(cached)) {
+        mergeAndSync(Number(cached));
+    }
+
+    // Also fetch latest B1 in background to stay updated
+    fetchStartOdFromSheet();
+}
+
+// Fetch B1 from sheet, update cache if changed, re-sync if needed
+function fetchStartOdFromSheet() {
+    let scriptUrl = localStorage.getItem('liveWebSheetScriptUrl');
+    if (!scriptUrl) return;
+
+    let sep = scriptUrl.includes('?') ? '&' : '?';
+    fetch(scriptUrl + sep + '_t=' + Date.now(), { redirect: 'follow' })
+        .then(r => r.ok ? r.json() : Promise.reject('HTTP ' + r.status))
+        .then(d => {
+            if (!d.startOd) return;
+            let newOd = String(d.startOd);
+            let old = localStorage.getItem('liveWebSheetStartOd');
+            if (newOd !== old) {
+                console.log('[SYNC] B1 startOd changed:', old, '→', newOd);
+                localStorage.removeItem('liveWebOrders'); // new startOd = fresh start
+                localStorage.setItem('liveWebSheetStartOd', newOd);
+                mergeAndSync(Number(newOd)); // re-sync with new startOd
+            }
+        })
+        .catch(e => console.warn('[SYNC] Failed to fetch B1:', e));
+}
+
+// Merge pending orders into cache and send to sheet
+function mergeAndSync(fromNum) {
+    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
+
+    // Add/update every pending order that is >= startOd
+    for (let id in ods) {
+        if (Number(id) < fromNum) continue;
+        let od = ods[id]?.od;
         if (od && typeof od === 'object') {
-            updates['orders/' + key] = od;
-            count++;
+            cache[id] = od;
         }
     }
-    if (count === 0) return;
+    // Done orders STAY in cache — stock was sold, total keeps growing
 
-    fbDb.ref().update(updates)
-        .then(() => {
-            console.log('[FB] Synced ' + count + ' orders to Firebase');
+    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
+    sendSyncToSheet();
+}
+
+// Step 2: aggregate the cache and send to Google Sheet
+function sendSyncToSheet() {
+    let scriptUrl = localStorage.getItem('liveWebSheetScriptUrl');
+    if (!scriptUrl) return;
+
+    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
+
+    // Aggregate: type > color > size > total qty
+    let agg = {};
+    let orderCount = 0;
+    let totalQty = 0;
+
+    for (let id in cache) {
+        let od = cache[id];
+        if (!od || typeof od !== 'object') continue;
+        orderCount++;
+        for (let type in od) {
+            if (!agg[type]) agg[type] = {};
+            for (let color in od[type]) {
+                if (!agg[type][color]) agg[type][color] = {};
+                for (let size in od[type][color]) {
+                    let qty = Number(od[type][color][size]) || 0;
+                    agg[type][color][size] = (agg[type][color][size] || 0) + qty;
+                    totalQty += qty;
+                }
+            }
+        }
+    }
+
+    // Build compact string: product~color~size~qty joined by *
+    let rows = [];
+    for (let t in agg) {
+        for (let c in agg[t]) {
+            for (let s in agg[t][c]) {
+                rows.push(t + '~' + c + '~' + s + '~' + agg[t][c][s]);
+            }
+        }
+    }
+    let dataStr = rows.join('*');
+
+    // Build GET URL
+    let sep = scriptUrl.includes('?') ? '&' : '?';
+    let url = scriptUrl + sep + 'action=sync&n=' + orderCount + '&q=' + totalQty + '&d=' + encodeURIComponent(dataStr);
+
+    console.log('[SYNC] sending — orders:', orderCount, '| rows:', rows.length, '| qty:', totalQty, '| url length:', url.length);
+
+    fetch(url, { redirect: 'follow' })
+        .then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(d => {
+            console.log('[SYNC] SUCCESS', d);
+            syncRetryCount = 0;
+            if (syncRetryTimer) { clearTimeout(syncRetryTimer); syncRetryTimer = null; }
             updateSyncIndicator('ok');
-            snackbar('Synced ' + count + ' orders', 1500);
-            fbSyncToSheet();
+            snackbar('Synced ' + d.synced + ' rows', 1500);
+            // Update cached startOd from sheet B1 if it changed
+            if (d.startOd) {
+                let newOd = String(d.startOd);
+                let old = localStorage.getItem('liveWebSheetStartOd');
+                if (newOd !== old) {
+                    console.log('[SYNC] B1 changed during sync:', old, '→', newOd);
+                    localStorage.removeItem('liveWebOrders');
+                    localStorage.setItem('liveWebSheetStartOd', newOd);
+                    mergeAndSync(Number(newOd));
+                }
+            }
         })
         .catch(e => {
-            console.error('[FB] Sync failed:', e);
-            updateSyncIndicator('failed');
-            snackbar('Sync failed: ' + e.message, 3000);
+            console.error('[SYNC] FAILED', e);
+            syncRetryCount++;
+            if (syncRetryCount <= SYNC_MAX_RETRIES) {
+                let delay = syncRetryCount * 3000; // 3s, 6s, 9s
+                console.log('[SYNC] Retrying in ' + delay + 'ms (attempt ' + syncRetryCount + ')');
+                updateSyncIndicator('retrying');
+                snackbar('Sync failed, retrying in ' + (delay / 1000) + 's...', 2000);
+                syncRetryTimer = setTimeout(() => sendSyncToSheet(), delay);
+            } else {
+                console.error('[SYNC] All retries failed');
+                updateSyncIndicator('failed');
+                snackbar('Sync failed after ' + SYNC_MAX_RETRIES + ' retries!', 4000);
+                syncRetryCount = 0;
+            }
         });
 }
 
-// Delete orders from Firebase
-function fbDeleteOrders(orderIds) {
-    if (!fbDb) return;
-    let updates = {};
-    orderIds.forEach(id => { updates['orders/' + id] = null; });
-    fbDb.ref().update(updates)
-        .then(() => { console.log('[FB] Deleted', orderIds.length, 'orders'); fbSyncToSheet(); })
-        .catch(e => console.error('[FB] Delete failed:', e));
+// Called from deleteod() — removes orders from cache and updates sheet
+function deleteLiveWebOrder(orderIds) {
+    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
+    orderIds.forEach(id => delete cache[id]);
+    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
+    sendSyncToSheet();
 }
 
-// Update single order in Firebase
-function fbUpdateOrder(orderId, newOdData) {
-    if (!fbDb) return;
-    fbDb.ref('orders/' + orderId).set(newOdData)
-        .then(() => { console.log('[FB] Updated order', orderId); fbSyncToSheet(); })
-        .catch(e => console.error('[FB] Update failed:', e));
+// Called from edit.js — updates order quantity in cache and updates sheet
+function updateLiveWebOrder(orderId, newOdData) {
+    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
+    cache[orderId] = newOdData;
+    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
+    sendSyncToSheet();
 }
 
-// Read all orders from Firebase → aggregate → send to Google Sheet
-function fbSyncToSheet() {
-    let scriptUrl = localStorage.getItem('liveWebSheetScriptUrl');
-    if (!scriptUrl || !fbDb) return;
+// ===== Sync Settings UI =====
+function openSyncSettings() {
+    document.getElementById('syncScriptUrl').value = localStorage.getItem('liveWebSheetScriptUrl') || '';
+    document.getElementById('syncModal').style.display = 'block';
+    document.getElementById('syncStatus').style.display = 'none';
+}
 
-    fbDb.ref('orders').once('value').then(snap => {
-        let data = snap.val() || {};
-        let agg = {}, orderCount = 0, totalQty = 0;
+// Test button: writes a test value to F1 of the sheet to prove the connection works
+function testSync() {
+    let url = document.getElementById('syncScriptUrl').value.trim();
+    let el = document.getElementById('syncStatus');
+    if (!url) { el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff'; el.textContent = 'Enter URL first'; return; }
 
-        for (let key in data) {
-            let od = data[key];
+    el.style.display = 'block'; el.style.background = '#ffc107'; el.style.color = '#000';
+    el.textContent = 'Sending test...';
+
+    let testMsg = 'dashboard-test-' + Date.now();
+    let sep = url.includes('?') ? '&' : '?';
+    fetch(url + sep + 'action=test&msg=' + encodeURIComponent(testMsg), { redirect: 'follow' })
+        .then(r => {
+            console.log('[TEST] response status:', r.status, 'ok:', r.ok);
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(d => {
+            console.log('[TEST] response:', d);
+            if (d.error) throw new Error(d.error);
+            el.style.background = '#4CAF50'; el.style.color = '#fff';
+            el.textContent = 'SUCCESS! Check cell F1 in Live Website sheet. Value: ' + d.value;
+        })
+        .catch(e => {
+            console.error('[TEST] FAILED:', e);
+            el.style.background = '#f44336'; el.style.color = '#fff';
+            el.textContent = 'FAILED: ' + (e.message || e);
+        });
+}
+
+function saveSyncSettings() {
+    let url = document.getElementById('syncScriptUrl').value.trim();
+    let el = document.getElementById('syncStatus');
+
+    if (!url) { el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff'; el.textContent = 'Enter URL'; return; }
+
+    el.style.display = 'block'; el.style.background = '#ffc107'; el.style.color = '#000';
+    el.textContent = 'Connecting...';
+
+    // Verify script version with ping
+    let sep = url.includes('?') ? '&' : '?';
+    fetch(url + sep + 'action=ping', { redirect: 'follow' })
+        .then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(d => {
+            console.log('[SAVE] ping response:', d);
+            if (d.error) throw new Error(d.error);
+            if (!d.v || d.v < 4) throw new Error('Old script deployed. Need v4+. Got v' + (d.v || '?') + '. Deploy the NEW script as a NEW deployment.');
+
+            localStorage.setItem('liveWebSheetScriptUrl', url);
+
+            // Fetch startOd from B1 immediately
+            return fetch(url + sep + '_t=' + Date.now(), { redirect: 'follow' })
+                .then(r => r.ok ? r.json() : Promise.reject('HTTP ' + r.status))
+                .then(b1 => {
+                    if (b1.startOd) {
+                        let newOd = String(b1.startOd);
+                        let old = localStorage.getItem('liveWebSheetStartOd');
+                        if (newOd !== old) {
+                            localStorage.removeItem('liveWebOrders');
+                            localStorage.setItem('liveWebSheetStartOd', newOd);
+                        }
+                        el.style.background = '#4CAF50'; el.style.color = '#fff';
+                        el.textContent = 'Saved! Script v' + d.v + ' | Start: ' + newOd;
+                    } else {
+                        el.style.background = '#ff9800'; el.style.color = '#fff';
+                        el.textContent = 'Saved! But B1 is empty — enter start order in B1';
+                    }
+
+                    setTimeout(() => {
+                        document.getElementById('syncModal').style.display = 'none';
+                        el.style.display = 'none';
+                        syncOrdersToLiveWeb();
+                    }, 1500);
+                });
+        })
+        .catch(e => {
+            console.error('[SAVE] FAILED:', e);
+            el.style.background = '#f44336'; el.style.color = '#fff';
+            el.textContent = 'FAIL: ' + (e.message || e);
+        });
+}
+
+// ===== Export (From-To) — shows BOTH sources for cross-verification =====
+function openExportModal() {
+    document.getElementById('exportFrom').value = '';
+    document.getElementById('exportTo').value = '';
+    document.getElementById('exportResult').style.display = 'none';
+    document.getElementById('exportModal').style.display = 'block';
+}
+
+function aggregateOrders(source, from, to) {
+    let totalQty = 0, orderCount = 0, agg = {};
+    if (source === 'cache') {
+        let cache = JSON.parse(localStorage.liveWebOrders || '{}');
+        for (let key in cache) {
+            let num = Number(key.slice(6, 13));
+            if (num < from || num > to) continue;
+            let od = cache[key];
             if (!od || typeof od !== 'object') continue;
             orderCount++;
             for (let type in od) {
@@ -759,185 +963,22 @@ function fbSyncToSheet() {
                 }
             }
         }
-
-        let rows = [];
-        for (let t in agg) for (let c in agg[t]) for (let s in agg[t][c])
-            rows.push(t + '~' + c + '~' + s + '~' + agg[t][c][s]);
-
-        let sep = scriptUrl.includes('?') ? '&' : '?';
-        let url = scriptUrl + sep + 'action=sync&n=' + orderCount + '&q=' + totalQty + '&d=' + encodeURIComponent(rows.join('*'));
-        console.log('[FB→Sheet] orders:', orderCount, '| qty:', totalQty);
-
-        return fetch(url, { redirect: 'follow' }).then(r => r.ok ? r.json() : Promise.reject('HTTP ' + r.status));
-    }).then(d => {
-        console.log('[FB→Sheet] SUCCESS', d);
-    }).catch(e => {
-        console.warn('[FB→Sheet] Failed:', e);
-    });
-}
-
-// Read all orders from Firebase (for export feature)
-function fbGetAllOrders() {
-    return new Promise(resolve => {
-        if (!fbDb) { resolve({}); return; }
-        fbDb.ref('orders').once('value')
-            .then(snap => resolve(snap.val() || {}))
-            .catch(() => resolve({}));
-    });
-}
-
-// ===== Legacy function names (route through Firebase) =====
-function syncOrdersToLiveWeb() {
-    if (fbDb) fbSyncOrders();
-}
-
-function deleteLiveWebOrder(orderIds) {
-    if (fbDb) fbDeleteOrders(orderIds);
-}
-
-function updateLiveWebOrder(orderId, newOdData) {
-    if (fbDb) fbUpdateOrder(orderId, newOdData);
-}
-
-function sendSyncToSheet() {
-    if (fbDb) fbSyncOrders();
-}
-
-// ===== Sync Settings UI =====
-function openSyncSettings() {
-    document.getElementById('syncFirebaseUrl').value = localStorage.getItem('fbDbUrl') || '';
-    document.getElementById('syncFirebaseKey').value = localStorage.getItem('fbApiKey') || '';
-    document.getElementById('syncStartOd').value = localStorage.getItem('fbStartOd') || '';
-    document.getElementById('syncScriptUrl').value = localStorage.getItem('liveWebSheetScriptUrl') || '';
-    document.getElementById('syncModal').style.display = 'block';
-    document.getElementById('syncStatus').style.display = 'none';
-}
-
-// Test Firebase connection
-function testFirebase() {
-    let dbUrl = document.getElementById('syncFirebaseUrl').value.trim();
-    let apiKey = document.getElementById('syncFirebaseKey').value.trim();
-    let el = document.getElementById('syncStatus');
-
-    if (!dbUrl || !apiKey) {
-        el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff';
-        el.textContent = 'Enter Firebase DB URL and API Key';
-        return;
-    }
-
-    el.style.display = 'block'; el.style.background = '#ffc107'; el.style.color = '#000';
-    el.textContent = 'Testing Firebase...';
-
-    try {
-        // Initialize temporarily if not already
-        if (!firebase.apps.length) {
-            firebase.initializeApp({ apiKey: apiKey, databaseURL: dbUrl });
-        }
-        let db = firebase.database();
-        let testVal = 'test-' + Date.now();
-        db.ref('_test').set(testVal)
-            .then(() => db.ref('_test').once('value'))
-            .then(snap => {
-                if (snap.val() === testVal) {
-                    el.style.background = '#4CAF50'; el.style.color = '#fff';
-                    el.textContent = 'Firebase OK! Read/Write working.';
-                    db.ref('_test').remove(); // cleanup
-                } else {
-                    throw new Error('Write succeeded but read returned wrong value');
-                }
-            })
-            .catch(e => {
-                el.style.background = '#f44336'; el.style.color = '#fff';
-                el.textContent = 'Firebase FAILED: ' + e.message;
-            });
-    } catch (e) {
-        el.style.background = '#f44336'; el.style.color = '#fff';
-        el.textContent = 'Firebase FAILED: ' + e.message;
-    }
-}
-
-// Test sheet connection
-function testSync() {
-    let url = document.getElementById('syncScriptUrl').value.trim();
-    let el = document.getElementById('syncStatus');
-    if (!url) { el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff'; el.textContent = 'Enter Sheet Script URL first'; return; }
-
-    el.style.display = 'block'; el.style.background = '#ffc107'; el.style.color = '#000';
-    el.textContent = 'Sending test...';
-
-    let testMsg = 'dashboard-test-' + Date.now();
-    let sep = url.includes('?') ? '&' : '?';
-    fetch(url + sep + 'action=test&msg=' + encodeURIComponent(testMsg), { redirect: 'follow' })
-        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-        .then(d => {
-            if (d.error) throw new Error(d.error);
-            el.style.background = '#4CAF50'; el.style.color = '#fff';
-            el.textContent = 'Sheet OK! Check F1. Value: ' + d.value;
-        })
-        .catch(e => {
-            el.style.background = '#f44336'; el.style.color = '#fff';
-            el.textContent = 'Sheet FAILED: ' + (e.message || e);
-        });
-}
-
-function saveSyncSettings() {
-    let dbUrl = document.getElementById('syncFirebaseUrl').value.trim();
-    let apiKey = document.getElementById('syncFirebaseKey').value.trim();
-    let startOd = document.getElementById('syncStartOd').value.trim();
-    let scriptUrl = document.getElementById('syncScriptUrl').value.trim();
-    let el = document.getElementById('syncStatus');
-
-    if (!dbUrl || !apiKey || !startOd) {
-        el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff';
-        el.textContent = 'Firebase URL, API Key, and Start Order are required';
-        return;
-    }
-
-    localStorage.setItem('fbDbUrl', dbUrl);
-    localStorage.setItem('fbApiKey', apiKey);
-    localStorage.setItem('fbStartOd', startOd);
-    if (scriptUrl) localStorage.setItem('liveWebSheetScriptUrl', scriptUrl);
-
-    initFirebase();
-
-    if (fbDb) {
-        el.style.display = 'block'; el.style.background = '#4CAF50'; el.style.color = '#fff';
-        el.textContent = 'Saved! Firebase connected. Start: ' + startOd;
-        setTimeout(() => {
-            document.getElementById('syncModal').style.display = 'none';
-            el.style.display = 'none';
-            syncOrdersToLiveWeb();
-        }, 1500);
     } else {
-        el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff';
-        el.textContent = 'Saved but Firebase failed to initialize. Check URL/Key.';
-    }
-}
-
-// ===== Export (From-To) — reads from Firebase + Dashboard =====
-function openExportModal() {
-    document.getElementById('exportFrom').value = '';
-    document.getElementById('exportTo').value = '';
-    document.getElementById('exportResult').style.display = 'none';
-    document.getElementById('exportModal').style.display = 'block';
-}
-
-function aggregateData(data, from, to, useOdProp) {
-    let totalQty = 0, orderCount = 0, agg = {};
-    for (let key in data) {
-        let num = Number(key.slice(6, 13));
-        if (num < from || num > to) continue;
-        let od = useOdProp ? data[key]?.od : data[key];
-        if (!od || typeof od !== 'object') continue;
-        orderCount++;
-        for (let type in od) {
-            if (!agg[type]) agg[type] = {};
-            for (let color in od[type]) {
-                if (!agg[type][color]) agg[type][color] = {};
-                for (let size in od[type][color]) {
-                    let qty = Number(od[type][color][size]) || 0;
-                    agg[type][color][size] = (agg[type][color][size] || 0) + qty;
-                    totalQty += qty;
+        for (let key in ods) {
+            let num = Number(key.slice(6, 13));
+            if (num < from || num > to) continue;
+            let od = ods[key]?.od;
+            if (!od || typeof od !== 'object') continue;
+            orderCount++;
+            for (let type in od) {
+                if (!agg[type]) agg[type] = {};
+                for (let color in od[type]) {
+                    if (!agg[type][color]) agg[type][color] = {};
+                    for (let size in od[type][color]) {
+                        let qty = Number(od[type][color][size]) || 0;
+                        agg[type][color][size] = (agg[type][color][size] || 0) + qty;
+                        totalQty += qty;
+                    }
                 }
             }
         }
@@ -959,7 +1000,7 @@ function renderExportBlock(label, color, r) {
         r.lines.map(l => '<div>' + l + '</div>').join('') + '</div></div>';
 }
 
-async function liveExportFromTo() {
+function liveExportFromTo() {
     let fromVal = document.getElementById('exportFrom').value.trim();
     let toVal = document.getElementById('exportTo').value.trim();
     let el = document.getElementById('exportResult');
@@ -976,23 +1017,18 @@ async function liveExportFromTo() {
         return;
     }
 
-    el.style.display = 'block'; el.style.background = '#ffc107'; el.style.color = '#000';
-    el.textContent = 'Loading from Firebase...';
+    let cacheResult = aggregateOrders('cache', from, to);
+    let dashResult = aggregateOrders('dashboard', from, to);
 
-    // Get Firebase data (pending + done orders — the truth)
-    let fbData = await fbGetAllOrders();
-    let fbResult = aggregateData(fbData, from, to, false);
-    // Get dashboard data (only currently pending)
-    let dashResult = aggregateData(ods, from, to, true);
+    let match = cacheResult.totalQty === dashResult.totalQty && cacheResult.orderCount === dashResult.orderCount;
+    let matchBar = match
+        ? '<div style="background:#2196F3;color:#fff;padding:6px;border-radius:4px;text-align:center;font-weight:bold;margin-bottom:8px;">MATCH — Both sources agree</div>'
+        : '<div style="background:#f44336;color:#fff;padding:6px;border-radius:4px;text-align:center;font-weight:bold;margin-bottom:8px;">MISMATCH — Values differ! (Sync cache has done+pending, Dashboard has only pending)</div>';
 
+    el.style.display = 'block';
     el.style.background = '#fff';
     el.style.color = '#000';
-
-    if (Object.keys(fbData).length === 0) {
-        el.innerHTML = '<div style="background:#ff9800;color:#fff;padding:8px;border-radius:4px;text-align:center;font-weight:bold;margin-bottom:8px;">Firebase not configured or empty</div>' +
-            renderExportBlock('Dashboard (only pending orders)', '#607D8B', dashResult);
-    } else {
-        el.innerHTML = renderExportBlock('Firebase (all devices, pending + done)', '#4CAF50', fbResult) +
-            renderExportBlock('Dashboard (only pending on this device)', '#607D8B', dashResult);
-    }
+    el.innerHTML = matchBar +
+        renderExportBlock('Sync Cache (pending + done orders)', '#4CAF50', cacheResult) +
+        renderExportBlock('Dashboard (only pending orders)', '#607D8B', dashResult);
 }
