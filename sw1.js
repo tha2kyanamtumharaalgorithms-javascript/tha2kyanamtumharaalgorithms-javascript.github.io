@@ -16,19 +16,15 @@ console.log(d);
 })
 
 // install, activate, fetch
-const CACHE_NAME = '10026';
+const CACHE_NAME = '10025';
 let urlsToCache = ['/main.css','/main.js','/bill.js','/bill.html',
   '/ajax/libs/dexie/4.0.8/dexie.min.js',
-  '/gh/tha2kyanamtumharaalgorithms-javascript/tha2kyanamtumharaalgorithms-javascript.github.io@main/a12.aac',
-  '/firebasejs/9.23.0/firebase-app-compat.js',
-  '/firebasejs/9.23.0/firebase-database-compat.js'
+  '/gh/tha2kyanamtumharaalgorithms-javascript/tha2kyanamtumharaalgorithms-javascript.github.io@main/a12.aac'
 ];
 
 let urlsToCache1 = ['/main.css','/main.js','/bill.js','/bill.html',
   'https://cdnjs.cloudflare.com/ajax/libs/dexie/4.0.8/dexie.min.js',
-  'https://cdn.jsdelivr.net/gh/tha2kyanamtumharaalgorithms-javascript/tha2kyanamtumharaalgorithms-javascript.github.io@main/a12.aac',
-  'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
-  'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js'
+  'https://cdn.jsdelivr.net/gh/tha2kyanamtumharaalgorithms-javascript/tha2kyanamtumharaalgorithms-javascript.github.io@main/a12.aac'
 ];
 
 // let rare=['/favicon.ico','/webw3.css','/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'];
