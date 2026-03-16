@@ -933,12 +933,71 @@ function saveSyncSettings() {
         });
 }
 
-// ===== Live Export (From-To) — reads from local dashboard data (ods), NOT from sheet cache =====
+// ===== Export (From-To) — shows BOTH sources for cross-verification =====
 function openExportModal() {
     document.getElementById('exportFrom').value = '';
     document.getElementById('exportTo').value = '';
     document.getElementById('exportResult').style.display = 'none';
     document.getElementById('exportModal').style.display = 'block';
+}
+
+function aggregateOrders(source, from, to) {
+    let totalQty = 0, orderCount = 0, agg = {};
+    if (source === 'cache') {
+        let cache = JSON.parse(localStorage.liveWebOrders || '{}');
+        for (let key in cache) {
+            let num = Number(key.slice(6, 13));
+            if (num < from || num > to) continue;
+            let od = cache[key];
+            if (!od || typeof od !== 'object') continue;
+            orderCount++;
+            for (let type in od) {
+                if (!agg[type]) agg[type] = {};
+                for (let color in od[type]) {
+                    if (!agg[type][color]) agg[type][color] = {};
+                    for (let size in od[type][color]) {
+                        let qty = Number(od[type][color][size]) || 0;
+                        agg[type][color][size] = (agg[type][color][size] || 0) + qty;
+                        totalQty += qty;
+                    }
+                }
+            }
+        }
+    } else {
+        for (let key in ods) {
+            let num = Number(key.slice(6, 13));
+            if (num < from || num > to) continue;
+            let od = ods[key]?.od;
+            if (!od || typeof od !== 'object') continue;
+            orderCount++;
+            for (let type in od) {
+                if (!agg[type]) agg[type] = {};
+                for (let color in od[type]) {
+                    if (!agg[type][color]) agg[type][color] = {};
+                    for (let size in od[type][color]) {
+                        let qty = Number(od[type][color][size]) || 0;
+                        agg[type][color][size] = (agg[type][color][size] || 0) + qty;
+                        totalQty += qty;
+                    }
+                }
+            }
+        }
+    }
+    let lines = [];
+    for (let t in agg) for (let c in agg[t]) for (let s in agg[t][c])
+        lines.push(t + ' | ' + c + ' | ' + s + ' : ' + agg[t][c][s]);
+    return { totalQty, orderCount, lines };
+}
+
+function renderExportBlock(label, color, r) {
+    if (r.orderCount === 0)
+        return '<div style="background:#ff9800;color:#fff;padding:10px;border-radius:4px;margin-bottom:8px;text-align:center;font-weight:bold;">' +
+            label + ': No orders found</div>';
+    return '<div style="background:' + color + ';color:#fff;padding:10px;border-radius:4px;margin-bottom:8px;font-weight:bold;text-align:center;">' +
+        '<div style="font-size:12px;">' + label + '</div>' +
+        '<div>Orders: ' + r.orderCount + ' | Total Qty: <span style="font-size:22px;">' + r.totalQty + '</span></div>' +
+        '<div style="margin-top:8px;font-size:13px;text-align:left;max-height:180px;overflow:auto;">' +
+        r.lines.map(l => '<div>' + l + '</div>').join('') + '</div></div>';
 }
 
 function liveExportFromTo() {
@@ -951,59 +1010,25 @@ function liveExportFromTo() {
         el.textContent = 'Enter both From and To order numbers';
         return;
     }
-
-    let from = Number(fromVal);
-    let to = Number(toVal);
-
+    let from = Number(fromVal), to = Number(toVal);
     if (from > to) {
         el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff';
         el.textContent = 'From must be less than or equal to To';
         return;
     }
 
-    // Read directly from dashboard's in-memory ods object (NOT from sheet cache)
-    let totalQty = 0;
-    let orderCount = 0;
-    let agg = {};
+    let cacheResult = aggregateOrders('cache', from, to);
+    let dashResult = aggregateOrders('dashboard', from, to);
 
-    for (let key in ods) {
-        let shortId = Number(key.slice(6, 13));
-        if (shortId < from || shortId > to) continue;
-        let od = ods[key]?.od;
-        if (!od || typeof od !== 'object') continue;
-        orderCount++;
-        for (let type in od) {
-            if (!agg[type]) agg[type] = {};
-            for (let color in od[type]) {
-                if (!agg[type][color]) agg[type][color] = {};
-                for (let size in od[type][color]) {
-                    let qty = Number(od[type][color][size]) || 0;
-                    agg[type][color][size] = (agg[type][color][size] || 0) + qty;
-                    totalQty += qty;
-                }
-            }
-        }
-    }
-
-    // Build display text
-    let lines = [];
-    for (let t in agg) {
-        for (let c in agg[t]) {
-            for (let s in agg[t][c]) {
-                lines.push(t + ' | ' + c + ' | ' + s + ' : ' + agg[t][c][s]);
-            }
-        }
-    }
+    let match = cacheResult.totalQty === dashResult.totalQty && cacheResult.orderCount === dashResult.orderCount;
+    let matchBar = match
+        ? '<div style="background:#2196F3;color:#fff;padding:6px;border-radius:4px;text-align:center;font-weight:bold;margin-bottom:8px;">MATCH — Both sources agree</div>'
+        : '<div style="background:#f44336;color:#fff;padding:6px;border-radius:4px;text-align:center;font-weight:bold;margin-bottom:8px;">MISMATCH — Values differ! (Sync cache has done+pending, Dashboard has only pending)</div>';
 
     el.style.display = 'block';
-    if (orderCount === 0) {
-        el.style.background = '#ff9800'; el.style.color = '#fff';
-        el.textContent = 'No orders found in range ' + from + ' to ' + to;
-    } else {
-        el.style.background = '#4CAF50'; el.style.color = '#fff';
-        el.innerHTML = '<div style="font-size:11px;color:#e0ffe0;">Source: Dashboard Local Data</div>' +
-            '<div>Orders: ' + orderCount + ' | Total Qty: <span style="font-size:22px;">' + totalQty + '</span></div>' +
-            '<div style="margin-top:8px;font-size:13px;text-align:left;max-height:200px;overflow:auto;">' +
-            lines.map(l => '<div>' + l + '</div>').join('') + '</div>';
-    }
+    el.style.background = '#fff';
+    el.style.color = '#000';
+    el.innerHTML = matchBar +
+        renderExportBlock('Sync Cache (pending + done orders)', '#4CAF50', cacheResult) +
+        renderExportBlock('Dashboard (only pending orders)', '#607D8B', dashResult);
 }

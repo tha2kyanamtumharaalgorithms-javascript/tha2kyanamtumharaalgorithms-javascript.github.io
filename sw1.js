@@ -16,7 +16,7 @@ console.log(d);
 })
 
 // install, activate, fetch
-const CACHE_NAME = '10023';
+const CACHE_NAME = '10024';
 let urlsToCache = ['/main.css','/main.js','/bill.js','/bill.html',
   '/ajax/libs/dexie/4.0.8/dexie.min.js',
   '/gh/tha2kyanamtumharaalgorithms-javascript/tha2kyanamtumharaalgorithms-javascript.github.io@main/a12.aac'
