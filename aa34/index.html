@@ -139,10 +139,6 @@
           <div id="ptplace" class="w3-padding">State, District</div>
           <textarea id="pta" class="w3-input w3-border" oninput="address(this)" placeholder="Delivery Address" rows="4"
             style="resize:none"></textarea>
-          <div id="ppdBox" style="margin-top:8px;padding:6px 8px;background:#fff3e0;border-radius:6px;display:flex;align-items:center;gap:8px;">
-            <label style="font-size:13px;white-space:nowrap;"><input id="ppdOn" type="checkbox" onchange="ppdToggle()"> Per Piece Discount</label>
-            <input id="ppdAmt" class="w3-input w3-border" type="number" placeholder="₹ per piece" style="width:110px;display:none;">
-          </div>
           <p>
             <button id="cnm0" onclick="sptcor()" style="display: none;" class="w3-button w3-green">Next</button>
             <button id="cnm1" onclick="sptd(1)" class="w3-button w3-green">Next</button>
@@ -154,6 +150,16 @@
             <a id="cnm4" href="#" target="_blank"
               style="display: none;color:blue;text-decoration: none;margin-left: 5px;">cn</a>
           </p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px 12px;margin-bottom:6px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <label style="font-size:12px;white-space:nowrap;"><input id="ppdOn" type="checkbox" onchange="ppdToggle()"> Discount/pc</label>
+              <input id="ppdAmt" class="w3-input w3-border" type="number" placeholder="₹" style="width:70px;display:none;height:28px;padding:2px 4px;font-size:12px;">
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <label style="font-size:12px;white-space:nowrap;"><input id="ptcOn" type="checkbox" onchange="ptcToggle()"> Transport/pc</label>
+              <input id="ptcAmt" class="w3-input w3-border" type="number" placeholder="₹" style="width:70px;display:none;height:28px;padding:2px 4px;font-size:12px;">
+            </div>
+          </div>
           <p><a id="whlink1" href="whatsapp://send/?phone=%2B918527150400&text&type=phone_number&app_absent=0"
               class="w3-button w3-amber w3-right">WhatsApp1</a></p>
         </div>
