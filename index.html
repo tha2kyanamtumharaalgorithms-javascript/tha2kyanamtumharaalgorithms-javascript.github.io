@@ -35,6 +35,7 @@
             <div class="w3-dropdown-content w3-bar-block w3-card-4" style="right:0;min-width:120px;z-index:10;">
               <div class="w3-bar-item w3-button" onclick="getdata()">Refresh</div>
               <div class="w3-bar-item w3-button" onclick="openSyncSettings()">Sync</div>
+              <div class="w3-bar-item w3-button" onclick="openExportModal()">Export</div>
               <div class="w3-bar-item w3-button" onclick="getbookedlabel()">Label</div>
               <div class="w3-bar-item w3-button w3-pale-red" onclick="deleteod()">Delete</div>
             </div>
@@ -97,6 +98,24 @@
         <div id="syncStatus" style="display:none;padding:8px;margin-bottom:8px;border-radius:4px;text-align:center;font-weight:bold;word-break:break-all;"></div>
         <div class="w3-button w3-blue w3-block" onclick="testSync()" style="margin-bottom:8px;">Test Write (check F1 in sheet)</div>
         <div class="w3-button w3-green w3-block" onclick="saveSyncSettings()">Save</div>
+      </div>
+    </div>
+  </div>
+  <div id="exportModal" class="w3-modal" style="display:none;">
+    <div class="w3-modal-content w3-card-4" style="max-width:500px;margin:10% auto;">
+      <div class="w3-container w3-teal">
+        <span onclick="document.getElementById('exportModal').style.display='none'" class="w3-button w3-display-topright">&times;</span>
+        <h3>Live Export (From-To)</h3>
+      </div>
+      <div class="w3-container" style="padding:16px;">
+        <label><b>From Order No.</b></label>
+        <input id="exportFrom" class="w3-input w3-border" type="number" placeholder="e.g. 1234567">
+        <div style="margin:8px;"></div>
+        <label><b>To Order No.</b></label>
+        <input id="exportTo" class="w3-input w3-border" type="number" placeholder="e.g. 1234599">
+        <div style="margin:12px;"></div>
+        <div id="exportResult" style="display:none;padding:12px;border-radius:4px;text-align:center;font-weight:bold;font-size:16px;word-break:break-all;"></div>
+        <div class="w3-button w3-teal w3-block" onclick="liveExportFromTo()" style="margin-bottom:8px;">Export</div>
       </div>
     </div>
   </div>

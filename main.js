@@ -932,3 +932,74 @@ function saveSyncSettings() {
             el.textContent = 'FAIL: ' + (e.message || e);
         });
 }
+
+// ===== Live Export (From-To) =====
+function openExportModal() {
+    let startOd = localStorage.getItem('liveWebSheetStartOd') || '';
+    document.getElementById('exportFrom').value = startOd;
+    document.getElementById('exportTo').value = '';
+    document.getElementById('exportResult').style.display = 'none';
+    document.getElementById('exportModal').style.display = 'block';
+}
+
+function liveExportFromTo() {
+    let from = Number(document.getElementById('exportFrom').value);
+    let to = Number(document.getElementById('exportTo').value);
+    let el = document.getElementById('exportResult');
+
+    if (!from || !to) {
+        el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff';
+        el.textContent = 'Enter both From and To order numbers';
+        return;
+    }
+    if (from > to) {
+        el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff';
+        el.textContent = 'From must be less than or equal to To';
+        return;
+    }
+
+    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
+    let totalQty = 0;
+    let orderCount = 0;
+    let agg = {};
+
+    for (let id in cache) {
+        let num = Number(id);
+        if (num < from || num > to) continue;
+        let od = cache[id];
+        if (!od || typeof od !== 'object') continue;
+        orderCount++;
+        for (let type in od) {
+            if (!agg[type]) agg[type] = {};
+            for (let color in od[type]) {
+                if (!agg[type][color]) agg[type][color] = {};
+                for (let size in od[type][color]) {
+                    let qty = Number(od[type][color][size]) || 0;
+                    agg[type][color][size] = (agg[type][color][size] || 0) + qty;
+                    totalQty += qty;
+                }
+            }
+        }
+    }
+
+    // Build display text
+    let lines = [];
+    for (let t in agg) {
+        for (let c in agg[t]) {
+            for (let s in agg[t][c]) {
+                lines.push(t + ' | ' + c + ' | ' + s + ' : ' + agg[t][c][s]);
+            }
+        }
+    }
+
+    el.style.display = 'block';
+    if (orderCount === 0) {
+        el.style.background = '#ff9800'; el.style.color = '#fff';
+        el.textContent = 'No orders found in range ' + from + ' to ' + to;
+    } else {
+        el.style.background = '#4CAF50'; el.style.color = '#fff';
+        el.innerHTML = '<div>Orders: ' + orderCount + ' | Total Qty: <span style="font-size:22px;">' + totalQty + '</span></div>' +
+            '<div style="margin-top:8px;font-size:13px;text-align:left;max-height:200px;overflow:auto;">' +
+            lines.map(l => '<div>' + l + '</div>').join('') + '</div>';
+    }
+}
