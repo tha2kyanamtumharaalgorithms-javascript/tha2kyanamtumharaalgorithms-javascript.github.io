@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue</title>
+    <script src="vue.js"></script>
+</head>
+<body>
+<div id="app"></div>
+
+type in console $vm or $vm0 
+then $vm.data.key
+
+<div :id="`list-${id}`">{{ ok ? 'YES' : 'NO' }}</div>
+
+<a v-bind:href="url"> ... </a>
+<!-- shorthand -->
+<a :href="url"> ... </a>
+<a @click="doSomething">v-on:click="doSomething"</a>
+
+<a v-bind:[attributeName]="url"> ... </a>
+<a :[attributeName]="url"> ... </a><!-- shorthand -->
+
+<a v-on:[eventName]="doSomething"> ... </a>
+<a @[eventName]="doSomething"><!-- shorthand -->
+
+<form @submit.prevent="onSubmit">...</form>
+
+<div class="static" :class="{ active: isActive, 'text-danger': hasError }"></div>
+<div :class="classObject"></div>
+<div :class="[activeClass, errorClass]"></div>
+<div :class="[isActive ? activeClass : '', errorClass]"></div>
+<div :class="[{ active: isActive }, errorClass]"></div>
+<div :style="{ color: activeColor, fontSize: fontSize + 'px' }"></div>
+<div :style="[baseStyles, overridingStyles]"></div>
+<div :style="{ display: ['-webkit-box', '-ms-flexbox', 'flex'] }"></div>
+
+<h1 v-if="awesome">Vue is awesome!</h1>
+
+<button @click="awesome = !awesome">Toggle</button>
+<h1 v-if="awesome">Vue is awesome!</h1>
+<h1 v-else>Oh no 😢</h1>
+
+<div v-if="type === 'A'">
+    A
+  </div>
+  <div v-else-if="type === 'B'">
+    B
+  </div>
+  <div v-else-if="type === 'C'">
+    C
+  </div>
+  <div v-else>
+    Not A/B/C
+  </div>
+
+  <template v-if="ok"> // ok is true then html render
+    <h1>Title</h1>
+    <p>Paragraph 1</p>
+    <p>Paragraph 2</p>
+  </template>
+
+  <h1 v-show="ok">Hello!</h1> // ok is true/false then css style display block/none
+
+  <li v-for="item in items">
+    {{ item.message }}
+  </li>
+
+  <li v-for="(item, index) in items">
+    {{ parentMessage }} - {{ index }} - {{ item.message }}
+  </li>
+
+  <li v-for="{ message } in items">
+    {{ message }}
+  </li>
+  
+  <!-- with index alias -->
+  <li v-for="({ message }, index) in items">
+    {{ message }} {{ index }}
+  </li>
+
+  <li v-for="item in items">
+    <span v-for="childItem in item.children">
+      {{ item.message }} {{ childItem }}
+    </span>
+  </li>
+
+  <div v-for="item of items"></div>
+
+  <ul>
+    <li v-for="value in myObject">
+      {{ value }}
+    </li>
+  </ul>
+
+  <li v-for="(value, key) in myObject">
+    {{ key }}: {{ value }}
+  </li>
+
+  <li v-for="(value, key, index) in myObject">
+    {{ index }}. {{ key }}: {{ value }}
+  </li>
+
+  <span v-for="n in 10">{{ n }}</span> // repeat n times
+
+  <ul>
+    <template v-for="item in items">
+      <li>{{ item.msg }}</li>
+      <li class="divider" role="presentation"></li>
+    </template>
+  </ul>
+
+  <template v-for="todo in todos">
+    <li v-if="!todo.isComplete">
+      {{ todo.name }}
+    </li>
+  </template>
+
+  <div v-for="item in items" :key="item.id">
+    <!-- content -->
+  </div>
+
+  <MyComponent v-for="item in items" :key="item.id" />
+
+  <ul v-for="numbers in sets">
+    <li v-for="n in even(numbers)">{{ n }}</li>
+  </ul>
+
+  inline handler
+  <button @click="count++">Add 1</button>
+
+  Mutation Methods
+  push()pop()shift()unshift()splice()sort()reverse()
+
+  non-Mutation Method replace old array to new array
+  this.items = this.items.filter((item) => item.message.match(/Foo/))
+
+
+  <button @click="warn('Form', $event)">Submit</button> // call function
+  <button @click="(event) => warn('Form', event)">Submit</button> // inline function
+
+  Event Modifiers
+  .stop.prevent.self.capture.once.passive
+  <a @click.once="doThis"></a>
+
+  Key Modifiers
+  .enter .tab .delete(captures both "Delete" and "Backspace" keys)
+    .esc .space .up .down .left .right
+  <input @keyup.enter="submit" />
+
+  System Modifier Keys
+  .ctrl .alt .shift .meta
+  <!-- Alt + Enter -->
+<input @keyup.alt.enter="clear" />
+<!-- Ctrl + Click -->
+<div @click.ctrl="doSomething">Do something</div>
+
+<!-- this will fire even if Alt or Shift is also pressed -->
+<button @click.ctrl="onClick">A</button>
+<!-- this will only fire when Ctrl and no other keys are pressed -->
+<button @click.ctrl.exact="onCtrlClick">A</button>
+<!-- this will only fire when no system modifiers are pressed -->
+<button @click.exact="onClick">A</button>
+
+Mouse Button Modifiers
+.left .right .middle
+
+Form Input Bindings
+<input :value="text" @input="event => text = event.target.value">
+simplify the above to
+<input v-model="text">
+
+Modifiers
+.lazy .number .trim
+<input v-model.lazy="msg" />
+<input v-model.number="age" />
+<input v-model.trim="msg" />
+
+
+     Computed             vs              Methods
+recalculate when                   recalculate when call
+change in reactive                 like normal javascript 
+data(if no change                   function
+then get from chache)
+
+<script>
+data() {
+  return {
+    parentMessage: 'Parent',
+    items: [{ message: 'Foo' }, { message: 'Bar' }]
+  }
+}
+
+methods: {
+  greet(event) {
+    // use this for axcess data
+    alert(`Hello ${this.name}!`)
+
+    // use event for axcess dom
+    if (event) {
+        event.preventDefault();
+      alert(event.target.tagName)
+      alert(event.target.value)
+    }
+  }
+}
+
+
+
+
+
+
+
+</script>
+</body>
+</html>
