@@ -303,6 +303,11 @@ function tot() {
       odpc += tpc;
       console.log(odwt);
     }
+    if (ptd && ptd.ppd && odqt) {
+      disx = dec2(odqt * ptd.ppd);
+      document.getElementById('dis').value = disx;
+      othch[2] = disx;
+    }
     let tch = tchx ? `<tr><td><b class='sa2'>Transport Charge -</b></td><td>${tchx}₹</td></tr>` : '';
     let och = ochx ? `<tr><td><b class='sa2'>Other Charges -</b></td><td>${ochx}₹</td></tr>` : '';
     let dis = disx ? `<tr><td><b class='sa2'>Discount -</b></td><td>${disx}₹</td></tr>` : '';
@@ -386,6 +391,8 @@ async function newc2() {
     t.innerHTML = '';
   }
   document.getElementById('pta').value = '';
+  document.getElementById('ppdOn').checked = false;
+  document.getElementById('ppdAmt').style.display = 'none';
   await newc1();
 }
 
