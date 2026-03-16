@@ -933,40 +933,43 @@ function saveSyncSettings() {
         });
 }
 
-// ===== Live Export (From-To) =====
+// ===== Live Export (From-To) — reads from local dashboard data (ods), NOT from sheet cache =====
 function openExportModal() {
-    let startOd = localStorage.getItem('liveWebSheetStartOd') || '';
-    document.getElementById('exportFrom').value = startOd;
+    document.getElementById('exportFrom').value = '';
     document.getElementById('exportTo').value = '';
     document.getElementById('exportResult').style.display = 'none';
     document.getElementById('exportModal').style.display = 'block';
 }
 
 function liveExportFromTo() {
-    let from = Number(document.getElementById('exportFrom').value);
-    let to = Number(document.getElementById('exportTo').value);
+    let fromVal = document.getElementById('exportFrom').value.trim();
+    let toVal = document.getElementById('exportTo').value.trim();
     let el = document.getElementById('exportResult');
 
-    if (!from || !to) {
+    if (!fromVal || !toVal) {
         el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff';
         el.textContent = 'Enter both From and To order numbers';
         return;
     }
+
+    let from = Number(fromVal);
+    let to = Number(toVal);
+
     if (from > to) {
         el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff';
         el.textContent = 'From must be less than or equal to To';
         return;
     }
 
-    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
+    // Read directly from dashboard's in-memory ods object (NOT from sheet cache)
     let totalQty = 0;
     let orderCount = 0;
     let agg = {};
 
-    for (let id in cache) {
-        let num = Number(id);
-        if (num < from || num > to) continue;
-        let od = cache[id];
+    for (let key in ods) {
+        let shortId = Number(key.slice(6, 13));
+        if (shortId < from || shortId > to) continue;
+        let od = ods[key]?.od;
         if (!od || typeof od !== 'object') continue;
         orderCount++;
         for (let type in od) {
@@ -998,7 +1001,8 @@ function liveExportFromTo() {
         el.textContent = 'No orders found in range ' + from + ' to ' + to;
     } else {
         el.style.background = '#4CAF50'; el.style.color = '#fff';
-        el.innerHTML = '<div>Orders: ' + orderCount + ' | Total Qty: <span style="font-size:22px;">' + totalQty + '</span></div>' +
+        el.innerHTML = '<div style="font-size:11px;color:#e0ffe0;">Source: Dashboard Local Data</div>' +
+            '<div>Orders: ' + orderCount + ' | Total Qty: <span style="font-size:22px;">' + totalQty + '</span></div>' +
             '<div style="margin-top:8px;font-size:13px;text-align:left;max-height:200px;overflow:auto;">' +
             lines.map(l => '<div>' + l + '</div>').join('') + '</div>';
     }
