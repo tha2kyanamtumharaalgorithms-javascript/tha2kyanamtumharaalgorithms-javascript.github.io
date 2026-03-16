@@ -18,10 +18,6 @@ input::-webkit-inner-spin-button {
   margin: 0;
 }
 
-#html33 #odid {
-  display: none;
-}
-
 .dn {
   display: none !important;
 }
@@ -61,8 +57,6 @@ td input {
   background-color: #ffffff;
 }
 
-#oder,
-#full,
 .w3-panel>.w3-button {
   margin: 0px;
   padding: 0.6em 1em;
@@ -89,44 +83,6 @@ tbody th {
 
 tbody td input {
   font-weight: 600;
-}
-
-#tb .w3-quarter.w3-tag {
-  width: 100px;
-  margin: 15px 1.4% 0;
-  font-size: 1.4em;
-}
-
-@media print {
-  body * {
-    visibility: hidden;
-  }
-
-  #tb * {
-    visibility: visible;
-  }
-
-  #tb {
-    position: absolute;
-    left: 0;
-    top: 0;
-  }
-}
-
-@media print {
-  #tb {
-
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-  }
-
-  #tb {
-    height: 100%;
-    width: 100%;
-    /*       margin-left:150px; */
-  }
-
 }
 
 @media print {

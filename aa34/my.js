@@ -9,8 +9,6 @@ function loadScript(url) {
     document.head.appendChild(sc);
   });
 }
-// loadScript('https://example.com/script.js')
-// .then(script => console.log('Loaded:', script)).catch(error => console.error(error));
 
 async function getods(gd) {
   try {
@@ -93,13 +91,9 @@ async function getinst() {
 let db = new Dexie("party"); db.version(2).stores({ pt: "id,cn,mn1,mn2,*ods" });
 let erdb = new Dexie("erro"); erdb.version(1).stores({ err: "id" });
 let instdb = new Dexie("inst"); instdb.version(1).stores({ inst: "++id" });
-// let bulkdb = new Dexie("bulk"); bulkdb.version(1).stores({ bk: "id" });
 let dldb = new Dexie("dldb"); dldb.version(1).stores({ dl: "id,st" });
 var selod5 = {}; var zsr = {}; let selg; let odimgbob;
-//var om=document.getElementById("tb").innerHTML;
 var od = {};
-// var zxc = 0;
-// if (localStorage.clickcount) { zxc = localStorage.clickcount; };
 
 // shp
 if (((Date.now() > (Number(localStorage.shpdt) + 40000000)) || (!localStorage.shpdt))) {
@@ -124,10 +118,6 @@ function todaydate() {
     month: '2-digit',
     year: '2-digit'
   }).split('-').join('').slice(-3);
-  // if (localStorage.m != (d.getMonth() + 1)) {
-  //   localStorage.clickcount = 0; localStorage.m = (d.getMonth() + 1);
-  //   // localStorage.fromod = 0; zxc = 0;
-  // }
 }
 todaydate();
 
@@ -211,12 +201,9 @@ let totqt = [];
 function bulks() {
   let hj = document.querySelectorAll("#pdbtn button").length + 2;
   totqt[hj] = (document.getElementById('bulkc').checked) ? tbl[3].moq : -110;
-  console.log(totqt, 'hiiiiiii');
 }
 
 // display all tab 
-// let bulk;
-// let prc = {};
 function viewtotal() {
   return new Promise(async (rez) => {
     let sum = totqt.reduce((p, a) => p + a, 0);
@@ -254,7 +241,6 @@ function viewtotal() {
 }
 
 function unavail() { if (!insxx.length) { alert('Stock Refilling Soon!!') } }
-// var pctt; var pcwt; let total; var odprice;
 
 let odtot, odwt, odqt, odpc, odpcf, oddata, billinv = [], othch;
 function tot() {
@@ -325,7 +311,6 @@ function tot() {
     odpcf = dec2(odpc + tm);
     billinv = [odpc, odpcf];
     ht += `${tax}<tr><td><b class='sc1'>${odqt} PCS Total</b><b class='sc1' style='margin-left: 2px;background: #2e2effd6'>${Math.ceil(odwt)}kg</b><b class='sa2 fw'>Total Amount -</b></td><td id='ttpc'><b class='sc1'>${Math.ceil(odpcf).toLocaleString('en-IN')}₹</b></td></tr>`;
-    // document.getElementById('odhh').innerHTML = `<input class="my-check" type="checkbox" ${odt ? '' : 'checked="checked"'}><label>Sample Order(<${tbl[3].moq}pcs)</label>, <input class="my-check" type="checkbox" ${odt ? 'checked="checked"' : ''}><label>Bulk Order(>${tbl[3].moq}pcs)</label>`;
     document.querySelector('#tot table tbody').innerHTML = ht;
 
     rez();
@@ -368,13 +353,6 @@ async function newc() {
   for await (let t of hjk) {
     if (t.value) { t.value = '' }
   }
-  // document.querySelectorAll('.city table td input').forEach(t => t.value = '');
-
-  // let ty1 = document.querySelectorAll(".city thead > tr.w3-blue-grey>th"); let ty11 = ty1.length;
-  // for (let q = 1; q < ty11; q++) {
-  //   let av = ty1[q];
-  //   if (av.innerText != 'Total') { av.innerText = ''; }
-  // }
   await newc2();
   document.querySelector("body > div.bar > div.w3-bar.w3-purple > button:nth-child(1)").click();
   document.getElementById('id01').style.display = 'block';
@@ -409,31 +387,18 @@ async function newc1() {
   ptd = {}; pk8 = 0; ptods = []; ptid = 0; selod5 = {};
 }
 
-// onload model get Customer Name and gst
-
 function gonext() {
   if (!ptid && (ptid.length != 10)) {
     return alert('Enter Mobile No.')
   }
   console.log(ptid);
-  // alert(document.getElementById('instock').checked);
-  // if (document.getElementById('instock').checked) {
-  //   let mypnm = document.getElementById('pnm');
-  //   document.getElementById("incn").value = mypnm.value.replace(/\s+/g, ' ').trim(); mypnm.value = ""; // document.querySelector('#gall input[type="radio"]:checked').labels[0].innerText;
-  // }
   let ur = document.getElementById("incn").value.replace(/\s+/g, ' ').trim();
   if (ur) {
     document.getElementById('u13').innerHTML = ur;
     document.getElementById('frt').innerHTML = '<strong>' + ur + '</strong>';
-    // if (document.getElementById('q000')) {
-    //   document.getElementById('gst').checked=true;
-    // }
     let val5 = document.querySelector('#gall input[type="radio"]:checked').value;
     document.getElementById("gsel").options[val5].selected = true;
     document.getElementById('id01').style.display = 'none';
-    // let ge5 = document.getElementById("gsel");
-    // let ovalue=ge5.options[ge5.selectedIndex].value;
-    //e.options[2].selected=true
   } else { alert('Customer Name Koun Likhega?'); }
 }
 

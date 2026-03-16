@@ -1,7 +1,7 @@
 {
   "name": "Offline",
   "short_name": "Offline",
-  "description": "dddd",
+  "description": "Offline Order Management App",
   "start_url": "/aa34/",
   "display": "standalone",
   "theme_color": "#4157fb",

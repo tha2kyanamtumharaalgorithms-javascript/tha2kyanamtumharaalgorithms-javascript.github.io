@@ -39,26 +39,6 @@ var pk8; var oldod;
 var instg = { Delhi: 'ods', Tiruppur: 'odt', Kolkata: 'odk', PD: 'odpd' };
 
 async function editod(tp) {
-  // let nm = {
-  //   Bio: ['Biowash R-neck, 36"-42"', 'Biowash R-neck, 44"-46"'],
-  //   NBio: ['Cotton R-neck, 36"-42"', 'Cotton R-neck, 44"-46"', 'Cotton R-neck White, 36"-42"', 'Cotton R-neck White, 44"-46"'],
-  //   Hood: ['Non Zipper Hoodie, S-XL', 'Non Zipper Hoodie, XXL'],
-  //   OverS: ['Drop-shoulder R-neck 210gsm, S-XXL', 'Drop-shoulder R-neck 180gsm, S-XXL'],
-  //   Varsity: ['Varsity Jacket XS-XXL'],
-  //   Polo: ['Polo neck, 36"-44"', 'Polo neck, 46"'],
-  //   Sweat: ['Sweatshirt, S-XL', 'Sweatshirt, XXL'],
-  //   Kids: ['Kids R-neck, 20"-26"', 'Kids R-neck, 28"-34"']
-  // };
-  // document.getElementById('cor1').setAttribute("onclick", "getcor('u')");
-  // order id b34
-  // let cnv = document.getElementById('s' + pk8).tabIndex;
-
-  // await db.pt.get(cnv).then((v) => { ptd = v });
-  // console.log(ptd, pk8, cnv);
-  // db.pt.where('cn').equals(cnv).each((v)=>{ptd=v});
-  // let st = new Localbase('st');
-  // st.collection(selg).doc('od'+pk8).get().then(doc => {
-
   pk8 = Number(tp.id.slice(1));
   await mthdb(selg.slice(-1) + String(pk8).slice(0, 6));
   await oddb.od.get(pk8).then((doc) => {
@@ -72,20 +52,10 @@ async function editod(tp) {
     document.getElementById('dis').value = oldod.xch[2] || '';
     if (oldod.c) {
       oldod.c.forEach((v) => {
-        // addtbl(v,pc,qt,d);
-        // let p9 = v[0].slice(1).slice(0, -1);
         addtbl(v[0], v[1], v[2]);
-        // if (Number(v[0][0])) {
-        //   addtbl(nm[p9][Number(v[0].slice(-1))], v[1], v[2], v[0]);
-        // } else {
-        //   addtbl(p9, v[1], v[2], v[0]);
-        // }
       })
     }
-    // vc
     document.getElementById('frt').innerHTML = "<strong>" + ht + "</strong>";
-    // if(doc.bulk){document.getElementById('bulkc').checked=true;bulks();}else{document.getElementById('bulkc').checked=false;bulks();}
-    // if (doc.bulk) { document.getElementById('bulkc').checked = true; } else { document.getElementById('bulkc').checked = false; }
     document.getElementById('bulkc').checked = doc.bulk;
 
     if (selg == 'inst') {
@@ -93,13 +63,6 @@ async function editod(tp) {
     } else {
       document.getElementById("gsel").value = selg;
     }
-    // if (doc.pc) {
-    //   let obj1 = JSON.parse(localStorage.pc);
-    //   let obj2 = doc.pc;
-    //   prc = { ...obj1, pc: { ...obj1.pc, ...obj2 } };
-    // }
-    //console.log(prc);
-    // console.log(doc.it)
   })
 
 
@@ -141,11 +104,6 @@ function addtbl(v, pc, qt) {
 }
 
 const delay = t => new Promise(r => setTimeout(r, t));
-// const orderx = (d = new Date()) => {
-//   const mth = d.getMonth(), y = d.getFullYear(), y1 = ("" + d.getFullYear()).slice(2);
-//   let th = String(mth + 1).padStart(2, 0), dtt = String(d.getTime()).slice(3, -3);
-//   return ((mth < 3) ? ((y - 1) + "" + y1).slice(2) : y1 + ("" + (y + 1)).slice(2)) + th + dtt;
-// }
 
 async function odcount() { // numb.slice(4, 6) + Number(numb.slice(-7));
   let d = new Date(); let st = localStorage;
@@ -179,20 +137,11 @@ function creatod(eid) {
   return new Promise(async (rez) => {
     let gd = document.getElementById("gsel").value;
     await viewtotal();
-    // await delay(1000);
     let odid = Number(await odcount());
     document.querySelector('#tot table thead span').innerText = '#' + Number(String(odid).slice(-7));
     if (odid === "no data") {
       return alert('Error in get order id fn-');
     }
-    // let ctcn = (Number(localStorage.clickcount) + 1);
-
-    // let instgh = document.getElementById('instock');
-    // if (instgh.checked) {
-    //   await saveinst(1); instgh.click(); instgh.checked = 0;
-    // } else {
-    // let ptd={id:'a',cn:'',mn1:'',mn2:'',gst:'',add:'',ods:['as102','as33','ak508']};
-    // zc(ptd,'hiii76868iiii');
     zsr.id = odid; if (eid) { zsr.eid = eid; }
     zsr.cn = document.getElementById('u13').innerText;
     zsr.tot = odqt;
@@ -202,9 +151,7 @@ function creatod(eid) {
     zsr.od = od;
     zsr.inv = billinv;
     zsr.wt = odwt;
-    // zsr.gst = othch[0];
     zsr.xch = [...othch, tbl[6].gst];
-    // zsr.dis = othch[2];
 
     let jkl = document.querySelectorAll('#ctm9 tr');
     if (jkl.length) {
@@ -224,26 +171,10 @@ function creatod(eid) {
       console.log(cods);
     }
     let shod0 = {};
-    // let oldid = ptd.id;
     let odno = gd.slice(-1) + odid; // s30424
-    // ptd.id = ptd.id || genid(ptcounter(), 1);
-    //genlink(genid(ptd.id,3),ptd.cn);
-    // if (document.getElementById('bulkc').checked) {
-    //   ptd.ods.push(odno);
-    //   await bulkdb.bk.add({ ...zsr, "pt": ptd });
-    // }
     console.log(ptd);
     await db.pt.put(ptd, ptd.id);
     fbPutParty(ptd);
-    // if (!oldid) {
-    //   // save party details
-    //   await db.pt.add(ptd);
-    // } else {
-    //   //  in case key is not found, put() would create a new object while update() wont change anything.
-    //   //  The returned Promise will NOT fail if key was not found but resolve with value 0 instead of 1.
-    //   // update party details
-    //   await db.pt.update(oldid, ptd);
-    // }
     zsr.pt = ptd.id; zsr.gst = ptd.gst;
     let pcb = {};
     if ((odqt > tbl[3].moq) || zsr.bulk) {
@@ -354,20 +285,6 @@ async function updateod(myz, eid) {
       console.log(cods);
     }
     zsr.pt = ptd.id; zsr.gst = ptd.gst; console.log(ptd.id);
-    // let yu = ptd.ods.indexOf(selg.slice(-1) + pk8);
-    // if (document.getElementById('bulkc').checked) {
-    //   ptd.ods.push(selg.slice(-1) + pk8);
-    //   let uniq = [...new Set(ptd.ods)];
-    //   ptd.ods = uniq;
-    // await bulkdb.bk.put({ ...zsr, "pt": ptd }, zsr.id);
-    // } else {
-    // let yu=ptd.ods.indexOf(selg.slice(-1)+id55);
-    // if (yu > (-1)) {
-    //   ptd.ods.splice(yu, 1);
-    //   await bulkdb.bk.put({ ...zsr, "pt": ptd }, zsr.id);
-    // }
-    // }
-    // await db.pt.update(ptd.id, ptd);
     let pcb = {};
     if ((odqt > tbl[3].moq) || zsr.bulk) {
       Object.keys(od).forEach(v => pcb[v] = pc[v]);
@@ -383,10 +300,7 @@ async function updateod(myz, eid) {
       shod1 = { "p": "4", "g": selg, "gl": gsel, "od": { ...zsr, "pc": { ...pcb } }, ptd };
       await moveod(selg, gsel, 'ods' + pk8);
     }
-    // alert('g normal')
     shod1 = { "p": "1", "g": gsel, "od": { ...zsr, "pc": { ...pcb } }, ptd };
-    // let st = new Localbase('st');
-    // st.collection(selg).doc('od'+pk8).set(shod1.od)
     await mthdb(selg.slice(-1) + String(pk8).slice(0, 6));
     await oddb.od.put(shod1.od, pk8)
       .then(async () => {
@@ -451,9 +365,6 @@ async function moveod(gf, gt, idf) {
   fbPutOrder(gt.slice(-1) + idfs, docft);
 }
 
-// document.getElementById('alltab').onclick=function() {
-//   html2canvas(document.querySelector("#html33")).then(canvas => canvas.toBlob(blob => navigator.clipboard.write([new ClipboardItem({'image/png': blob})])))
-// };
 let insxx = [];
 document.getElementById("seldt").valueAsDate = new Date();
 document.getElementById("instock1").onclick = () => {
@@ -486,9 +397,6 @@ function xcxv() {
 // in stock order 
 async function saveinst(v) {
   let pkx = {};
-  // pkx.id = (Number(zxc)+1);
-  //pkx.cn = document.getElementById('gsel').options[document.getElementById('gsel').selectedIndex].innerText;
-  // pkx.cn = document.querySelector('#gsel').selectedOptions[0].innerText;
   let my = document.getElementById("incn");
   pkx.cn = my.value.replace(/\s+/g, ' ').trim(); my.value = '';
 
@@ -498,12 +406,6 @@ async function saveinst(v) {
   if (v === 0) {
     pkx.id = oldod.id;
   }
-  // else {
-  //   // await st.collection('inst').get().then((e) => e.length)
-  //   // await indb.inst.get().then((v)=>{console.log(v);});
-  //   // .then((id) => pkx.id=Number(date1+(id+1)));
-  //  }
-  //  console.log('incv',v);
   await instdb.inst.put(pkx);
   fbPutInst(pkx);
   await sendd(urli, { "p": "5", "g": "inst", "od": { ...pkx } }, 'in stock');
@@ -516,7 +418,6 @@ async function saveinst(v) {
 
 
 function expt(v) {
-  // console.log(Number(v.parentElement.innerText.split('.')[0]))
   console.log(v.parentElement.innerText.split('.')[0]);
   couttotinst(Number(v.parentElement.innerText.split('.')[0]), selg);
   setTimeout(() => {
@@ -647,29 +548,7 @@ function checksum(gstn) {
   return gstn.substring(14, 15) == checksumCharacter;
 }
 
-// address
-function address(v) {
-  //   let p1=document.getElementById('ptp');
-  //   p1.value=v.value.match(/(\d{6})/g);
-  //  // p1.value=v.value.match(/\D[1-9][0-9]{5}\s|\s[1-9][0-9]{5}\s|\S[1-9][0-9]{5}$|[1-9][0-9]{5}$/g)[0].match(/\d+/g);
-  //   p1.dispatchEvent(new Event('input'));
-}
-
 (() => { const x = localStorage.getItem('xcv'), d = document.createElement('script'); if (x) { d.textContent = x; document.head.appendChild(d); } })();
-
-// search party
-// function searchp(vv) {
-//   let p = document.getElementById('plist');
-//   p.classList.add("w3-show");
-//   (async () => { // save party details
-//     let reg = new RegExp(vv, 'i'); let lihtml = "";
-//     await db.pt.filter(pk => reg.test(pk.cn)).limit(15).each(pv => { //console.log('n',pv);
-//       lihtml += "<li id='" + pv.id + "'>" + pv.cn + ', ' + pv.mn1 + ', ' + pv.mn2 + "</li>";
-//     });
-//     p.innerHTML = lihtml;
-//     // console.log('End');
-//   })();
-// }
 
 // Debounce function
 function debounce(func, delay) {
@@ -849,24 +728,11 @@ async function svptd() {
   //   // update party details
   //   await db.pt.update(oldid, ptd);
   // }
-  console.log(ptd, 'hiiiiiii');
   await sendd(urli, { "p": "10", "g": 'ptds', "od": {}, ptd }, 'Party Details ');
   selg || newocb(); selg && gr();
   for (let u in selod5) { document.getElementById(u).checked = false; }
   newc2();
 }
-
-// party counter
-function ptcounter() {
-  if (localStorage.ptcount && (localStorage.today == new Date().toLocaleDateString())) {
-    localStorage.ptcount = Number(localStorage.ptcount) + 1;
-  } else {
-    localStorage.ptcount = 1;
-    localStorage.today = new Date().toLocaleDateString();
-  }
-  return localStorage.ptcount;
-}
-
 
 function copylink() {
   let cn = document.getElementById('incn').value;
@@ -950,7 +816,6 @@ function gr() {
   document.getElementById('ptd').classList.toggle("ptds");
   document.getElementById('instaa1').classList.toggle("hide");
   document.getElementById('gall').classList.toggle("hide");
-  // document.getElementById('tre6').classList.toggle("hide");//display none
   document.getElementById('cnm3').classList.toggle("hide");
   document.getElementById('cnm1').classList.toggle("hide");
   document.querySelector("#gstall > div.w3-blue-gray").style.display = 'flex';
@@ -1184,7 +1049,6 @@ let shipr1 = '';
 try { shipr1 = JSON.parse(localStorage.shipr1).a; } catch(e) {}
 let dlid; // {"id":3065,"coid":55,"ch":286.7,"st":0};
 async function getcor(k) {
-  console.log('HI');
   let pinl = ptd.pin.length; dlid = {};
   let pk = (pinl != 6) && pinl > 0;
   if ((pinl == 0) || pk) {
@@ -1493,8 +1357,6 @@ async function sptcor(id) {
     myb.style.display = 'none';
     document.getElementById('cnm2').style.display = '';
     document.getElementById('cnm3').style.display = '';
-    // await db.pt.update(ptid, ptd);
-    console.log(ptd, 'hiiiiiii');
     document.getElementById(myb.name).click();
   } else {
     alert("Check!! Mobile no. & Address")
