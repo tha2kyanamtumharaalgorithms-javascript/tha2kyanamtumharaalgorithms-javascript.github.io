@@ -308,6 +308,11 @@ function tot() {
       document.getElementById('dis').value = disx;
       othch[2] = disx;
     }
+    if (ptd && ptd.ptc && odqt) {
+      tchx = dec2(odqt * ptd.ptc);
+      document.getElementById('tch').value = tchx;
+      othch[0] = tchx;
+    }
     let tch = tchx ? `<tr><td><b class='sa2'>Transport Charge -</b></td><td>${tchx}₹</td></tr>` : '';
     let och = ochx ? `<tr><td><b class='sa2'>Other Charges -</b></td><td>${ochx}₹</td></tr>` : '';
     let dis = disx ? `<tr><td><b class='sa2'>Discount -</b></td><td>${disx}₹</td></tr>` : '';
@@ -393,6 +398,8 @@ async function newc2() {
   document.getElementById('pta').value = '';
   document.getElementById('ppdOn').checked = false;
   document.getElementById('ppdAmt').style.display = 'none';
+  document.getElementById('ptcOn').checked = false;
+  document.getElementById('ptcAmt').style.display = 'none';
   await newc1();
 }
 

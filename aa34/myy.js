@@ -775,6 +775,9 @@ function getptd(e) {
       document.getElementById('ppdOn').checked = !!v.ppd;
       document.getElementById('ppdAmt').value = v.ppd || '';
       document.getElementById('ppdAmt').style.display = v.ppd ? '' : 'none';
+      document.getElementById('ptcOn').checked = !!v.ptc;
+      document.getElementById('ptcAmt').value = v.ptc || '';
+      document.getElementById('ptcAmt').style.display = v.ptc ? '' : 'none';
       // ptods = v.ods;
       ptid = v.id;
 
@@ -804,6 +807,7 @@ function sptd(v) {
   ptd.pin = pinc;
   ptd.add = pta;
   ptd.ppd = document.getElementById('ppdOn').checked ? (Number(document.getElementById('ppdAmt').value) || 0) : 0;
+  ptd.ptc = document.getElementById('ptcOn').checked ? (Number(document.getElementById('ptcAmt').value) || 0) : 0;
   if (v != 2) {
     if (ptd.add && cid && (v != 1)) { document.getElementById('ods' + cid).parentNode.style.color = ''; }
     else if (cid && (v != 1)) { document.getElementById('ods' + cid).parentNode.style.color = '#00f'; }
@@ -1687,4 +1691,10 @@ function ppdToggle() {
   let on = document.getElementById('ppdOn').checked;
   document.getElementById('ppdAmt').style.display = on ? '' : 'none';
   if (!on) document.getElementById('ppdAmt').value = '';
+}
+
+function ptcToggle() {
+  let on = document.getElementById('ptcOn').checked;
+  document.getElementById('ptcAmt').style.display = on ? '' : 'none';
+  if (!on) document.getElementById('ptcAmt').value = '';
 }
