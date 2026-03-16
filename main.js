@@ -62,7 +62,6 @@ od.addEventListener('click', (e) => {
 nmzx += 'img/image/hd/new';
 if (!localStorage.oldid) { localStorage.setItem('oldid', '[]') };
 if (!localStorage.dubli) { localStorage.setItem('dubli', '[]') };
-if (!localStorage.liveWebOrders) { localStorage.setItem('liveWebOrders', '{}') };
 let odtype = ['', 'A', 'L', 'T', 'D', 'S', 'Tr'], newid = [], duplicates;
 async function getdata() {
     sel = {}; ods = {}; newid = []; let dem = [];
@@ -163,13 +162,10 @@ async function getdata() {
             })
         }, 8)
 
-        // Sync orders to Live Website sheet
-        syncOrdersToLiveWeb();
-
     });
 };
 
-(async () => { checkPendingSync(); await getdata(); await getbookedlabel(); })();
+(async () => { await getdata(); await getbookedlabel(); })();
 
 async function getbookedlabel() {
     await fetch('https://docs.google.com/spreadsheets/d/1RErftkKVUQWwCC6FqQJJqzGLY3niMwVv2s-ThdtFfRU/gviz/tq?tqx=out:csv').then(v => v.text()).then((t) => {
@@ -210,7 +206,7 @@ function Refresh(t) {
     }, 1000 * t);
 }
 
-Refresh(60);
+Refresh(400);
 
 async function done() {
     let sel1 = Object.keys(sel);
@@ -237,7 +233,6 @@ async function done() {
         await fetch("https://script.google.com/macros/s/AKfycbxJs1MUozlOyJWpxY4EQmBL3qSkQq6hVKUwmvhSn53Fuhwh6Q3-Tzu3ntuAjqa0aTcK/exec", { method: 'POST', body: fmd }).then(res => res.json()).finally((v) => {
             // setTimeout(async()=>{await getdata();},100)
         })
-        // Done orders STAY in live sheet cache (counted as sold)
     }
 
 }
@@ -255,10 +250,17 @@ async function deleteod() {
     // Step 1: Remove from PendingOrder (same as Done)
     let fmd = new FormData();
     fmd.append("myd", JSON.stringify(sel1));
-    fetch("https://script.google.com/macros/s/AKfycbxJs1MUozlOyJWpxY4EQmBL3qSkQq6hVKUwmvhSn53Fuhwh6Q3-Tzu3ntuAjqa0aTcK/exec", { method: 'POST', body: fmd, mode: 'no-cors' });
+    fetch("https://script.google.com/macros/s/AKfycbxJs1MUozlOyJWpxY4EQmBL3qSkQq6hVKUwmvhSn53Fuhwh6Q3-Tzu3ntuAjqa0aTcK/exec", { method: 'POST', body: fmd });
 
-    // Step 2: Remove from Live Website sheet and re-sync (GET-based)
-    deleteLiveWebOrder(sel1);
+    // Step 2: Record deletion in Live Website Apps Script
+    let liveUrl = localStorage.getItem('liveWebScriptUrl');
+    if (liveUrl) {
+        fetch(liveUrl, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'deleteOrder', orderIds: sel1 }),
+            mode: 'no-cors'
+        });
+    }
 
     snackbar('Deleted', 1500);
 }
@@ -630,405 +632,3 @@ function holdn() {
 //     }
 // }
 
-// =====================================================
-// LIVE WEBSITE SHEET SYNC — v3.1 (with retry + failed sync tracking)
-// =====================================================
-// How it works:
-//   1. startOd comes from cell B1 in the Google Sheet (source of truth)
-//   2. localStorage.liveWebOrders = cache of all orders from startOd onwards
-//   3. New orders from getdata() → added to cache (keeps growing)
-//   4. Done orders → STAY in cache (stock already sold, keeps counting)
-//   5. Deleted orders → REMOVED from cache via deleteLiveWebOrder()
-//   6. Edited orders → UPDATED in cache via updateLiveWebOrder()
-//   7. After any change → aggregate cache → send to sheet via GET
-//   8. Failed syncs → auto-retry 3 times, then show red indicator
-//
-// Why GET not POST:
-//   Google Apps Script redirects POST with 302, browser changes to GET,
-//   POST body is lost. GET works because params are in the URL.
-//
-// Data format in URL: product~color~size~qty joined by * for rows
-//   Example: T-Shirt~Red~M~5*Pants~Black~L~3
-// =====================================================
-
-// Failed sync tracking
-let syncRetryCount = 0;
-let syncRetryTimer = null;
-const SYNC_MAX_RETRIES = 3;
-
-function updateSyncIndicator(status, msg) {
-    let el = document.getElementById('syncIndicator');
-    if (!el) return;
-    if (status === 'ok') {
-        el.style.display = 'none';
-        localStorage.removeItem('syncFailed');
-    } else if (status === 'retrying') {
-        el.style.display = 'block';
-        el.style.background = '#ff9800';
-        el.textContent = '⟳ Sync retry ' + syncRetryCount + '/' + SYNC_MAX_RETRIES + '...';
-    } else if (status === 'failed') {
-        el.style.display = 'block';
-        el.style.background = '#f44336';
-        el.textContent = '✗ Sync failed — tap to retry';
-        localStorage.setItem('syncFailed', Date.now());
-    }
-}
-
-// Check on page load if there was a previous failed sync
-function checkPendingSync() {
-    let failed = localStorage.getItem('syncFailed');
-    if (failed) {
-        updateSyncIndicator('failed');
-    }
-}
-
-
-// Fetch startOd from sheet B1 (source of truth), then sync
-function syncOrdersToLiveWeb() {
-    let scriptUrl = localStorage.getItem('liveWebSheetScriptUrl');
-    if (!scriptUrl) return;
-
-    // If we already have a cached startOd, sync immediately with it
-    let cached = localStorage.getItem('liveWebSheetStartOd');
-    if (cached && Number(cached)) {
-        mergeAndSync(Number(cached));
-    }
-
-    // Also fetch latest B1 in background to stay updated
-    fetchStartOdFromSheet();
-}
-
-// Fetch B1 from sheet, update cache if changed, re-sync if needed
-function fetchStartOdFromSheet() {
-    let scriptUrl = localStorage.getItem('liveWebSheetScriptUrl');
-    if (!scriptUrl) return;
-
-    let sep = scriptUrl.includes('?') ? '&' : '?';
-    fetch(scriptUrl + sep + '_t=' + Date.now(), { redirect: 'follow' })
-        .then(r => r.ok ? r.json() : Promise.reject('HTTP ' + r.status))
-        .then(d => {
-            if (!d.startOd) return;
-            let newOd = String(d.startOd);
-            let old = localStorage.getItem('liveWebSheetStartOd');
-            if (newOd !== old) {
-                console.log('[SYNC] B1 startOd changed:', old, '→', newOd);
-                localStorage.removeItem('liveWebOrders'); // new startOd = fresh start
-                localStorage.setItem('liveWebSheetStartOd', newOd);
-                mergeAndSync(Number(newOd)); // re-sync with new startOd
-            }
-        })
-        .catch(e => console.warn('[SYNC] Failed to fetch B1:', e));
-}
-
-// Merge pending orders into cache and send to sheet
-function mergeAndSync(fromNum) {
-    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
-
-    // Add/update every pending order that is >= startOd
-    for (let id in ods) {
-        if (Number(id) < fromNum) continue;
-        let od = ods[id]?.od;
-        if (od && typeof od === 'object') {
-            cache[id] = od;
-        }
-    }
-    // Done orders STAY in cache — stock was sold, total keeps growing
-
-    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
-    sendSyncToSheet();
-}
-
-// Step 2: aggregate the cache and send to Google Sheet
-function sendSyncToSheet() {
-    let scriptUrl = localStorage.getItem('liveWebSheetScriptUrl');
-    if (!scriptUrl) return;
-
-    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
-
-    // Aggregate: type > color > size > total qty
-    let agg = {};
-    let orderCount = 0;
-    let totalQty = 0;
-
-    for (let id in cache) {
-        let od = cache[id];
-        if (!od || typeof od !== 'object') continue;
-        orderCount++;
-        for (let type in od) {
-            if (!agg[type]) agg[type] = {};
-            for (let color in od[type]) {
-                if (!agg[type][color]) agg[type][color] = {};
-                for (let size in od[type][color]) {
-                    let qty = Number(od[type][color][size]) || 0;
-                    agg[type][color][size] = (agg[type][color][size] || 0) + qty;
-                    totalQty += qty;
-                }
-            }
-        }
-    }
-
-    // Build compact string: product~color~size~qty joined by *
-    let rows = [];
-    for (let t in agg) {
-        for (let c in agg[t]) {
-            for (let s in agg[t][c]) {
-                rows.push(t + '~' + c + '~' + s + '~' + agg[t][c][s]);
-            }
-        }
-    }
-    let dataStr = rows.join('*');
-
-    // Build GET URL
-    let sep = scriptUrl.includes('?') ? '&' : '?';
-    let url = scriptUrl + sep + 'action=sync&n=' + orderCount + '&q=' + totalQty + '&d=' + encodeURIComponent(dataStr);
-
-    console.log('[SYNC] sending — orders:', orderCount, '| rows:', rows.length, '| qty:', totalQty, '| url length:', url.length);
-
-    fetch(url, { redirect: 'follow' })
-        .then(r => {
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            return r.json();
-        })
-        .then(d => {
-            console.log('[SYNC] SUCCESS', d);
-            syncRetryCount = 0;
-            if (syncRetryTimer) { clearTimeout(syncRetryTimer); syncRetryTimer = null; }
-            updateSyncIndicator('ok');
-            snackbar('Synced ' + d.synced + ' rows', 1500);
-            // Update cached startOd from sheet B1 if it changed
-            if (d.startOd) {
-                let newOd = String(d.startOd);
-                let old = localStorage.getItem('liveWebSheetStartOd');
-                if (newOd !== old) {
-                    console.log('[SYNC] B1 changed during sync:', old, '→', newOd);
-                    localStorage.removeItem('liveWebOrders');
-                    localStorage.setItem('liveWebSheetStartOd', newOd);
-                    mergeAndSync(Number(newOd));
-                }
-            }
-        })
-        .catch(e => {
-            console.error('[SYNC] FAILED', e);
-            syncRetryCount++;
-            if (syncRetryCount <= SYNC_MAX_RETRIES) {
-                let delay = syncRetryCount * 3000; // 3s, 6s, 9s
-                console.log('[SYNC] Retrying in ' + delay + 'ms (attempt ' + syncRetryCount + ')');
-                updateSyncIndicator('retrying');
-                snackbar('Sync failed, retrying in ' + (delay / 1000) + 's...', 2000);
-                syncRetryTimer = setTimeout(() => sendSyncToSheet(), delay);
-            } else {
-                console.error('[SYNC] All retries failed');
-                updateSyncIndicator('failed');
-                snackbar('Sync failed after ' + SYNC_MAX_RETRIES + ' retries!', 4000);
-                syncRetryCount = 0;
-            }
-        });
-}
-
-// Called from deleteod() — removes orders from cache and updates sheet
-function deleteLiveWebOrder(orderIds) {
-    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
-    orderIds.forEach(id => delete cache[id]);
-    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
-    sendSyncToSheet();
-}
-
-// Called from edit.js — updates order quantity in cache and updates sheet
-function updateLiveWebOrder(orderId, newOdData) {
-    let cache = JSON.parse(localStorage.liveWebOrders || '{}');
-    cache[orderId] = newOdData;
-    localStorage.setItem('liveWebOrders', JSON.stringify(cache));
-    sendSyncToSheet();
-}
-
-// ===== Sync Settings UI =====
-function openSyncSettings() {
-    document.getElementById('syncScriptUrl').value = localStorage.getItem('liveWebSheetScriptUrl') || '';
-    document.getElementById('syncModal').style.display = 'block';
-    document.getElementById('syncStatus').style.display = 'none';
-}
-
-// Test button: writes a test value to F1 of the sheet to prove the connection works
-function testSync() {
-    let url = document.getElementById('syncScriptUrl').value.trim();
-    let el = document.getElementById('syncStatus');
-    if (!url) { el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff'; el.textContent = 'Enter URL first'; return; }
-
-    el.style.display = 'block'; el.style.background = '#ffc107'; el.style.color = '#000';
-    el.textContent = 'Sending test...';
-
-    let testMsg = 'dashboard-test-' + Date.now();
-    let sep = url.includes('?') ? '&' : '?';
-    fetch(url + sep + 'action=test&msg=' + encodeURIComponent(testMsg), { redirect: 'follow' })
-        .then(r => {
-            console.log('[TEST] response status:', r.status, 'ok:', r.ok);
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            return r.json();
-        })
-        .then(d => {
-            console.log('[TEST] response:', d);
-            if (d.error) throw new Error(d.error);
-            el.style.background = '#4CAF50'; el.style.color = '#fff';
-            el.textContent = 'SUCCESS! Check cell F1 in Live Website sheet. Value: ' + d.value;
-        })
-        .catch(e => {
-            console.error('[TEST] FAILED:', e);
-            el.style.background = '#f44336'; el.style.color = '#fff';
-            el.textContent = 'FAILED: ' + (e.message || e);
-        });
-}
-
-function saveSyncSettings() {
-    let url = document.getElementById('syncScriptUrl').value.trim();
-    let el = document.getElementById('syncStatus');
-
-    if (!url) { el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff'; el.textContent = 'Enter URL'; return; }
-
-    el.style.display = 'block'; el.style.background = '#ffc107'; el.style.color = '#000';
-    el.textContent = 'Connecting...';
-
-    // Verify script version with ping
-    let sep = url.includes('?') ? '&' : '?';
-    fetch(url + sep + 'action=ping', { redirect: 'follow' })
-        .then(r => {
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            return r.json();
-        })
-        .then(d => {
-            console.log('[SAVE] ping response:', d);
-            if (d.error) throw new Error(d.error);
-            if (!d.v || d.v < 4) throw new Error('Old script deployed. Need v4+. Got v' + (d.v || '?') + '. Deploy the NEW script as a NEW deployment.');
-
-            localStorage.setItem('liveWebSheetScriptUrl', url);
-
-            // Fetch startOd from B1 immediately
-            return fetch(url + sep + '_t=' + Date.now(), { redirect: 'follow' })
-                .then(r => r.ok ? r.json() : Promise.reject('HTTP ' + r.status))
-                .then(b1 => {
-                    if (b1.startOd) {
-                        let newOd = String(b1.startOd);
-                        let old = localStorage.getItem('liveWebSheetStartOd');
-                        if (newOd !== old) {
-                            localStorage.removeItem('liveWebOrders');
-                            localStorage.setItem('liveWebSheetStartOd', newOd);
-                        }
-                        el.style.background = '#4CAF50'; el.style.color = '#fff';
-                        el.textContent = 'Saved! Script v' + d.v + ' | Start: ' + newOd;
-                    } else {
-                        el.style.background = '#ff9800'; el.style.color = '#fff';
-                        el.textContent = 'Saved! But B1 is empty — enter start order in B1';
-                    }
-
-                    setTimeout(() => {
-                        document.getElementById('syncModal').style.display = 'none';
-                        el.style.display = 'none';
-                        syncOrdersToLiveWeb();
-                    }, 1500);
-                });
-        })
-        .catch(e => {
-            console.error('[SAVE] FAILED:', e);
-            el.style.background = '#f44336'; el.style.color = '#fff';
-            el.textContent = 'FAIL: ' + (e.message || e);
-        });
-}
-
-// ===== Export (From-To) — shows BOTH sources for cross-verification =====
-function openExportModal() {
-    document.getElementById('exportFrom').value = '';
-    document.getElementById('exportTo').value = '';
-    document.getElementById('exportResult').style.display = 'none';
-    document.getElementById('exportModal').style.display = 'block';
-}
-
-function aggregateOrders(source, from, to) {
-    let totalQty = 0, orderCount = 0, agg = {};
-    if (source === 'cache') {
-        let cache = JSON.parse(localStorage.liveWebOrders || '{}');
-        for (let key in cache) {
-            let num = Number(key.slice(6, 13));
-            if (num < from || num > to) continue;
-            let od = cache[key];
-            if (!od || typeof od !== 'object') continue;
-            orderCount++;
-            for (let type in od) {
-                if (!agg[type]) agg[type] = {};
-                for (let color in od[type]) {
-                    if (!agg[type][color]) agg[type][color] = {};
-                    for (let size in od[type][color]) {
-                        let qty = Number(od[type][color][size]) || 0;
-                        agg[type][color][size] = (agg[type][color][size] || 0) + qty;
-                        totalQty += qty;
-                    }
-                }
-            }
-        }
-    } else {
-        for (let key in ods) {
-            let num = Number(key.slice(6, 13));
-            if (num < from || num > to) continue;
-            let od = ods[key]?.od;
-            if (!od || typeof od !== 'object') continue;
-            orderCount++;
-            for (let type in od) {
-                if (!agg[type]) agg[type] = {};
-                for (let color in od[type]) {
-                    if (!agg[type][color]) agg[type][color] = {};
-                    for (let size in od[type][color]) {
-                        let qty = Number(od[type][color][size]) || 0;
-                        agg[type][color][size] = (agg[type][color][size] || 0) + qty;
-                        totalQty += qty;
-                    }
-                }
-            }
-        }
-    }
-    let lines = [];
-    for (let t in agg) for (let c in agg[t]) for (let s in agg[t][c])
-        lines.push(t + ' | ' + c + ' | ' + s + ' : ' + agg[t][c][s]);
-    return { totalQty, orderCount, lines };
-}
-
-function renderExportBlock(label, color, r) {
-    if (r.orderCount === 0)
-        return '<div style="background:#ff9800;color:#fff;padding:10px;border-radius:4px;margin-bottom:8px;text-align:center;font-weight:bold;">' +
-            label + ': No orders found</div>';
-    return '<div style="background:' + color + ';color:#fff;padding:10px;border-radius:4px;margin-bottom:8px;font-weight:bold;text-align:center;">' +
-        '<div style="font-size:12px;">' + label + '</div>' +
-        '<div>Orders: ' + r.orderCount + ' | Total Qty: <span style="font-size:22px;">' + r.totalQty + '</span></div>' +
-        '<div style="margin-top:8px;font-size:13px;text-align:left;max-height:180px;overflow:auto;">' +
-        r.lines.map(l => '<div>' + l + '</div>').join('') + '</div></div>';
-}
-
-function liveExportFromTo() {
-    let fromVal = document.getElementById('exportFrom').value.trim();
-    let toVal = document.getElementById('exportTo').value.trim();
-    let el = document.getElementById('exportResult');
-
-    if (!fromVal || !toVal) {
-        el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff';
-        el.textContent = 'Enter both From and To order numbers';
-        return;
-    }
-    let from = Number(fromVal), to = Number(toVal);
-    if (from > to) {
-        el.style.display = 'block'; el.style.background = '#f44336'; el.style.color = '#fff';
-        el.textContent = 'From must be less than or equal to To';
-        return;
-    }
-
-    let cacheResult = aggregateOrders('cache', from, to);
-    let dashResult = aggregateOrders('dashboard', from, to);
-
-    let match = cacheResult.totalQty === dashResult.totalQty && cacheResult.orderCount === dashResult.orderCount;
-    let matchBar = match
-        ? '<div style="background:#2196F3;color:#fff;padding:6px;border-radius:4px;text-align:center;font-weight:bold;margin-bottom:8px;">MATCH — Both sources agree</div>'
-        : '<div style="background:#f44336;color:#fff;padding:6px;border-radius:4px;text-align:center;font-weight:bold;margin-bottom:8px;">MISMATCH — Values differ! (Sync cache has done+pending, Dashboard has only pending)</div>';
-
-    el.style.display = 'block';
-    el.style.background = '#fff';
-    el.style.color = '#000';
-    el.innerHTML = matchBar +
-        renderExportBlock('Sync Cache (pending + done orders)', '#4CAF50', cacheResult) +
-        renderExportBlock('Dashboard (only pending orders)', '#607D8B', dashResult);
-}
