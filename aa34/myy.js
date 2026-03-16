@@ -288,6 +288,10 @@ function creatod(eid) {
     if (instock.checked) {
       xcxv(); instock.checked = 0;
     }
+    let allStk = document.getElementById('allStockOn');
+    if (allStk.checked) {
+      allStk.checked = false; allStockToggle();
+    }
     html33.style.width = '455px';
     await html2canvas(html33,
       {
@@ -1697,4 +1701,16 @@ function ptcToggle() {
   let on = document.getElementById('ptcOn').checked;
   document.getElementById('ptcAmt').style.display = on ? '' : 'none';
   if (!on) document.getElementById('ptcAmt').value = '';
+}
+
+let allStockItems = [];
+function allStockToggle() {
+  let inx = (navigator.platform === 'iPhone') ? 'text' : 'number';
+  if (document.getElementById('allStockOn').checked) {
+    allStockItems = document.querySelectorAll('#tbldiv input[type="button"]');
+    allStockItems.forEach(v => v.setAttribute('type', inx));
+  } else {
+    allStockItems.forEach(v => v.setAttribute('type', 'button'));
+    allStockItems = [];
+  }
 }
