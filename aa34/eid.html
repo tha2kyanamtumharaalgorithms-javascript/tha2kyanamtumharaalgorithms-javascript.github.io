@@ -321,7 +321,6 @@ async function loadData() {
   // --- RENDER ISSUES ---
   let resolved = getResolved();
   let dupResolved = getDupResolved();
-  let totalIssues = allMissing.length + duplicates.length;
 
   // Count actual missing (ranges count as 1 issue each)
   let missingCount = allMissing.reduce((sum, item) => sum + (item.range ? 1 : 1), 0);
