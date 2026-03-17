@@ -42,11 +42,16 @@
   </div>
 
 <script>
-// Both apps write to the SAME Firebase. _src field tells us the source.
-const db = firebase.initializeApp({
+// Offline App Firebase - has orders with ord.eid field
+const offlineDb = firebase.initializeApp({
   apiKey: "AIzaSyBVnlwEnclUCBVs6xMVnAbmB8I_CWwlPCc",
   databaseURL: "https://offline-app-e9b72-default-rtdb.asia-southeast1.firebasedatabase.app"
-}).database();
+}, 'off').database();
+
+// Website Firebase - order KEY itself is the e-ID (e.g. orders/2526030023578)
+const websiteDb = firebase.initializeApp({
+  databaseURL: "https://dashboard-stock-default-rtdb.asia-southeast1.firebasedatabase.app"
+}, 'web').database();
 
 const MO = [
   {n:'April',v:4},{n:'May',v:5},{n:'June',v:6},{n:'July',v:7},
@@ -61,7 +66,7 @@ function getFY() {
   return String(s).slice(2) + String(s + 1).slice(2);
 }
 
-// Extract short e-ID: strip FY+month prefix if present
+// Extract short e-ID (counter only) from full number
 function shortEid(raw) {
   let n = Number(raw);
   if (!n) return 0;
@@ -90,33 +95,40 @@ async function load() {
 
   let entries = [];
 
+  // 1. Fetch from Offline App Firebase (ord.eid field)
   try {
-    let snap = await db.ref('data/orders/s' + fy + mStr).once('value');
+    let snap = await offlineDb.ref('data/orders/s' + fy + mStr).once('value');
     let val = snap.val();
     if (val) {
       Object.values(val).forEach(ord => {
-        if (!ord) return;
-        // Get e-ID: use ord.eid if available, otherwise extract from order ID
-        let eid = 0;
-        if (ord.eid) {
-          eid = shortEid(ord.eid);
-        } else if (ord.id) {
-          // Fallback: extract counter from order ID
-          eid = shortEid(ord.id);
-        }
-        if (eid) {
-          // Source: _src='website' means online, everything else is offline app
-          let source = ord._src === 'website' ? 'web' : 'app';
-          entries.push({ eid, source });
+        if (ord && ord.eid) {
+          let eid = shortEid(ord.eid);
+          if (eid) entries.push({ eid, source: 'app' });
         }
       });
     }
-  } catch(e) { console.log('Firebase err', e); }
+  } catch(e) { console.log('Offline err', e); }
 
-  // Deduplicate by eid
+  // 2. Fetch from Website Firebase (order KEY is the e-ID)
+  try {
+    let prefix = fy + mStr; // e.g. "252603"
+    let snap = await websiteDb.ref('orders').once('value');
+    let val = snap.val();
+    if (val) {
+      Object.keys(val).forEach(key => {
+        if (key.startsWith('BillNo')) return;
+        if (!key.startsWith(prefix)) return;
+        let eid = shortEid(key);
+        if (eid) entries.push({ eid, source: 'web' });
+      });
+    }
+  } catch(e) { console.log('Website err', e); }
+
+  // Deduplicate by eid (if same eid in both, prefer website as it's the origin)
   let map = {};
   for (let e of entries) {
     if (!map[e.eid]) map[e.eid] = e;
+    else if (e.source === 'web') map[e.eid] = e; // website takes priority
   }
   let all = Object.values(map).sort((a, b) => a.eid - b.eid);
 
