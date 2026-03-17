@@ -79,6 +79,7 @@
 <script>
 // --- Firebase Setup: Two separate databases ---
 const offlineApp = firebase.initializeApp({
+  apiKey: "AIzaSyBVnlwEnclUCBVs6xMVnAbmB8I_CWwlPCc",
   databaseURL: "https://offline-app-e9b72-default-rtdb.asia-southeast1.firebasedatabase.app"
 }, 'offlineApp');
 const websiteApp = firebase.initializeApp({
@@ -176,7 +177,7 @@ async function fetchOfflineOrders(fy) {
               date: ord.dt || '',
               eid: ord.eid ? Number(ord.eid) : 0,
               month: mi,
-              source: 'offline'
+              source: ord._src === 'website' ? 'website' : 'offline'
             });
           }
         });
@@ -187,42 +188,41 @@ async function fetchOfflineOrders(fy) {
 }
 
 // --- Fetch orders from Website Dashboard Firebase ---
+// Website orders are keyed like "BillNo_25260400000001"
+// Filter by FY using startAt/endAt to avoid downloading all orders
 async function fetchWebsiteOrders(fy) {
   let orders = [];
   try {
-    let snap = await websiteDb.ref('orders').once('value');
+    // Query only keys matching this FY: BillNo_XXXX where XXXX = fy code
+    let startKey = 'BillNo_' + fy;
+    let endKey = 'BillNo_' + fy + '\uf8ff';
+    let snap = await websiteDb.ref('orders').orderByKey().startAt(startKey).endAt(endKey).once('value');
     let val = snap.val();
     if (!val) return orders;
 
-    // Website orders are keyed like "BillNo_252604_0000001" or just the order ID
     Object.entries(val).forEach(([key, ord]) => {
       if (!ord) return;
-      // Extract order ID number and determine month
-      let odId = ord.odid || ord.id || key;
+      let odId = ord.id || key;
       let idStr = String(odId).replace(/\D/g, '');
       if (idStr.length >= 6) {
-        let fyCode = idStr.slice(0, 4);
-        if (fyCode === fy) {
-          let mth = parseInt(idStr.slice(4, 6));
-          let mi = MONTH_NUMS.indexOf(mth);
-          if (mi >= 0) {
-            let tot = ord.tot || 0;
-            // Website orders may use 'nm' for name instead of 'cn'
-            let cn = ord.cn || ord.nm || '';
-            let eid = ord.eid ? Number(ord.eid) : 0;
-            let inv = ord.inv ? Math.ceil(Array.isArray(ord.inv) ? ord.inv[1] : ord.inv) : 0;
-            if (tot) {
-              orders.push({
-                id: ord.id || odId,
-                cn: cn,
-                tot: tot,
-                inv: inv,
-                date: ord.dt || '',
-                eid: eid,
-                month: mi,
-                source: 'website'
-              });
-            }
+        let mth = parseInt(idStr.slice(4, 6));
+        let mi = MONTH_NUMS.indexOf(mth);
+        if (mi >= 0) {
+          let tot = ord.tot || 0;
+          let cn = ord.cn || ord.nm || '';
+          let eid = ord.eid ? Number(ord.eid) : 0;
+          let inv = ord.inv ? Math.ceil(Array.isArray(ord.inv) ? ord.inv[1] : ord.inv) : 0;
+          if (tot) {
+            orders.push({
+              id: ord.id || Number(idStr),
+              cn: cn,
+              tot: tot,
+              inv: inv,
+              date: ord.dt || '',
+              eid: eid,
+              month: mi,
+              source: 'website'
+            });
           }
         }
       }
@@ -239,6 +239,7 @@ async function loadData() {
   monthsDiv.innerHTML = '<div class="loading">Loading from Firebase...</div>';
   summaryDiv.innerHTML = '';
   issuesDiv.innerHTML = '';
+  try {
 
   // Fetch from both Firebase databases in parallel
   let [offlineOrders, websiteOrders] = await Promise.all([
@@ -282,9 +283,24 @@ async function loadData() {
   let globalMax = allEids.length ? allEids[allEids.length - 1].eid : 0;
   let eidSet = new Set(allEids.map(e => e.eid));
   let allMissing = [];
-  if (globalMin && globalMax) {
+  let rangeTooBig = false;
+  if (globalMin && globalMax && (globalMax - globalMin) < 100000) {
     for (let i = globalMin; i <= globalMax; i++) {
       if (!eidSet.has(i)) allMissing.push(i);
+    }
+  } else if (globalMin && globalMax) {
+    rangeTooBig = true;
+    // Range too large - find gaps between consecutive e-IDs instead
+    for (let idx = 1; idx < allEids.length; idx++) {
+      let gap = allEids[idx].eid - allEids[idx - 1].eid;
+      if (gap > 1 && gap <= 100) {
+        for (let i = allEids[idx - 1].eid + 1; i < allEids[idx].eid; i++) {
+          allMissing.push(i);
+        }
+      } else if (gap > 100) {
+        // Large gap - just note the range
+        allMissing.push({ range: true, from: allEids[idx - 1].eid + 1, to: allEids[idx].eid - 1, count: gap - 1 });
+      }
     }
   }
 
@@ -307,17 +323,34 @@ async function loadData() {
   let dupResolved = getDupResolved();
   let totalIssues = allMissing.length + duplicates.length;
 
+  // Count actual missing (ranges count as 1 issue each)
+  let missingCount = allMissing.reduce((sum, item) => sum + (item.range ? 1 : 1), 0);
+  let totalIssues = missingCount + duplicates.length;
+
   if (totalIssues > 0) {
     let missingHtml = '';
-    for (let id of allMissing) {
-      let isRes = resolved[id];
-      missingHtml += `<div class="issue-item ${isRes ? 'resolved' : ''}" style="${isRes && !showResolved ? 'display:none' : ''}">
-        <input type="checkbox" ${isRes ? 'checked' : ''} onchange="resolveIssue(this, ${id})">
-        <div class="issue-text">
-          <span class="eid-num">E-ID ${id} is missing</span>
-          <span class="detail">Expected in sequence ${globalMin} - ${globalMax}</span>
-        </div>
-      </div>`;
+    for (let item of allMissing) {
+      if (item.range) {
+        // Large gap - show as a range
+        let rangeKey = item.from + '-' + item.to;
+        let isRes = resolved[rangeKey];
+        missingHtml += `<div class="issue-item ${isRes ? 'resolved' : ''}" style="${isRes && !showResolved ? 'display:none' : ''}">
+          <input type="checkbox" ${isRes ? 'checked' : ''} onchange="resolveIssue(this, '${rangeKey}')">
+          <div class="issue-text">
+            <span class="eid-num">${item.count} missing E-IDs: ${item.from} to ${item.to}</span>
+            <span class="detail">Large gap between consecutive invoices</span>
+          </div>
+        </div>`;
+      } else {
+        let isRes = resolved[item];
+        missingHtml += `<div class="issue-item ${isRes ? 'resolved' : ''}" style="${isRes && !showResolved ? 'display:none' : ''}">
+          <input type="checkbox" ${isRes ? 'checked' : ''} onchange="resolveIssue(this, ${item})">
+          <div class="issue-text">
+            <span class="eid-num">E-ID ${item} is missing</span>
+            <span class="detail">Expected in sequence ${globalMin} - ${globalMax}</span>
+          </div>
+        </div>`;
+      }
     }
 
     let dupHtml = '';
@@ -335,7 +368,7 @@ async function loadData() {
       </div>`;
     }
 
-    let unresolvedCount = allMissing.filter(id => !resolved[id]).length + duplicates.filter(d => !dupResolved[d.key]).length;
+    let unresolvedCount = allMissing.filter(item => !resolved[item.range ? (item.from + '-' + item.to) : item]).length + duplicates.filter(d => !dupResolved[d.key]).length;
     issuesDiv.innerHTML = `<div class="issues-box">
       <div class="issues-header">Issues <span id="issueBadge" class="badge ${unresolvedCount > 0 ? 'error' : 'ok'}">${unresolvedCount > 0 ? unresolvedCount + ' issue' + (unresolvedCount > 1 ? 's' : '') : 'All clear'}</span></div>
       <div class="issues-body">${missingHtml}${dupHtml}</div>
@@ -355,7 +388,7 @@ async function loadData() {
       <div>Total: <b>${allEids.length}</b></div>
       <div>Range: <b>${globalMin || '-'}</b> to <b>${globalMax || '-'}</b></div>
       <div>Expected: <b>${globalMax - globalMin + 1 || 0}</b></div>
-      <div style="color:${allMissing.length ? '#c62828' : '#2e7d32'}">Missing: <b>${allMissing.length}</b></div>
+      <div style="color:${allMissing.length ? '#c62828' : '#2e7d32'}">Missing: <b>${allMissing.reduce((s, item) => s + (item.range ? item.count : 1), 0)}</b></div>
       <div style="color:${duplicates.length ? '#e65100' : '#2e7d32'}">Duplicates: <b>${duplicates.length}</b></div>
     </div>
     <div class="src-info">Offline App: ${offlineCount} orders | Website: ${websiteCount} orders (from Firebase)</div>
@@ -374,7 +407,20 @@ async function loadData() {
     let mMax = entries[entries.length - 1].eid;
     let mSet = new Set(entries.map(e => e.eid));
     let mMissing = [];
-    for (let i = mMin; i <= mMax; i++) { if (!mSet.has(i)) mMissing.push(i); }
+    let mRange = mMax - mMin;
+    if (mRange < 100000) {
+      for (let i = mMin; i <= mMax; i++) { if (!mSet.has(i)) mMissing.push(i); }
+    } else {
+      // Large range - find gaps between consecutive entries
+      for (let idx = 1; idx < entries.length; idx++) {
+        let gap = entries[idx].eid - entries[idx - 1].eid;
+        if (gap > 1 && gap <= 50) {
+          for (let i = entries[idx - 1].eid + 1; i < entries[idx].eid; i++) mMissing.push(i);
+        } else if (gap > 50) {
+          mMissing.push('...' + (gap - 1) + ' missing (' + (entries[idx - 1].eid + 1) + '-' + (entries[idx].eid - 1) + ')');
+        }
+      }
+    }
     let hasGap = mMissing.length > 0;
 
     html += `<div class="month-card">
@@ -396,6 +442,10 @@ async function loadData() {
   }
 
   monthsDiv.innerHTML = allEids.length ? html : '<div class="no-data">No e-invoice orders found for this fiscal year.</div>';
+  } catch (err) {
+    console.error('loadData error:', err);
+    monthsDiv.innerHTML = '<div class="no-data" style="color:#c62828;">Error: ' + err.message + '<br><br><small>Check console for details</small></div>';
+  }
 }
 </script>
 </body>
