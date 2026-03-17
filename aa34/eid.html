@@ -179,6 +179,10 @@ async function loadData() {
     monthData[mi] = [];
 
     try {
+      // Skip if database doesn't exist - avoids creating empty DBs and hanging
+      let exists = await Dexie.exists(dbName);
+      if (!exists) continue;
+
       let tmpDb = new Dexie(dbName);
       tmpDb.version(1).stores({ od: "id,dt,bulk" });
       let orders = await tmpDb.od.toArray();
