@@ -112,12 +112,12 @@ async function load() {
   // 2. Fetch from Website Firebase (order KEY is the e-ID)
   try {
     let prefix = fy + mStr; // e.g. "252603"
-    let snap = await websiteDb.ref('orders').orderByKey().startAt(prefix).endAt(prefix + '\uf8ff').once('value');
+    let snap = await websiteDb.ref('orders').once('value');
     let val = snap.val();
     if (val) {
       Object.keys(val).forEach(key => {
-        // Skip BillNo_ prefixed keys
         if (key.startsWith('BillNo')) return;
+        if (!key.startsWith(prefix)) return;
         let eid = shortEid(key);
         if (eid) entries.push({ eid, source: 'web' });
       });
