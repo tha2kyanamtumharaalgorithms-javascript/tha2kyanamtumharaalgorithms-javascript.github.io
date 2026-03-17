@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<title>E-ID Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="om.css">
+<script src="dexie.min.js"></script>
+<style>
+  body { background: #f5f5f5; margin: 0; }
+  .header { background: #607d8b; color: #fff; padding: 10px 12px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 5; }
+  .header select, .header button { padding: 6px 10px; border: none; border-radius: 4px; font-size: 14px; }
+  .header select { background: #fff; }
+  .header .back-btn { background: #2196F3; color: #fff; cursor: pointer; }
+  .header .back-btn:hover { background: #1976D2; }
+  .container { max-width: 600px; margin: 0 auto; padding: 8px; }
+
+  /* Issues Section */
+  .issues-box { background: #fff; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); overflow: hidden; }
+  .issues-header { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 15px; }
+  .issues-header .badge { font-size: 12px; padding: 2px 10px; border-radius: 10px; font-weight: 600; }
+  .issues-header .badge.error { background: #ffebee; color: #c62828; }
+  .issues-header .badge.ok { background: #e8f5e9; color: #2e7d32; }
+  .issues-body { padding: 0 14px 10px; }
+  .issue-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; border-top: 1px solid #f0f0f0; }
+  .issue-item:first-child { border-top: none; }
+  .issue-item input[type="checkbox"] { margin-top: 3px; cursor: pointer; }
+  .issue-item.resolved { opacity: 0.4; text-decoration: line-through; }
+  .issue-text { flex: 1; font-size: 13px; }
+  .issue-text .eid-num { font-weight: 600; color: #c62828; }
+  .issue-text .eid-num.dup { color: #e65100; }
+  .issue-text .detail { color: #666; font-size: 11px; display: block; }
+  .toggle-resolved { font-size: 11px; color: #999; cursor: pointer; border: none; background: none; padding: 0 14px 10px; }
+  .toggle-resolved:hover { color: #333; }
+
+  /* Summary */
+  .summary { background: #fff; border-radius: 8px; padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+  .summary h3 { margin: 0 0 6px; font-size: 16px; color: #333; }
+  .summary .stats { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: #555; }
+  .summary .stats b { color: #000; }
+
+  /* Month cards */
+  .month-card { background: #fff; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); overflow: hidden; }
+  .month-head { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+  .month-head:hover { background: #f9f9f9; }
+  .month-head .name { font-weight: 600; font-size: 15px; }
+  .month-head .range { font-size: 12px; color: #666; }
+  .month-head .count { font-size: 12px; background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 10px; }
+  .month-head .count.has-gap { background: #ffebee; color: #c62828; }
+  .month-body { padding: 0 14px 12px; display: none; }
+  .month-body.open { display: block; }
+  .missing-label { font-size: 12px; font-weight: 600; color: #c62828; margin: 6px 0 4px; }
+  .missing-ids { display: flex; flex-wrap: wrap; gap: 4px; }
+  .missing-ids span { background: #ffcdd2; color: #b71c1c; font-size: 12px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+  .eid-list { max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; margin-top: 6px; }
+  .eid-list table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .eid-list th { background: #f5f5f5; padding: 4px 8px; text-align: left; position: sticky; top: 0; }
+  .eid-list td { padding: 4px 8px; border-top: 1px solid #f0f0f0; }
+  .no-data { text-align: center; color: #999; padding: 40px 10px; font-size: 14px; }
+  .loading { text-align: center; padding: 40px; color: #666; }
+</style>
+
+<body>
+  <div class="header">
+    <button class="back-btn" onclick="history.back()">&#10094; Back</button>
+    <select id="fySelect" onchange="loadData()"></select>
+  </div>
+
+  <div class="container">
+    <div id="issuesDiv"></div>
+    <div id="summaryDiv"></div>
+    <div id="monthsDiv"><div class="no-data">Loading...</div></div>
+  </div>
+
+<script>
+const MONTHS = ['April','May','June','July','August','September','October','November','December','January','February','March'];
+const MONTH_NUMS = [4,5,6,7,8,9,10,11,12,1,2,3];
+const GD = 's'; // Delhi only
+
+// Load resolved states from localStorage
+function getResolved() {
+  try { return JSON.parse(localStorage.getItem('eidResolved') || '{}'); } catch(e) { return {}; }
+}
+function saveResolved(obj) {
+  localStorage.setItem('eidResolved', JSON.stringify(obj));
+}
+function getDupResolved() {
+  try { return JSON.parse(localStorage.getItem('eidDupResolved') || '{}'); } catch(e) { return {}; }
+}
+function saveDupResolved(obj) {
+  localStorage.setItem('eidDupResolved', JSON.stringify(obj));
+}
+
+let showResolved = false;
+
+// Populate fiscal year dropdown
+(function initFY() {
+  let sel = document.getElementById('fySelect');
+  let d = new Date();
+  let y = d.getFullYear();
+  let m = d.getMonth() + 1;
+  let curFYStart = m >= 4 ? y : y - 1;
+  for (let i = 0; i < 4; i++) {
+    let s = curFYStart - i;
+    let e = s + 1;
+    let opt = document.createElement('option');
+    let sy = String(s).slice(2), ey = String(e).slice(2);
+    opt.value = sy + ey;
+    opt.textContent = 'FY ' + s + '-' + ey;
+    sel.appendChild(opt);
+  }
+  loadData();
+})();
+
+function toggleResolved() {
+  showResolved = !showResolved;
+  document.querySelectorAll('.issue-item.resolved').forEach(el => {
+    el.style.display = showResolved ? 'flex' : 'none';
+  });
+  let btn = document.getElementById('toggleResBtn');
+  if (btn) btn.textContent = showResolved ? 'Hide resolved' : 'Show resolved';
+}
+
+function resolveIssue(cb, eid) {
+  let res = getResolved();
+  if (cb.checked) {
+    res[eid] = true;
+    cb.closest('.issue-item').classList.add('resolved');
+  } else {
+    delete res[eid];
+    cb.closest('.issue-item').classList.remove('resolved');
+  }
+  saveResolved(res);
+  updateIssueBadge();
+}
+
+function resolveDup(cb, key) {
+  let res = getDupResolved();
+  if (cb.checked) {
+    res[key] = true;
+    cb.closest('.issue-item').classList.add('resolved');
+  } else {
+    delete res[key];
+    cb.closest('.issue-item').classList.remove('resolved');
+  }
+  saveDupResolved(res);
+  updateIssueBadge();
+}
+
+function updateIssueBadge() {
+  let unresolved = document.querySelectorAll('.issue-item:not(.resolved)').length;
+  let badge = document.getElementById('issueBadge');
+  if (badge) {
+    if (unresolved > 0) {
+      badge.className = 'badge error';
+      badge.textContent = unresolved + ' issue' + (unresolved > 1 ? 's' : '');
+    } else {
+      badge.className = 'badge ok';
+      badge.textContent = 'All clear';
+    }
+  }
+}
+
+async function loadData() {
+  let fy = document.getElementById('fySelect').value;
+  let monthsDiv = document.getElementById('monthsDiv');
+  let summaryDiv = document.getElementById('summaryDiv');
+  let issuesDiv = document.getElementById('issuesDiv');
+  monthsDiv.innerHTML = '<div class="loading">Loading...</div>';
+  summaryDiv.innerHTML = '';
+  issuesDiv.innerHTML = '';
+
+  let allEids = [];
+  let allOrders = []; // for duplicate detection
+  let monthData = {};
+
+  for (let mi = 0; mi < 12; mi++) {
+    let mNum = MONTH_NUMS[mi];
+    let mStr = String(mNum).padStart(2, '0');
+    let dbName = GD + fy + mStr;
+    monthData[mi] = [];
+
+    try {
+      let tmpDb = new Dexie(dbName);
+      tmpDb.version(1).stores({ od: "id,dt,bulk" });
+      let orders = await tmpDb.od.toArray();
+      tmpDb.close();
+
+      for (let ord of orders) {
+        // Collect for duplicate detection (all orders with quantity)
+        if (ord.tot) {
+          allOrders.push({
+            id: ord.id,
+            cn: (ord.cn || '').trim().toLowerCase(),
+            cnDisplay: ord.cn || '',
+            tot: ord.tot,
+            inv: ord.inv ? Math.ceil(ord.inv[1]) : 0,
+            date: ord.dt || '',
+            eid: ord.eid || '',
+            month: mi
+          });
+        }
+        // Collect for e-ID tracking
+        if (ord.eid && ord.tot) {
+          let entry = {
+            eid: Number(ord.eid),
+            orderId: ord.id,
+            date: ord.dt || '',
+            cn: ord.cn || '',
+            month: mi
+          };
+          monthData[mi].push(entry);
+          allEids.push(entry);
+        }
+      }
+      monthData[mi].sort((a, b) => a.eid - b.eid);
+    } catch (e) { }
+  }
+
+  allEids.sort((a, b) => a.eid - b.eid);
+
+  // Find missing e-IDs
+  let globalMin = allEids.length ? allEids[0].eid : 0;
+  let globalMax = allEids.length ? allEids[allEids.length - 1].eid : 0;
+  let eidSet = new Set(allEids.map(e => e.eid));
+  let allMissing = [];
+  if (globalMin && globalMax) {
+    for (let i = globalMin; i <= globalMax; i++) {
+      if (!eidSet.has(i)) allMissing.push(i);
+    }
+  }
+
+  // Find duplicate orders (same cn + tot + inv amount)
+  let duplicates = [];
+  let seen = {};
+  for (let o of allOrders) {
+    let key = o.cn + '|' + o.tot + '|' + o.inv;
+    if (!key || o.cn === '') continue;
+    if (seen[key]) {
+      // Check it's not already added as a pair
+      let existing = duplicates.find(d => d.key === key);
+      if (existing) {
+        existing.orders.push(o);
+      } else {
+        duplicates.push({ key: key, orders: [seen[key], o] });
+      }
+    } else {
+      seen[key] = o;
+    }
+  }
+
+  // --- RENDER ISSUES SECTION ---
+  let resolved = getResolved();
+  let dupResolved = getDupResolved();
+  let issueHtml = '';
+  let totalIssues = allMissing.length + duplicates.length;
+
+  if (totalIssues > 0) {
+    // Missing e-ID issues
+    let missingHtml = '';
+    for (let id of allMissing) {
+      let isRes = resolved[id];
+      missingHtml += `<div class="issue-item ${isRes ? 'resolved' : ''}" style="${isRes && !showResolved ? 'display:none' : ''}">
+        <input type="checkbox" ${isRes ? 'checked' : ''} onchange="resolveIssue(this, ${id})">
+        <div class="issue-text">
+          <span class="eid-num">E-ID ${id} is missing</span>
+          <span class="detail">Expected in sequence ${globalMin} - ${globalMax}</span>
+        </div>
+      </div>`;
+    }
+
+    // Duplicate order issues
+    let dupHtml = '';
+    for (let dup of duplicates) {
+      let isRes = dupResolved[dup.key];
+      let orderIds = dup.orders.map(o => o.id).join(', ');
+      let o = dup.orders[0];
+      dupHtml += `<div class="issue-item ${isRes ? 'resolved' : ''}" style="${isRes && !showResolved ? 'display:none' : ''}">
+        <input type="checkbox" ${isRes ? 'checked' : ''} onchange="resolveDup(this, '${dup.key.replace(/'/g, "\\'")}')">
+        <div class="issue-text">
+          <span class="eid-num dup">Possible duplicate: ${o.cnDisplay}</span>
+          <span class="detail">Qty: ${o.tot}, Amount: ${o.inv} | Orders: ${orderIds}</span>
+          <span class="detail">Dates: ${dup.orders.map(x => x.date).join(' & ')}</span>
+        </div>
+      </div>`;
+    }
+
+    let unresolvedCount = allMissing.filter(id => !resolved[id]).length + duplicates.filter(d => !dupResolved[d.key]).length;
+
+    issueHtml = `<div class="issues-box">
+      <div class="issues-header">
+        Issues
+        <span id="issueBadge" class="badge ${unresolvedCount > 0 ? 'error' : 'ok'}">${unresolvedCount > 0 ? unresolvedCount + ' issue' + (unresolvedCount > 1 ? 's' : '') : 'All clear'}</span>
+      </div>
+      <div class="issues-body">
+        ${missingHtml}
+        ${dupHtml}
+      </div>
+      <button id="toggleResBtn" class="toggle-resolved" onclick="toggleResolved()">Show resolved</button>
+    </div>`;
+  } else if (allEids.length) {
+    issueHtml = `<div class="issues-box">
+      <div class="issues-header">
+        Issues
+        <span id="issueBadge" class="badge ok">All clear</span>
+      </div>
+      <div class="issues-body" style="padding:10px 14px;font-size:13px;color:#2e7d32;">No missing e-IDs and no duplicate orders detected.</div>
+    </div>`;
+  }
+  issuesDiv.innerHTML = issueHtml;
+
+  // --- RENDER SUMMARY ---
+  summaryDiv.innerHTML = `<div class="summary">
+    <h3>FY ${fy.slice(0,2)}/${fy.slice(2,4)} - E-ID Summary</h3>
+    <div class="stats">
+      <div>Total: <b>${allEids.length}</b></div>
+      <div>Range: <b>${globalMin || '-'}</b> to <b>${globalMax || '-'}</b></div>
+      <div>Expected: <b>${globalMax - globalMin + 1 || 0}</b></div>
+      <div style="color:${allMissing.length ? '#c62828' : '#2e7d32'}">Missing: <b>${allMissing.length}</b></div>
+      <div style="color:${duplicates.length ? '#e65100' : '#2e7d32'}">Duplicates: <b>${duplicates.length}</b></div>
+    </div>
+  </div>`;
+
+  // --- RENDER MONTH CARDS ---
+  let html = '';
+  for (let mi = 0; mi < 12; mi++) {
+    let entries = monthData[mi];
+    if (!entries.length) {
+      html += `<div class="month-card">
+        <div class="month-head" style="opacity:0.5">
+          <span class="name">${MONTHS[mi]}</span>
+          <span class="range">No orders</span>
+        </div>
+      </div>`;
+      continue;
+    }
+
+    let mMin = entries[0].eid;
+    let mMax = entries[entries.length - 1].eid;
+    let mSet = new Set(entries.map(e => e.eid));
+    let mMissing = [];
+    for (let i = mMin; i <= mMax; i++) {
+      if (!mSet.has(i)) mMissing.push(i);
+    }
+    let hasGap = mMissing.length > 0;
+
+    html += `<div class="month-card">
+      <div class="month-head" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="name">${MONTHS[mi]}</span>
+        <span class="range">${mMin} &rarr; ${mMax}</span>
+        <span class="count ${hasGap ? 'has-gap' : ''}">${entries.length} orders${hasGap ? ' | ' + mMissing.length + ' missing' : ''}</span>
+      </div>
+      <div class="month-body">
+        ${mMissing.length ? '<div class="missing-label">Missing E-IDs in this month:</div><div class="missing-ids">' + mMissing.map(id => '<span>' + id + '</span>').join('') + '</div>' : '<div style="font-size:12px;color:#2e7d32;margin-bottom:4px;">No gaps</div>'}
+        <div class="eid-list">
+          <table>
+            <thead><tr><th>E-ID</th><th>Order ID</th><th>Customer</th><th>Date</th></tr></thead>
+            <tbody>${entries.map(e => `<tr><td><b>${e.eid}</b></td><td>${e.orderId}</td><td>${e.cn}</td><td>${e.date}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  monthsDiv.innerHTML = allEids.length ? html : '<div class="no-data">No e-invoice orders found for this fiscal year.</div>';
+}
+</script>
+</body>
+</html>
