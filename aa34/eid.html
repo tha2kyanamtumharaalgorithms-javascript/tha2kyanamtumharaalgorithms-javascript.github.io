@@ -3,14 +3,16 @@
 <title>E-ID Tracker</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="om.css">
-<script src="dexie.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <style>
   body { background: #f5f5f5; margin: 0; }
-  .header { background: #607d8b; color: #fff; padding: 10px 12px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 5; }
+  .header { background: #607d8b; color: #fff; padding: 10px 12px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
   .header select, .header button { padding: 6px 10px; border: none; border-radius: 4px; font-size: 14px; }
   .header select { background: #fff; }
   .header .back-btn { background: #2196F3; color: #fff; cursor: pointer; }
   .header .back-btn:hover { background: #1976D2; }
+  .header .src-label { font-size: 11px; color: #cfd8dc; }
   .container { max-width: 600px; margin: 0 auto; padding: 8px; }
 
   /* Issues Section */
@@ -36,6 +38,7 @@
   .summary h3 { margin: 0 0 6px; font-size: 16px; color: #333; }
   .summary .stats { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: #555; }
   .summary .stats b { color: #000; }
+  .src-info { font-size: 11px; color: #888; margin-top: 6px; }
 
   /* Month cards */
   .month-card { background: #fff; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); overflow: hidden; }
@@ -54,6 +57,8 @@
   .eid-list table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .eid-list th { background: #f5f5f5; padding: 4px 8px; text-align: left; position: sticky; top: 0; }
   .eid-list td { padding: 4px 8px; border-top: 1px solid #f0f0f0; }
+  .tag-off { background: #e8f5e9; color: #2e7d32; font-size: 10px; padding: 1px 5px; border-radius: 3px; }
+  .tag-web { background: #e3f2fd; color: #1565c0; font-size: 10px; padding: 1px 5px; border-radius: 3px; }
   .no-data { text-align: center; color: #999; padding: 40px 10px; font-size: 14px; }
   .loading { text-align: center; padding: 40px; color: #666; }
 </style>
@@ -62,6 +67,7 @@
   <div class="header">
     <button class="back-btn" onclick="history.back()">&#10094; Back</button>
     <select id="fySelect" onchange="loadData()"></select>
+    <span class="src-label">Source: Firebase (Offline + Website)</span>
   </div>
 
   <div class="container">
@@ -71,23 +77,28 @@
   </div>
 
 <script>
+// --- Firebase Setup: Two separate databases ---
+const offlineApp = firebase.initializeApp({
+  databaseURL: "https://offline-app-e9b72-default-rtdb.asia-southeast1.firebasedatabase.app"
+}, 'offlineApp');
+const websiteApp = firebase.initializeApp({
+  databaseURL: "https://dashboard-stock-default-rtdb.asia-southeast1.firebasedatabase.app"
+}, 'websiteApp');
+const offlineDb = firebase.app('offlineApp').database();
+const websiteDb = firebase.app('websiteApp').database();
+
 const MONTHS = ['April','May','June','July','August','September','October','November','December','January','February','March'];
 const MONTH_NUMS = [4,5,6,7,8,9,10,11,12,1,2,3];
-const GD = 's'; // Delhi only
 
 // Load resolved states from localStorage
 function getResolved() {
   try { return JSON.parse(localStorage.getItem('eidResolved') || '{}'); } catch(e) { return {}; }
 }
-function saveResolved(obj) {
-  localStorage.setItem('eidResolved', JSON.stringify(obj));
-}
+function saveResolved(obj) { localStorage.setItem('eidResolved', JSON.stringify(obj)); }
 function getDupResolved() {
   try { return JSON.parse(localStorage.getItem('eidDupResolved') || '{}'); } catch(e) { return {}; }
 }
-function saveDupResolved(obj) {
-  localStorage.setItem('eidDupResolved', JSON.stringify(obj));
-}
+function saveDupResolved(obj) { localStorage.setItem('eidDupResolved', JSON.stringify(obj)); }
 
 let showResolved = false;
 
@@ -121,26 +132,16 @@ function toggleResolved() {
 
 function resolveIssue(cb, eid) {
   let res = getResolved();
-  if (cb.checked) {
-    res[eid] = true;
-    cb.closest('.issue-item').classList.add('resolved');
-  } else {
-    delete res[eid];
-    cb.closest('.issue-item').classList.remove('resolved');
-  }
+  if (cb.checked) { res[eid] = true; cb.closest('.issue-item').classList.add('resolved'); }
+  else { delete res[eid]; cb.closest('.issue-item').classList.remove('resolved'); }
   saveResolved(res);
   updateIssueBadge();
 }
 
 function resolveDup(cb, key) {
   let res = getDupResolved();
-  if (cb.checked) {
-    res[key] = true;
-    cb.closest('.issue-item').classList.add('resolved');
-  } else {
-    delete res[key];
-    cb.closest('.issue-item').classList.remove('resolved');
-  }
+  if (cb.checked) { res[key] = true; cb.closest('.issue-item').classList.add('resolved'); }
+  else { delete res[key]; cb.closest('.issue-item').classList.remove('resolved'); }
   saveDupResolved(res);
   updateIssueBadge();
 }
@@ -149,14 +150,85 @@ function updateIssueBadge() {
   let unresolved = document.querySelectorAll('.issue-item:not(.resolved)').length;
   let badge = document.getElementById('issueBadge');
   if (badge) {
-    if (unresolved > 0) {
-      badge.className = 'badge error';
-      badge.textContent = unresolved + ' issue' + (unresolved > 1 ? 's' : '');
-    } else {
-      badge.className = 'badge ok';
-      badge.textContent = 'All clear';
-    }
+    badge.className = unresolved > 0 ? 'badge error' : 'badge ok';
+    badge.textContent = unresolved > 0 ? unresolved + ' issue' + (unresolved > 1 ? 's' : '') : 'All clear';
   }
+}
+
+// --- Fetch orders from Offline App Firebase ---
+async function fetchOfflineOrders(fy) {
+  let orders = [];
+  for (let mi = 0; mi < 12; mi++) {
+    let mNum = MONTH_NUMS[mi];
+    let mStr = String(mNum).padStart(2, '0');
+    let monthKey = 's' + fy + mStr; // e.g. s252604
+    try {
+      let snap = await offlineDb.ref('data/orders/' + monthKey).once('value');
+      let val = snap.val();
+      if (val) {
+        Object.values(val).forEach(ord => {
+          if (ord && ord.tot) {
+            orders.push({
+              id: ord.id,
+              cn: ord.cn || '',
+              tot: ord.tot,
+              inv: ord.inv ? Math.ceil(ord.inv[1]) : 0,
+              date: ord.dt || '',
+              eid: ord.eid ? Number(ord.eid) : 0,
+              month: mi,
+              source: 'offline'
+            });
+          }
+        });
+      }
+    } catch (e) { console.log('Offline FB err ' + monthKey, e); }
+  }
+  return orders;
+}
+
+// --- Fetch orders from Website Dashboard Firebase ---
+async function fetchWebsiteOrders(fy) {
+  let orders = [];
+  try {
+    let snap = await websiteDb.ref('orders').once('value');
+    let val = snap.val();
+    if (!val) return orders;
+
+    // Website orders are keyed like "BillNo_252604_0000001" or just the order ID
+    Object.entries(val).forEach(([key, ord]) => {
+      if (!ord) return;
+      // Extract order ID number and determine month
+      let odId = ord.odid || ord.id || key;
+      let idStr = String(odId).replace(/\D/g, '');
+      if (idStr.length >= 6) {
+        let fyCode = idStr.slice(0, 4);
+        if (fyCode === fy) {
+          let mth = parseInt(idStr.slice(4, 6));
+          let mi = MONTH_NUMS.indexOf(mth);
+          if (mi >= 0) {
+            let tot = ord.tot || 0;
+            // Website orders may use 'nm' for name instead of 'cn'
+            let cn = ord.cn || ord.nm || '';
+            let eid = ord.eid ? Number(ord.eid) : 0;
+            let inv = ord.inv ? Math.ceil(Array.isArray(ord.inv) ? ord.inv[1] : ord.inv) : 0;
+            if (tot) {
+              orders.push({
+                id: ord.id || odId,
+                cn: cn,
+                tot: tot,
+                inv: inv,
+                date: ord.dt || '',
+                eid: eid,
+                month: mi,
+                source: 'website'
+              });
+            }
+          }
+        }
+      }
+    });
+  } catch (e) { console.log('Website FB err', e); }
+  return orders;
 }
 
 async function loadData() {
@@ -164,62 +236,46 @@ async function loadData() {
   let monthsDiv = document.getElementById('monthsDiv');
   let summaryDiv = document.getElementById('summaryDiv');
   let issuesDiv = document.getElementById('issuesDiv');
-  monthsDiv.innerHTML = '<div class="loading">Loading...</div>';
+  monthsDiv.innerHTML = '<div class="loading">Loading from Firebase...</div>';
   summaryDiv.innerHTML = '';
   issuesDiv.innerHTML = '';
 
+  // Fetch from both Firebase databases in parallel
+  let [offlineOrders, websiteOrders] = await Promise.all([
+    fetchOfflineOrders(fy),
+    fetchWebsiteOrders(fy)
+  ]);
+
+  // Deduplicate: if same order ID exists in both, prefer offline (has more complete data)
+  let orderMap = {};
+  for (let o of offlineOrders) { orderMap[o.id] = o; }
+  for (let o of websiteOrders) {
+    if (!orderMap[o.id]) { orderMap[o.id] = o; }
+    else if (!orderMap[o.id].eid && o.eid) { orderMap[o.id].eid = o.eid; } // merge eid if offline didn't have it
+  }
+  let allOrdersList = Object.values(orderMap);
+
+  let offlineCount = offlineOrders.length;
+  let websiteCount = websiteOrders.filter(o => !offlineOrders.find(x => x.id === o.id)).length; // unique website orders
+
+  // Separate into e-ID entries and all orders
   let allEids = [];
-  let allOrders = []; // for duplicate detection
+  let allOrders = [];
   let monthData = {};
+  for (let mi = 0; mi < 12; mi++) monthData[mi] = [];
 
-  for (let mi = 0; mi < 12; mi++) {
-    let mNum = MONTH_NUMS[mi];
-    let mStr = String(mNum).padStart(2, '0');
-    let dbName = GD + fy + mStr;
-    monthData[mi] = [];
-
-    try {
-      // Skip if database doesn't exist - avoids creating empty DBs and hanging
-      let exists = await Dexie.exists(dbName);
-      if (!exists) continue;
-
-      let tmpDb = new Dexie(dbName);
-      tmpDb.version(1).stores({ od: "id,dt,bulk" });
-      let orders = await tmpDb.od.toArray();
-      tmpDb.close();
-
-      for (let ord of orders) {
-        // Collect for duplicate detection (all orders with quantity)
-        if (ord.tot) {
-          allOrders.push({
-            id: ord.id,
-            cn: (ord.cn || '').trim().toLowerCase(),
-            cnDisplay: ord.cn || '',
-            tot: ord.tot,
-            inv: ord.inv ? Math.ceil(ord.inv[1]) : 0,
-            date: ord.dt || '',
-            eid: ord.eid || '',
-            month: mi
-          });
-        }
-        // Collect for e-ID tracking
-        if (ord.eid && ord.tot) {
-          let entry = {
-            eid: Number(ord.eid),
-            orderId: ord.id,
-            date: ord.dt || '',
-            cn: ord.cn || '',
-            month: mi
-          };
-          monthData[mi].push(entry);
-          allEids.push(entry);
-        }
-      }
-      monthData[mi].sort((a, b) => a.eid - b.eid);
-    } catch (e) { }
+  for (let ord of allOrdersList) {
+    allOrders.push(ord);
+    if (ord.eid) {
+      let entry = { eid: ord.eid, orderId: ord.id, date: ord.date, cn: ord.cn, month: ord.month, source: ord.source };
+      monthData[ord.month].push(entry);
+      allEids.push(entry);
+    }
   }
 
+  // Sort
   allEids.sort((a, b) => a.eid - b.eid);
+  for (let mi = 0; mi < 12; mi++) monthData[mi].sort((a, b) => a.eid - b.eid);
 
   // Find missing e-IDs
   let globalMin = allEids.length ? allEids[0].eid : 0;
@@ -236,29 +292,22 @@ async function loadData() {
   let duplicates = [];
   let seen = {};
   for (let o of allOrders) {
-    let key = o.cn + '|' + o.tot + '|' + o.inv;
-    if (!key || o.cn === '') continue;
+    let cn = (o.cn || '').trim().toLowerCase();
+    let key = cn + '|' + o.tot + '|' + o.inv;
+    if (!cn) continue;
     if (seen[key]) {
-      // Check it's not already added as a pair
       let existing = duplicates.find(d => d.key === key);
-      if (existing) {
-        existing.orders.push(o);
-      } else {
-        duplicates.push({ key: key, orders: [seen[key], o] });
-      }
-    } else {
-      seen[key] = o;
-    }
+      if (existing) { existing.orders.push(o); }
+      else { duplicates.push({ key: key, orders: [seen[key], o] }); }
+    } else { seen[key] = o; }
   }
 
-  // --- RENDER ISSUES SECTION ---
+  // --- RENDER ISSUES ---
   let resolved = getResolved();
   let dupResolved = getDupResolved();
-  let issueHtml = '';
   let totalIssues = allMissing.length + duplicates.length;
 
   if (totalIssues > 0) {
-    // Missing e-ID issues
     let missingHtml = '';
     for (let id of allMissing) {
       let isRes = resolved[id];
@@ -271,7 +320,6 @@ async function loadData() {
       </div>`;
     }
 
-    // Duplicate order issues
     let dupHtml = '';
     for (let dup of duplicates) {
       let isRes = dupResolved[dup.key];
@@ -280,36 +328,25 @@ async function loadData() {
       dupHtml += `<div class="issue-item ${isRes ? 'resolved' : ''}" style="${isRes && !showResolved ? 'display:none' : ''}">
         <input type="checkbox" ${isRes ? 'checked' : ''} onchange="resolveDup(this, '${dup.key.replace(/'/g, "\\'")}')">
         <div class="issue-text">
-          <span class="eid-num dup">Possible duplicate: ${o.cnDisplay}</span>
+          <span class="eid-num dup">Possible duplicate: ${o.cn}</span>
           <span class="detail">Qty: ${o.tot}, Amount: ${o.inv} | Orders: ${orderIds}</span>
-          <span class="detail">Dates: ${dup.orders.map(x => x.date).join(' & ')}</span>
+          <span class="detail">Dates: ${dup.orders.map(x => x.date).join(' & ')} | Sources: ${dup.orders.map(x => x.source).join(', ')}</span>
         </div>
       </div>`;
     }
 
     let unresolvedCount = allMissing.filter(id => !resolved[id]).length + duplicates.filter(d => !dupResolved[d.key]).length;
-
-    issueHtml = `<div class="issues-box">
-      <div class="issues-header">
-        Issues
-        <span id="issueBadge" class="badge ${unresolvedCount > 0 ? 'error' : 'ok'}">${unresolvedCount > 0 ? unresolvedCount + ' issue' + (unresolvedCount > 1 ? 's' : '') : 'All clear'}</span>
-      </div>
-      <div class="issues-body">
-        ${missingHtml}
-        ${dupHtml}
-      </div>
+    issuesDiv.innerHTML = `<div class="issues-box">
+      <div class="issues-header">Issues <span id="issueBadge" class="badge ${unresolvedCount > 0 ? 'error' : 'ok'}">${unresolvedCount > 0 ? unresolvedCount + ' issue' + (unresolvedCount > 1 ? 's' : '') : 'All clear'}</span></div>
+      <div class="issues-body">${missingHtml}${dupHtml}</div>
       <button id="toggleResBtn" class="toggle-resolved" onclick="toggleResolved()">Show resolved</button>
     </div>`;
   } else if (allEids.length) {
-    issueHtml = `<div class="issues-box">
-      <div class="issues-header">
-        Issues
-        <span id="issueBadge" class="badge ok">All clear</span>
-      </div>
+    issuesDiv.innerHTML = `<div class="issues-box">
+      <div class="issues-header">Issues <span id="issueBadge" class="badge ok">All clear</span></div>
       <div class="issues-body" style="padding:10px 14px;font-size:13px;color:#2e7d32;">No missing e-IDs and no duplicate orders detected.</div>
     </div>`;
   }
-  issuesDiv.innerHTML = issueHtml;
 
   // --- RENDER SUMMARY ---
   summaryDiv.innerHTML = `<div class="summary">
@@ -321,6 +358,7 @@ async function loadData() {
       <div style="color:${allMissing.length ? '#c62828' : '#2e7d32'}">Missing: <b>${allMissing.length}</b></div>
       <div style="color:${duplicates.length ? '#e65100' : '#2e7d32'}">Duplicates: <b>${duplicates.length}</b></div>
     </div>
+    <div class="src-info">Offline App: ${offlineCount} orders | Website: ${websiteCount} orders (from Firebase)</div>
   </div>`;
 
   // --- RENDER MONTH CARDS ---
@@ -328,12 +366,7 @@ async function loadData() {
   for (let mi = 0; mi < 12; mi++) {
     let entries = monthData[mi];
     if (!entries.length) {
-      html += `<div class="month-card">
-        <div class="month-head" style="opacity:0.5">
-          <span class="name">${MONTHS[mi]}</span>
-          <span class="range">No orders</span>
-        </div>
-      </div>`;
+      html += `<div class="month-card"><div class="month-head" style="opacity:0.5"><span class="name">${MONTHS[mi]}</span><span class="range">No orders</span></div></div>`;
       continue;
     }
 
@@ -341,9 +374,7 @@ async function loadData() {
     let mMax = entries[entries.length - 1].eid;
     let mSet = new Set(entries.map(e => e.eid));
     let mMissing = [];
-    for (let i = mMin; i <= mMax; i++) {
-      if (!mSet.has(i)) mMissing.push(i);
-    }
+    for (let i = mMin; i <= mMax; i++) { if (!mSet.has(i)) mMissing.push(i); }
     let hasGap = mMissing.length > 0;
 
     html += `<div class="month-card">
@@ -356,8 +387,8 @@ async function loadData() {
         ${mMissing.length ? '<div class="missing-label">Missing E-IDs in this month:</div><div class="missing-ids">' + mMissing.map(id => '<span>' + id + '</span>').join('') + '</div>' : '<div style="font-size:12px;color:#2e7d32;margin-bottom:4px;">No gaps</div>'}
         <div class="eid-list">
           <table>
-            <thead><tr><th>E-ID</th><th>Order ID</th><th>Customer</th><th>Date</th></tr></thead>
-            <tbody>${entries.map(e => `<tr><td><b>${e.eid}</b></td><td>${e.orderId}</td><td>${e.cn}</td><td>${e.date}</td></tr>`).join('')}</tbody>
+            <thead><tr><th>E-ID</th><th>Order ID</th><th>Customer</th><th>Date</th><th>Source</th></tr></thead>
+            <tbody>${entries.map(e => `<tr><td><b>${e.eid}</b></td><td>${e.orderId}</td><td>${e.cn}</td><td>${e.date}</td><td><span class="${e.source === 'offline' ? 'tag-off' : 'tag-web'}">${e.source === 'offline' ? 'App' : 'Web'}</span></td></tr>`).join('')}</tbody>
           </table>
         </div>
       </div>
