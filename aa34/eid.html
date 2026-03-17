@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<title>E-ID Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="om.css">
+<script src="dexie.min.js"></script>
+<style>
+  body { background: #f5f5f5; margin: 0; }
+  .header { background: #607d8b; color: #fff; padding: 10px 12px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 5; }
+  .header select, .header button { padding: 6px 10px; border: none; border-radius: 4px; font-size: 14px; }
+  .header select { background: #fff; }
+  .header button { background: #2196F3; color: #fff; cursor: pointer; }
+  .header button:hover { background: #1976D2; }
+  .container { max-width: 600px; margin: 0 auto; padding: 8px; }
+  .summary { background: #fff; border-radius: 8px; padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+  .summary h3 { margin: 0 0 6px; font-size: 16px; color: #333; }
+  .summary .stats { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: #555; }
+  .summary .stats b { color: #000; }
+  .month-card { background: #fff; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); overflow: hidden; }
+  .month-head { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+  .month-head:hover { background: #f9f9f9; }
+  .month-head .name { font-weight: 600; font-size: 15px; }
+  .month-head .range { font-size: 12px; color: #666; }
+  .month-head .count { font-size: 12px; background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 10px; }
+  .month-head .count.has-gap { background: #ffebee; color: #c62828; }
+  .month-body { padding: 0 14px 12px; display: none; }
+  .month-body.open { display: block; }
+  .missing-label { font-size: 12px; font-weight: 600; color: #c62828; margin: 6px 0 4px; }
+  .missing-ids { display: flex; flex-wrap: wrap; gap: 4px; }
+  .missing-ids span { background: #ffcdd2; color: #b71c1c; font-size: 12px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+  .eid-list { max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; margin-top: 6px; }
+  .eid-list table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .eid-list th { background: #f5f5f5; padding: 4px 8px; text-align: left; position: sticky; top: 0; }
+  .eid-list td { padding: 4px 8px; border-top: 1px solid #f0f0f0; }
+  .eid-list tr.missing-row { background: #fff3f3; }
+  .no-data { text-align: center; color: #999; padding: 40px 10px; font-size: 14px; }
+  .loading { text-align: center; padding: 40px; color: #666; }
+  .godown-sel { display: flex; gap: 6px; }
+  .godown-sel label { font-size: 13px; display: flex; align-items: center; gap: 3px; color: #fff; }
+</style>
+
+<body>
+  <div class="header">
+    <button onclick="history.back()">&#10094; Back</button>
+    <select id="fySelect" onchange="loadData()"></select>
+    <div class="godown-sel">
+      <label><input type="radio" name="gd" value="s" checked> Delhi</label>
+      <label><input type="radio" name="gd" value="t"> Tiruppur</label>
+      <label><input type="radio" name="gd" value="k"> Kolkata</label>
+    </div>
+  </div>
+
+  <div class="container">
+    <div id="summaryDiv"></div>
+    <div id="monthsDiv"><div class="no-data">Select a fiscal year and click load</div></div>
+  </div>
+
+<script>
+const MONTHS = ['April','May','June','July','August','September','October','November','December','January','February','March'];
+const MONTH_NUMS = [4,5,6,7,8,9,10,11,12,1,2,3];
+
+// Populate fiscal year dropdown (current FY and a few previous)
+(function initFY() {
+  let sel = document.getElementById('fySelect');
+  let d = new Date();
+  let y = d.getFullYear();
+  let m = d.getMonth() + 1;
+  let curFYStart = m >= 4 ? y : y - 1;
+  for (let i = 0; i < 4; i++) {
+    let s = curFYStart - i;
+    let e = s + 1;
+    let opt = document.createElement('option');
+    let sy = String(s).slice(2), ey = String(e).slice(2);
+    opt.value = sy + ey; // e.g. "2526"
+    opt.textContent = 'FY ' + s + '-' + ey;
+    sel.appendChild(opt);
+  }
+  loadData();
+})();
+
+function getGodown() {
+  return document.querySelector('input[name="gd"]:checked').value;
+}
+
+document.querySelectorAll('input[name="gd"]').forEach(r => r.addEventListener('change', loadData));
+
+async function loadData() {
+  let fy = document.getElementById('fySelect').value; // e.g. "2526"
+  let gd = getGodown(); // e.g. "s"
+  let monthsDiv = document.getElementById('monthsDiv');
+  let summaryDiv = document.getElementById('summaryDiv');
+  monthsDiv.innerHTML = '<div class="loading">Loading...</div>';
+  summaryDiv.innerHTML = '';
+
+  let allEids = []; // {eid, orderId, date, month, cn}
+  let monthData = {}; // monthIdx -> [{eid, orderId, date, cn}]
+
+  for (let mi = 0; mi < 12; mi++) {
+    let mNum = MONTH_NUMS[mi];
+    let mStr = String(mNum).padStart(2, '0');
+    // DB name: godown prefix + fy(4) + month(2)
+    let dbName = gd + fy + mStr;
+    monthData[mi] = [];
+
+    try {
+      // Check if database exists by trying to open it
+      let tmpDb = new Dexie(dbName);
+      tmpDb.version(1).stores({ od: "id,dt,bulk" });
+      let orders = await tmpDb.od.toArray();
+      tmpDb.close();
+
+      for (let ord of orders) {
+        if (ord.eid && ord.tot) {
+          let entry = {
+            eid: Number(ord.eid),
+            orderId: ord.id,
+            date: ord.dt || '',
+            cn: ord.cn || '',
+            month: mi
+          };
+          monthData[mi].push(entry);
+          allEids.push(entry);
+        }
+      }
+      // Sort by eid within month
+      monthData[mi].sort((a, b) => a.eid - b.eid);
+    } catch (e) {
+      // DB doesn't exist or error - skip
+    }
+  }
+
+  // Sort all eids
+  allEids.sort((a, b) => a.eid - b.eid);
+
+  // Find global range and missing
+  let globalMin = allEids.length ? allEids[0].eid : 0;
+  let globalMax = allEids.length ? allEids[allEids.length - 1].eid : 0;
+  let eidSet = new Set(allEids.map(e => e.eid));
+  let allMissing = [];
+  if (globalMin && globalMax) {
+    for (let i = globalMin; i <= globalMax; i++) {
+      if (!eidSet.has(i)) allMissing.push(i);
+    }
+  }
+
+  // Render summary
+  summaryDiv.innerHTML = `<div class="summary">
+    <h3>FY ${fy.slice(0,2)}/${fy.slice(2,4)} - E-ID Summary</h3>
+    <div class="stats">
+      <div>Total: <b>${allEids.length}</b></div>
+      <div>Range: <b>${globalMin || '-'}</b> to <b>${globalMax || '-'}</b></div>
+      <div>Expected: <b>${globalMax - globalMin + 1 || 0}</b></div>
+      <div style="color:${allMissing.length ? '#c62828' : '#2e7d32'}">Missing: <b>${allMissing.length}</b></div>
+    </div>
+    ${allMissing.length ? '<div class="missing-label" style="margin-top:8px">All Missing E-IDs:</div><div class="missing-ids">' + allMissing.map(id => '<span>' + id + '</span>').join('') + '</div>' : ''}
+  </div>`;
+
+  // Render months
+  let html = '';
+  for (let mi = 0; mi < 12; mi++) {
+    let entries = monthData[mi];
+    if (!entries.length) {
+      html += `<div class="month-card">
+        <div class="month-head" style="opacity:0.5">
+          <span class="name">${MONTHS[mi]}</span>
+          <span class="range">No orders</span>
+        </div>
+      </div>`;
+      continue;
+    }
+
+    let mMin = entries[0].eid;
+    let mMax = entries[entries.length - 1].eid;
+    let mSet = new Set(entries.map(e => e.eid));
+    let mMissing = [];
+    for (let i = mMin; i <= mMax; i++) {
+      if (!mSet.has(i)) mMissing.push(i);
+    }
+    // Also check gaps between previous month's max and this month's min
+    let hasGap = mMissing.length > 0;
+
+    html += `<div class="month-card">
+      <div class="month-head" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="name">${MONTHS[mi]}</span>
+        <span class="range">${mMin} → ${mMax}</span>
+        <span class="count ${hasGap ? 'has-gap' : ''}">${entries.length} orders${hasGap ? ' | ' + mMissing.length + ' missing' : ''}</span>
+      </div>
+      <div class="month-body">
+        ${mMissing.length ? '<div class="missing-label">Missing E-IDs in this month range:</div><div class="missing-ids">' + mMissing.map(id => '<span>' + id + '</span>').join('') + '</div>' : '<div style="font-size:12px;color:#2e7d32;margin-bottom:4px;">No gaps in this month</div>'}
+        <div class="eid-list">
+          <table>
+            <thead><tr><th>E-ID</th><th>Order ID</th><th>Customer</th><th>Date</th></tr></thead>
+            <tbody>${entries.map(e => `<tr><td><b>${e.eid}</b></td><td>${e.orderId}</td><td>${e.cn}</td><td>${e.date}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // Check inter-month gaps
+  let prevMax = 0;
+  let interGaps = [];
+  for (let mi = 0; mi < 12; mi++) {
+    let entries = monthData[mi];
+    if (!entries.length) continue;
+    let mMin = entries[0].eid;
+    let mMax = entries[entries.length - 1].eid;
+    if (prevMax && mMin > prevMax + 1) {
+      let gapIds = [];
+      for (let i = prevMax + 1; i < mMin; i++) {
+        if (!eidSet.has(i)) gapIds.push(i);
+      }
+      if (gapIds.length) {
+        interGaps.push({ from: MONTHS[monthData[mi - 1] ? mi - 1 : mi].split(' ')[0], to: MONTHS[mi], ids: gapIds });
+      }
+    }
+    prevMax = mMax;
+  }
+
+  if (!allEids.length) {
+    monthsDiv.innerHTML = '<div class="no-data">No e-invoice orders found for this fiscal year and godown.</div>';
+  } else {
+    monthsDiv.innerHTML = html;
+  }
+}
+</script>
+</body>
+</html>
