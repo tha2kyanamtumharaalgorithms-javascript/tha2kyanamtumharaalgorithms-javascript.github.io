@@ -29,6 +29,12 @@
   .src.app { background: #e8f5e9; color: #2e7d32; }
   .src.web { background: #e3f2fd; color: #1565c0; }
   .loading { text-align: center; padding: 40px; color: #666; font-size: 14px; }
+  .dup-list { background: #fff3e0; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; font-size: 12px; color: #e65100; }
+  .dup-list b { display: block; margin-bottom: 6px; font-size: 13px; }
+  .dup-item { background: #fff; border-radius: 6px; padding: 8px; margin-bottom: 6px; border: 1px solid #ffe0b2; }
+  .dup-item .dup-name { font-weight: 600; font-size: 13px; color: #333; }
+  .dup-item .dup-detail { font-size: 11px; color: #666; margin-top: 2px; }
+  .dup-item .dup-ids { font-size: 11px; color: #e65100; margin-top: 2px; }
 </style>
 
 <body>
@@ -103,7 +109,12 @@ async function load() {
       Object.values(val).forEach(ord => {
         if (ord && ord.eid) {
           let eid = shortEid(ord.eid);
-          if (eid) entries.push({ eid, source: 'app' });
+          if (eid) entries.push({
+            eid, source: 'app',
+            name: (ord.cn || '').trim().toLowerCase(),
+            qty: Number(ord.tot) || 0,
+            amt: (ord.inv && ord.inv[0]) ? Number(ord.inv[0]) : 0
+          });
         }
       });
     }
@@ -119,7 +130,24 @@ async function load() {
         if (key.startsWith('BillNo')) return;
         if (!key.startsWith(prefix)) return;
         let eid = shortEid(key);
-        if (eid) entries.push({ eid, source: 'web' });
+        if (eid) {
+          let ord = val[key];
+          // Compute total qty from od (product > color > size > qty)
+          let qty = 0;
+          if (ord.od) {
+            for (let p of Object.values(ord.od)) {
+              for (let c of Object.values(p)) {
+                for (let q of Object.values(c)) qty += Number(q) || 0;
+              }
+            }
+          }
+          entries.push({
+            eid, source: 'web',
+            name: (ord.nm || '').trim().toLowerCase(),
+            qty,
+            amt: Number(ord.tv) || 0
+          });
+        }
       });
     }
   } catch(e) { console.log('Website err', e); }
@@ -141,6 +169,28 @@ async function load() {
     }
   }
 
+  // Detect duplicates: compare name + qty + amount across different e-IDs
+  let dupGroups = [];
+  let allEntries = entries.filter(e => e.name); // only entries with a name
+  for (let i = 0; i < allEntries.length; i++) {
+    let a = allEntries[i];
+    if (a._dupDone) continue;
+    let group = [a];
+    for (let j = i + 1; j < allEntries.length; j++) {
+      let b = allEntries[j];
+      if (b._dupDone) continue;
+      if (a.eid === b.eid) continue; // same e-ID is not a duplicate
+      if (a.name === b.name && a.qty === b.qty && a.amt === b.amt) {
+        group.push(b);
+        b._dupDone = true;
+      }
+    }
+    if (group.length > 1) {
+      a._dupDone = true;
+      dupGroups.push(group);
+    }
+  }
+
   // Render
   let html = '';
   let total = all.length;
@@ -154,8 +204,23 @@ async function load() {
     <div class="row"><span>Range</span><b>${first} &rarr; ${last}</b></div>
     <div class="row"><span>Offline App</span><b>${appCount}</b></div>
     <div class="row"><span>Website</span><b>${webCount}</b></div>
+    <div class="row"><span>Duplicates</span><span class="${dupGroups.length ? 'miss' : 'ok'}">${dupGroups.length}</span></div>
     <div class="row"><span>Missing</span><span class="${missing.length ? 'miss' : 'ok'}">${missing.length}</span></div>
   </div>`;
+
+  if (dupGroups.length) {
+    html += `<div class="dup-list"><b>Duplicate Orders (same name, qty &amp; amount):</b>`;
+    for (let g of dupGroups) {
+      let displayName = g[0].name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      let ids = g.map(e => e.eid + ' <span class="src ' + e.source + '">' + (e.source === 'app' ? 'App' : 'Web') + '</span>').join(', ');
+      html += `<div class="dup-item">
+        <div class="dup-name">${displayName}</div>
+        <div class="dup-detail">Qty: ${g[0].qty} | Amt: ${g[0].amt.toLocaleString('en-IN')}</div>
+        <div class="dup-ids">E-IDs: ${ids}</div>
+      </div>`;
+    }
+    html += `</div>`;
+  }
 
   if (missing.length) {
     html += `<div class="miss-list"><b>Missing E-IDs:</b>${missing.join(', ')}</div>`;
