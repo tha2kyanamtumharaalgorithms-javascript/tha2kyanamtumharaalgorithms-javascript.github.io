@@ -42,16 +42,12 @@
   </div>
 
 <script>
-const offlineDb = firebase.initializeApp({
+// Both apps write to the SAME Firebase. _src field tells us the source.
+const db = firebase.initializeApp({
   apiKey: "AIzaSyBVnlwEnclUCBVs6xMVnAbmB8I_CWwlPCc",
   databaseURL: "https://offline-app-e9b72-default-rtdb.asia-southeast1.firebasedatabase.app"
-}, 'off').database();
+}).database();
 
-const websiteDb = firebase.initializeApp({
-  databaseURL: "https://dashboard-stock-default-rtdb.asia-southeast1.firebasedatabase.app"
-}, 'web').database();
-
-// FY months: April(4) to March(3)
 const MO = [
   {n:'April',v:4},{n:'May',v:5},{n:'June',v:6},{n:'July',v:7},
   {n:'August',v:8},{n:'September',v:9},{n:'October',v:10},
@@ -65,14 +61,14 @@ function getFY() {
   return String(s).slice(2) + String(s + 1).slice(2);
 }
 
-// Extract short e-ID from stored value (strip FY+month prefix)
+// Extract short e-ID: strip FY+month prefix if present
 function shortEid(raw) {
   let n = Number(raw);
   if (!n) return 0;
   return n > 9999999 ? n % 10000000 : n;
 }
 
-// Init month dropdown - show only up to current month
+// Init month dropdown
 (function() {
   let sel = document.getElementById('monthSel');
   let curM = new Date().getMonth() + 1;
@@ -94,36 +90,30 @@ async function load() {
 
   let entries = [];
 
-  // Fetch offline
   try {
-    let snap = await offlineDb.ref('data/orders/s' + fy + mStr).once('value');
+    let snap = await db.ref('data/orders/s' + fy + mStr).once('value');
     let val = snap.val();
     if (val) {
       Object.values(val).forEach(ord => {
-        if (ord && ord.eid) {
-          let eid = shortEid(ord.eid);
-          if (eid) entries.push({ eid, source: 'app' });
+        if (!ord) return;
+        // Get e-ID: use ord.eid if available, otherwise extract from order ID
+        let eid = 0;
+        if (ord.eid) {
+          eid = shortEid(ord.eid);
+        } else if (ord.id) {
+          // Fallback: extract counter from order ID
+          eid = shortEid(ord.id);
+        }
+        if (eid) {
+          // Source: _src='website' means online, everything else is offline app
+          let source = ord._src === 'website' ? 'web' : 'app';
+          entries.push({ eid, source });
         }
       });
     }
-  } catch(e) { console.log('Offline err', e); }
+  } catch(e) { console.log('Firebase err', e); }
 
-  // Fetch website
-  try {
-    let prefix = 'BillNo_' + fy + mStr;
-    let snap = await websiteDb.ref('orders').orderByKey().startAt(prefix).endAt(prefix + '\uf8ff').once('value');
-    let val = snap.val();
-    if (val) {
-      Object.values(val).forEach(ord => {
-        if (ord && ord.eid) {
-          let eid = shortEid(ord.eid);
-          if (eid) entries.push({ eid, source: 'web' });
-        }
-      });
-    }
-  } catch(e) { console.log('Website err', e); }
-
-  // Deduplicate by eid (keep first seen source)
+  // Deduplicate by eid
   let map = {};
   for (let e of entries) {
     if (!map[e.eid]) map[e.eid] = e;
@@ -141,8 +131,6 @@ async function load() {
 
   // Render
   let html = '';
-
-  // Summary
   let total = all.length;
   let first = total ? all[0].eid : '-';
   let last = total ? all[total - 1].eid : '-';
@@ -157,15 +145,12 @@ async function load() {
     <div class="row"><span>Missing</span><span class="${missing.length ? 'miss' : 'ok'}">${missing.length}</span></div>
   </div>`;
 
-  // Missing list
   if (missing.length) {
     html += `<div class="miss-list"><b>Missing E-IDs:</b>${missing.join(', ')}</div>`;
   }
 
-  // Table
   if (total) {
     html += `<table><thead><tr><th>E-ID</th><th>Source</th></tr></thead><tbody>`;
-    // Show newest first
     for (let i = all.length - 1; i >= 0; i--) {
       let e = all[i];
       html += `<tr><td><b>${e.eid}</b></td><td><span class="src ${e.source}">${e.source === 'app' ? 'Offline App' : 'Website'}</span></td></tr>`;
