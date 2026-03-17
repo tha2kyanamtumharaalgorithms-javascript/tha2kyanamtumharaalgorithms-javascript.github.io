@@ -100,39 +100,55 @@ async function load() {
   document.getElementById('out').innerHTML = '<div class="loading">Loading...</div>';
 
   let entries = [];
+  let dupPool = []; // larger pool for duplicate detection (last 500 e-IDs)
 
-  // 1. Fetch from Offline App Firebase (ord.eid field)
-  try {
-    let snap = await offlineDb.ref('data/orders/s' + fy + mStr).once('value');
-    let val = snap.val();
-    if (val) {
-      Object.values(val).forEach(ord => {
-        if (ord && ord.eid) {
-          let eid = shortEid(ord.eid);
-          if (eid) entries.push({
-            eid, source: 'app',
-            name: (ord.cn || '').trim().toLowerCase(),
-            qty: Number(ord.tot) || 0,
-            amt: (ord.inv && ord.inv[0]) ? Number(ord.inv[0]) : 0
-          });
-        }
-      });
-    }
-  } catch(e) { console.log('Offline err', e); }
+  // Build list of months to fetch for duplicate pool (current + up to 3 previous)
+  let moIdx = MO.findIndex(m => m.v === Number(month));
+  let monthsToFetch = [];
+  for (let i = moIdx; i >= Math.max(0, moIdx - 3); i--) {
+    let mv = String(MO[i].v).padStart(2, '0');
+    monthsToFetch.push(mv);
+  }
+
+  // 1. Fetch from Offline App Firebase (current month for entries, multiple months for dup pool)
+  for (let mo of monthsToFetch) {
+    try {
+      let snap = await offlineDb.ref('data/orders/s' + fy + mo).once('value');
+      let val = snap.val();
+      if (val) {
+        Object.values(val).forEach(ord => {
+          if (ord && ord.eid) {
+            let eid = shortEid(ord.eid);
+            if (eid) {
+              let entry = {
+                eid, source: 'app',
+                name: (ord.cn || '').trim().toLowerCase(),
+                qty: Number(ord.tot) || 0,
+                amt: (ord.inv && ord.inv[0]) ? Number(ord.inv[0]) : 0
+              };
+              if (mo === mStr) entries.push(entry);
+              dupPool.push(entry);
+            }
+          }
+        });
+      }
+    } catch(e) { console.log('Offline err', e); }
+  }
 
   // 2. Fetch from Website Firebase (order KEY is the e-ID)
   try {
-    let prefix = fy + mStr; // e.g. "252603"
     let snap = await websiteDb.ref('orders').once('value');
     let val = snap.val();
     if (val) {
       Object.keys(val).forEach(key => {
         if (key.startsWith('BillNo')) return;
-        if (!key.startsWith(prefix)) return;
+        // Check if key belongs to any of the months we're looking at
+        let isCurrentMonth = key.startsWith(fy + mStr);
+        let isAnyMonth = monthsToFetch.some(mo => key.startsWith(fy + mo));
+        if (!isAnyMonth) return;
         let eid = shortEid(key);
         if (eid) {
           let ord = val[key];
-          // Compute total qty from od (product > color > size > qty)
           let qty = 0;
           if (ord.od) {
             for (let p of Object.values(ord.od)) {
@@ -141,16 +157,22 @@ async function load() {
               }
             }
           }
-          entries.push({
+          let entry = {
             eid, source: 'web',
             name: (ord.nm || '').trim().toLowerCase(),
             qty,
             amt: Number(ord.tv) || 0
-          });
+          };
+          if (isCurrentMonth) entries.push(entry);
+          dupPool.push(entry);
         }
       });
     }
   } catch(e) { console.log('Website err', e); }
+
+  // Trim dupPool to last 500 e-IDs (highest e-ID numbers)
+  dupPool.sort((a, b) => b.eid - a.eid);
+  dupPool = dupPool.slice(0, 500);
 
   // Deduplicate by eid (if same eid in both, prefer website as it's the origin)
   let map = {};
@@ -169,17 +191,17 @@ async function load() {
     }
   }
 
-  // Detect duplicates: compare name + qty + amount across different e-IDs
+  // Detect duplicates: compare name + qty + amount across last 500 e-IDs
   let dupGroups = [];
-  let allEntries = entries.filter(e => e.name); // only entries with a name
-  for (let i = 0; i < allEntries.length; i++) {
-    let a = allEntries[i];
+  let dupEntries = dupPool.filter(e => e.name);
+  for (let i = 0; i < dupEntries.length; i++) {
+    let a = dupEntries[i];
     if (a._dupDone) continue;
     let group = [a];
-    for (let j = i + 1; j < allEntries.length; j++) {
-      let b = allEntries[j];
+    for (let j = i + 1; j < dupEntries.length; j++) {
+      let b = dupEntries[j];
       if (b._dupDone) continue;
-      if (a.eid === b.eid) continue; // same e-ID is not a duplicate
+      if (a.eid === b.eid) continue;
       if (a.name === b.name && a.qty === b.qty && a.amt === b.amt) {
         group.push(b);
         b._dupDone = true;
@@ -204,7 +226,7 @@ async function load() {
     <div class="row"><span>Range</span><b>${first} &rarr; ${last}</b></div>
     <div class="row"><span>Offline App</span><b>${appCount}</b></div>
     <div class="row"><span>Website</span><b>${webCount}</b></div>
-    <div class="row"><span>Duplicates</span><span class="${dupGroups.length ? 'miss' : 'ok'}">${dupGroups.length}</span></div>
+    <div class="row"><span>Duplicates (last 500)</span><span class="${dupGroups.length ? 'miss' : 'ok'}">${dupGroups.length}</span></div>
     <div class="row"><span>Missing</span><span class="${missing.length ? 'miss' : 'ok'}">${missing.length}</span></div>
   </div>`;
 
