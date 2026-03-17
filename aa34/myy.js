@@ -1496,8 +1496,7 @@ async function dlfn(v, id) {
         }
       }
       let pid = pe.title.split(',');
-      let ewaybill = (x.od.inv[1] >= 50000) ? prompt("Enter E-way Bill No. (invoice ≥₹50k)", '') : '';
-      dlid.book = [new rkbs(x.ptd, dlid.c1, dlid.s1, dlid.durl, x.pcwt), new rkbf(jm + (eid || x.od.id), x.od.inv[1], Number(pid[0]), Number(pid[1]), dlid.durl, ewaybill)];
+      dlid.book = [new rkbs(x.ptd, dlid.c1, dlid.s1, dlid.durl, x.pcwt), new rkbf(jm + (eid || x.od.id), x.od.inv[1], Number(pid[0]), Number(pid[1]), dlid.durl, eway)];
       if (eway) { dlid.eway = eway; }
       dlurl = "https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec";
       // dlurl = "https://script.google.com/macros/s/AKfycbxXWJGTlbU8oiXqBJ7a678POQhCC7sdcqlotW4mXKmiQiOBsjMCpOtywWjINo28GGLtDg/exec";
