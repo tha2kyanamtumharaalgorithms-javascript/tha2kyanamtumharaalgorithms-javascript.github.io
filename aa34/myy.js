@@ -1333,7 +1333,7 @@ class rkbs {
 }
 
 class rkbf {
-  constructor(inn, inv, mid, pid, docid) {
+  constructor(inn, inv, mid, pid, docid, ewaybill) {
     let mydt = formatDate(new Date(new Date().getTime() + (1000 * 60 * 3)));
     this.client_id = "3410";
     this.order_id = 22222;
@@ -1341,8 +1341,11 @@ class rkbf {
     this.mode_id = mid;
     this.delivery_partner_id = pid;
     this.pickup_date_time = mydt;
+    this.recipient_GST = null;
+    this.to_pay_amount = "0";
     this.invoice_value = inv;
     this.invoice_number = inn;
+    this.eway_bill_no = ewaybill || null;
     this.invoice_date = mydt.slice(0, 10);
     this.source = "API";
     this.supporting_docs = [docid];
@@ -1484,8 +1487,18 @@ async function dlfn(v, id) {
       // // if (!dlid.st) {
       // await uplodimg(v9, ptd, myl); // upload always so book later
       // // }
+      let eway = '';
+      if (x.od.inv[1] > 49999.99) {
+        eway = prompt("Enter Eway bill number", "");
+        if (!eway) {
+          await snackbar("Eway bill required - Booking cancelled", 1000);
+          return;
+        }
+      }
       let pid = pe.title.split(',');
-      dlid.book = [new rkbs(x.ptd, dlid.c1, dlid.s1, dlid.durl, x.pcwt), new rkbf(jm + (eid || x.od.id), x.od.inv[1], Number(pid[0]), Number(pid[1]), dlid.durl)];
+      let ewaybill = (x.od.inv[1] >= 50000) ? prompt("Enter E-way Bill No. (invoice ≥₹50k)", '') : '';
+      dlid.book = [new rkbs(x.ptd, dlid.c1, dlid.s1, dlid.durl, x.pcwt), new rkbf(jm + (eid || x.od.id), x.od.inv[1], Number(pid[0]), Number(pid[1]), dlid.durl, ewaybill)];
+      if (eway) { dlid.eway = eway; }
       dlurl = "https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec";
       // dlurl = "https://script.google.com/macros/s/AKfycbxXWJGTlbU8oiXqBJ7a678POQhCC7sdcqlotW4mXKmiQiOBsjMCpOtywWjINo28GGLtDg/exec";
       myd = '';
