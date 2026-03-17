@@ -1,207 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
-<title>E-ID Continuity</title>
+<title>E-ID Tracker</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="om.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <style>
   body { background: #f5f5f5; margin: 0; font-family: -apple-system, sans-serif; }
-  .header { background: #607d8b; color: #fff; padding: 10px 12px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 5; }
+  .header { background: #455a64; color: #fff; padding: 10px 12px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 5; }
   .header button { padding: 6px 10px; border: none; border-radius: 4px; font-size: 14px; background: #2196F3; color: #fff; cursor: pointer; }
-  .container { max-width: 500px; margin: 0 auto; padding: 10px; }
-  .status { text-align: center; padding: 20px; border-radius: 8px; margin-bottom: 10px; font-size: 15px; font-weight: 600; }
-  .status.ok { background: #e8f5e9; color: #2e7d32; }
-  .status.bad { background: #ffebee; color: #c62828; }
-  .status .big { font-size: 28px; display: block; margin-bottom: 4px; }
-  .section { background: #fff; border-radius: 8px; margin-bottom: 10px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-  .section h3 { margin: 0 0 8px; font-size: 14px; color: #333; }
-  .range { font-size: 13px; color: #555; margin-bottom: 6px; }
-  .range b { color: #000; }
-  .gap { background: #fff3e0; border-left: 3px solid #e65100; padding: 6px 10px; margin: 4px 0; font-size: 13px; border-radius: 0 4px 4px 0; }
-  .gap .nums { color: #c62828; font-weight: 600; }
-  .no-gaps { color: #2e7d32; font-size: 13px; }
-  .loading { text-align: center; padding: 40px; color: #666; }
-  .tag { font-size: 10px; padding: 1px 5px; border-radius: 3px; font-weight: 600; }
-  .tag.off { background: #e8f5e9; color: #2e7d32; }
-  .tag.web { background: #e3f2fd; color: #1565c0; }
-  .eid-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; border-bottom: 1px solid #f5f5f5; }
-  .eid-row:last-child { border: none; }
-  .recent-box { max-height: 180px; overflow-y: auto; margin-top: 6px; }
+  .header select { padding: 6px 10px; border: none; border-radius: 4px; font-size: 14px; background: #fff; }
+  .header .title { font-size: 14px; font-weight: 600; flex: 1; }
+  .box { max-width: 480px; margin: 10px auto; padding: 0 8px; }
+
+  .summary { background: #fff; border-radius: 8px; padding: 12px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .summary .row { display: flex; justify-content: space-between; font-size: 13px; color: #555; margin-bottom: 4px; }
+  .summary .row:last-child { margin: 0; }
+  .summary b { color: #000; }
+  .summary .miss { color: #c62828; font-weight: 600; }
+  .summary .ok { color: #2e7d32; font-weight: 600; }
+  .miss-list { background: #ffebee; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; font-size: 12px; color: #b71c1c; }
+  .miss-list b { display: block; margin-bottom: 4px; font-size: 13px; }
+
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  th { background: #eceff1; padding: 8px 12px; text-align: left; font-size: 13px; color: #333; position: sticky; top: 44px; }
+  td { padding: 6px 12px; border-top: 1px solid #f0f0f0; font-size: 13px; }
+  .src { font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 600; }
+  .src.app { background: #e8f5e9; color: #2e7d32; }
+  .src.web { background: #e3f2fd; color: #1565c0; }
+  .loading { text-align: center; padding: 40px; color: #666; font-size: 14px; }
 </style>
 
 <body>
   <div class="header">
     <button onclick="history.back()">&#10094; Back</button>
-    <span style="font-size:14px;font-weight:600;">E-ID Continuity Tracker</span>
+    <span class="title">E-ID Tracker</span>
+    <select id="monthSel" onchange="load()"></select>
   </div>
-
-  <div class="container">
-    <div id="content"><div class="loading">Loading...</div></div>
+  <div class="box">
+    <div id="out"><div class="loading">Loading...</div></div>
   </div>
 
 <script>
-const offlineApp = firebase.initializeApp({
+const offlineDb = firebase.initializeApp({
   apiKey: "AIzaSyBVnlwEnclUCBVs6xMVnAbmB8I_CWwlPCc",
   databaseURL: "https://offline-app-e9b72-default-rtdb.asia-southeast1.firebasedatabase.app"
-}, 'offlineApp');
-const websiteApp = firebase.initializeApp({
+}, 'off').database();
+
+const websiteDb = firebase.initializeApp({
   databaseURL: "https://dashboard-stock-default-rtdb.asia-southeast1.firebasedatabase.app"
-}, 'websiteApp');
-const offlineDb = firebase.app('offlineApp').database();
-const websiteDb = firebase.app('websiteApp').database();
+}, 'web').database();
 
-const MONTH_NUMS = [4,5,6,7,8,9,10,11,12,1,2,3];
+// FY months: April(4) to March(3)
+const MO = [
+  {n:'April',v:4},{n:'May',v:5},{n:'June',v:6},{n:'July',v:7},
+  {n:'August',v:8},{n:'September',v:9},{n:'October',v:10},
+  {n:'November',v:11},{n:'December',v:12},{n:'January',v:1},
+  {n:'February',v:2},{n:'March',v:3}
+];
 
-// Get current FY code
 function getFY() {
   let d = new Date(), y = d.getFullYear(), m = d.getMonth() + 1;
   let s = m >= 4 ? y : y - 1;
   return String(s).slice(2) + String(s + 1).slice(2);
 }
 
-// Get current month and 2 previous months to check (not all 12)
-function getRecentMonths() {
-  let d = new Date(), m = d.getMonth() + 1; // 1-12
-  let months = [];
-  for (let i = 0; i < 3; i++) {
-    let mo = m - i;
-    if (mo <= 0) mo += 12;
-    months.push(mo);
-  }
-  return months;
+// Extract short e-ID from stored value (strip FY+month prefix)
+function shortEid(raw) {
+  let n = Number(raw);
+  if (!n) return 0;
+  return n > 9999999 ? n % 10000000 : n;
 }
 
-async function fetchOfflineEids(fy, months) {
-  let eids = [];
-  for (let mNum of months) {
-    let mStr = String(mNum).padStart(2, '0');
-    let monthKey = 's' + fy + mStr;
-    try {
-      let snap = await offlineDb.ref('data/orders/' + monthKey).once('value');
-      let val = snap.val();
-      if (val) {
-        Object.values(val).forEach(ord => {
-          if (ord && ord.eid) {
-            eids.push({ eid: Number(ord.eid), cn: ord.cn || '', source: 'offline', dt: ord.dt || '' });
-          }
-        });
-      }
-    } catch (e) { console.log('Offline err', e); }
+// Init month dropdown - show only up to current month
+(function() {
+  let sel = document.getElementById('monthSel');
+  let curM = new Date().getMonth() + 1;
+  let curMoIdx = MO.findIndex(m => m.v === curM);
+  for (let i = curMoIdx; i >= 0; i--) {
+    let o = document.createElement('option');
+    o.value = MO[i].v;
+    o.textContent = MO[i].n;
+    sel.appendChild(o);
   }
-  return eids;
-}
-
-async function fetchWebsiteEids(fy, months) {
-  let eids = [];
-  for (let mNum of months) {
-    let mStr = String(mNum).padStart(2, '0');
-    let prefix = 'BillNo_' + fy + mStr;
-    try {
-      let snap = await websiteDb.ref('orders').orderByKey().startAt(prefix).endAt(prefix + '\uf8ff').once('value');
-      let val = snap.val();
-      if (val) {
-        Object.values(val).forEach(ord => {
-          if (ord && ord.eid) {
-            eids.push({ eid: Number(ord.eid), cn: ord.cn || ord.nm || '', source: 'website', dt: ord.dt || '' });
-          }
-        });
-      }
-    } catch (e) { console.log('Website err', e); }
-  }
-  return eids;
-}
+  load();
+})();
 
 async function load() {
   let fy = getFY();
-  let months = getRecentMonths();
+  let month = document.getElementById('monthSel').value;
+  let mStr = String(month).padStart(2, '0');
+  document.getElementById('out').innerHTML = '<div class="loading">Loading...</div>';
 
-  let [offEids, webEids] = await Promise.all([
-    fetchOfflineEids(fy, months),
-    fetchWebsiteEids(fy, months)
-  ]);
+  let entries = [];
 
-  // Merge and deduplicate by eid number
-  let eidMap = {};
-  for (let e of offEids) {
-    if (e.eid) eidMap[e.eid] = e;
+  // Fetch offline
+  try {
+    let snap = await offlineDb.ref('data/orders/s' + fy + mStr).once('value');
+    let val = snap.val();
+    if (val) {
+      Object.values(val).forEach(ord => {
+        if (ord && ord.eid) {
+          let eid = shortEid(ord.eid);
+          if (eid) entries.push({ eid, source: 'app' });
+        }
+      });
+    }
+  } catch(e) { console.log('Offline err', e); }
+
+  // Fetch website
+  try {
+    let prefix = 'BillNo_' + fy + mStr;
+    let snap = await websiteDb.ref('orders').orderByKey().startAt(prefix).endAt(prefix + '\uf8ff').once('value');
+    let val = snap.val();
+    if (val) {
+      Object.values(val).forEach(ord => {
+        if (ord && ord.eid) {
+          let eid = shortEid(ord.eid);
+          if (eid) entries.push({ eid, source: 'web' });
+        }
+      });
+    }
+  } catch(e) { console.log('Website err', e); }
+
+  // Deduplicate by eid (keep first seen source)
+  let map = {};
+  for (let e of entries) {
+    if (!map[e.eid]) map[e.eid] = e;
   }
-  for (let e of webEids) {
-    if (e.eid && !eidMap[e.eid]) eidMap[e.eid] = e;
-  }
+  let all = Object.values(map).sort((a, b) => a.eid - b.eid);
 
-  let all = Object.values(eidMap).sort((a, b) => a.eid - b.eid);
-
-  // Find gaps in continuity
-  let gaps = [];
+  // Find missing (gaps in continuity)
+  let missing = [];
   for (let i = 1; i < all.length; i++) {
     let diff = all[i].eid - all[i - 1].eid;
     if (diff > 1) {
-      let missing = [];
-      if (diff <= 20) {
-        for (let n = all[i - 1].eid + 1; n < all[i].eid; n++) missing.push(n);
-      }
-      gaps.push({
-        after: all[i - 1].eid,
-        before: all[i].eid,
-        count: diff - 1,
-        missing: missing
-      });
+      for (let n = all[i - 1].eid + 1; n < all[i].eid; n++) missing.push(n);
     }
   }
 
-  let latest = all.length ? all[all.length - 1].eid : '-';
-  let first = all.length ? all[0].eid : '-';
-  let total = all.length;
-  let offCount = offEids.filter(e => e.eid).length;
-  let webCount = webEids.filter(e => e.eid).length;
-
-  // Get last 15 e-IDs
-  let recent = all.slice(-15).reverse();
-
+  // Render
   let html = '';
 
-  // Status banner
-  if (gaps.length === 0 && all.length) {
-    html += `<div class="status ok"><span class="big">&#10003;</span>No breaks in continuity</div>`;
-  } else if (gaps.length > 0) {
-    html += `<div class="status bad"><span class="big">&#9888;</span>${gaps.length} gap${gaps.length > 1 ? 's' : ''} found</div>`;
-  }
+  // Summary
+  let total = all.length;
+  let first = total ? all[0].eid : '-';
+  let last = total ? all[total - 1].eid : '-';
+  let appCount = all.filter(e => e.source === 'app').length;
+  let webCount = all.filter(e => e.source === 'web').length;
 
-  // Range info
-  html += `<div class="section">
-    <h3>Current Range</h3>
-    <div class="range">Latest: <b>${latest}</b> &nbsp;|&nbsp; First: <b>${first}</b> &nbsp;|&nbsp; Total: <b>${total}</b></div>
-    <div class="range"><span class="tag off">Offline</span> ${offCount} &nbsp; <span class="tag web">Website</span> ${webCount}</div>
+  html += `<div class="summary">
+    <div class="row"><span>Total E-IDs</span><b>${total}</b></div>
+    <div class="row"><span>Range</span><b>${first} &rarr; ${last}</b></div>
+    <div class="row"><span>Offline App</span><b>${appCount}</b></div>
+    <div class="row"><span>Website</span><b>${webCount}</b></div>
+    <div class="row"><span>Missing</span><span class="${missing.length ? 'miss' : 'ok'}">${missing.length}</span></div>
   </div>`;
 
-  // Gaps section - only show if there are gaps
-  if (gaps.length > 0) {
-    html += `<div class="section"><h3>Continuity Breaks</h3>`;
-    for (let g of gaps) {
-      if (g.missing.length) {
-        html += `<div class="gap">Missing <span class="nums">${g.missing.join(', ')}</span><br>Between ${g.after} and ${g.before}</div>`;
-      } else {
-        html += `<div class="gap"><span class="nums">${g.count} missing</span> between ${g.after} and ${g.before}</div>`;
-      }
+  // Missing list
+  if (missing.length) {
+    html += `<div class="miss-list"><b>Missing E-IDs:</b>${missing.join(', ')}</div>`;
+  }
+
+  // Table
+  if (total) {
+    html += `<table><thead><tr><th>E-ID</th><th>Source</th></tr></thead><tbody>`;
+    // Show newest first
+    for (let i = all.length - 1; i >= 0; i--) {
+      let e = all[i];
+      html += `<tr><td><b>${e.eid}</b></td><td><span class="src ${e.source}">${e.source === 'app' ? 'Offline App' : 'Website'}</span></td></tr>`;
     }
-    html += `</div>`;
+    html += `</tbody></table>`;
+  } else {
+    html += `<div class="loading">No e-IDs found for this month</div>`;
   }
 
-  // Recent e-IDs
-  html += `<div class="section"><h3>Recent E-IDs</h3><div class="recent-box">`;
-  for (let e of recent) {
-    html += `<div class="eid-row"><span><b>${e.eid}</b> ${e.cn}</span><span class="tag ${e.source === 'offline' ? 'off' : 'web'}">${e.source === 'offline' ? 'App' : 'Web'}</span></div>`;
-  }
-  html += `</div></div>`;
-
-  document.getElementById('content').innerHTML = html;
+  document.getElementById('out').innerHTML = html;
 }
-
-load().catch(err => {
-  document.getElementById('content').innerHTML = '<div class="loading" style="color:#c62828;">Error: ' + err.message + '</div>';
-  console.error(err);
-});
 </script>
 </body>
 </html>
