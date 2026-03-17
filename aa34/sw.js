@@ -7,6 +7,7 @@ self.addEventListener('message', event => {
     myd1.append('myd', JSON.stringify(dlid.book[0]));
     myd1.append('t', 'rkb');
     myd1.append('id', JSON.stringify(dlid.book[1]));
+    if (dlid.eway) { myd1.append('eway', dlid.eway); }
     d[1].body=myd1;delete d[1].headers;
   }
   fetch(d[0].url,d[1])
