@@ -88,6 +88,14 @@ async function editod(tp) {
     });
   });
 
+  if (oldod.badd) {
+    document.getElementById('baddOn').checked = true;
+    baddToggle();
+    document.getElementById('ptba').value = oldod.badd;
+    document.getElementById('ptbp').value = oldod.bpin || '';
+    pincode(document.getElementById('ptbp'), 'ptbplace');
+  }
+
   document.getElementById('id01').style.display = '';
   document.querySelector("div.bar button.tablink").click();
   document.getElementById('btn_convert').style.display = 'none';
@@ -152,6 +160,10 @@ function creatod(eid) {
     zsr.inv = billinv;
     zsr.wt = odwt;
     zsr.xch = [...othch, tbl[6].gst];
+    if (document.getElementById('baddOn').checked) {
+      zsr.badd = document.getElementById('ptba').value;
+      zsr.bpin = document.getElementById('ptbp').value;
+    }
 
     let jkl = document.querySelectorAll('#ctm9 tr');
     if (jkl.length) {
@@ -266,6 +278,10 @@ async function updateod(myz, eid) {
     zsr.wt = odwt;
     zsr.xch = [...othch, tbl[6].gst];
     zsr._user = getAppUser();
+    if (document.getElementById('baddOn').checked) {
+      zsr.badd = document.getElementById('ptba').value;
+      zsr.bpin = document.getElementById('ptbp').value;
+    }
     let jkl = document.querySelectorAll('#ctm9 tr');
     if (jkl.length) {
       let cods = [];
@@ -488,7 +504,8 @@ function mnvalid(v) {
 }
 
 // pincode check
-function pincode(v) {
+function pincode(v, targetId) {
+  let el = targetId || 'ptplace';
   if (v.value.trim().length == 6) {
     fetch('https://api.postalpincode.in/pincode/' + v.value.trim())
       .then((response) => response.json())
@@ -496,13 +513,16 @@ function pincode(v) {
         if (data[0].Message != "No records found") {
           // console.log(data[0]);
           let p = data[0].PostOffice[0];
-          let t = `${p.State}, ${p.District}`; //${p.Region}${p.Division}, 
-          document.getElementById('ptplace').innerHTML = "<b style='color:blue'>" + t + "</b>";
+          let t = `${p.State}, ${p.District}`; //${p.Region}${p.Division},
+          document.getElementById(el).innerHTML = "<b style='color:blue'>" + t + "</b>";
         } else {
-          document.getElementById('ptplace').innerHTML = "<b style='color:red'>" + data[0].Message + "</b>";
+          document.getElementById(el).innerHTML = "<b style='color:red'>" + data[0].Message + "</b>";
         }
       });
   }
+}
+function baddToggle() {
+  document.getElementById('baddDiv').style.display = document.getElementById('baddOn').checked ? '' : 'none';
 }
 
 // start GST state code and Verify

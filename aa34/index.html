@@ -119,6 +119,14 @@
           <div id="ptplace" class="w3-padding">State, District</div>
           <textarea id="pta" class="w3-input w3-border" placeholder="Delivery Address" rows="4"
             style="resize:none"></textarea>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+            <label style="font-size:12px;white-space:nowrap;"><input id="baddOn" type="checkbox" onchange="baddToggle()"> Different Billing Address</label>
+          </div>
+          <div id="baddDiv" style="display:none;">
+            <input id="ptbp" class="w3-input w3-border" oninput="pincode(this,'ptbplace')" type="tel" maxlength="6" placeholder="Billing Pincode">
+            <div id="ptbplace" class="w3-padding">State, District</div>
+            <textarea id="ptba" class="w3-input w3-border" placeholder="Billing Address" rows="3" style="resize:none"></textarea>
+          </div>
           <p>
             <button id="cnm0" onclick="sptcor()" style="display: none;" class="w3-button w3-green">Next</button>
             <button id="cnm1" onclick="sptd(1)" class="w3-button w3-green">Next</button>

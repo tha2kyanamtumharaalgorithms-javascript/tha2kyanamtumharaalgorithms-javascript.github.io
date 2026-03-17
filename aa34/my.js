@@ -378,6 +378,9 @@ async function newc2() {
   document.getElementById('ppdAmt').style.display = 'none';
   document.getElementById('ptcOn').checked = false;
   document.getElementById('ptcAmt').style.display = 'none';
+  document.getElementById('baddOn').checked = false;
+  document.getElementById('baddDiv').style.display = 'none';
+  document.getElementById('ptba').value = '';
   await newc1();
 }
 

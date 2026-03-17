@@ -321,6 +321,19 @@
                     </tbody>
                   </table>
                 </td>
+                <td style="padding:0px;">
+                  <table style="width: 90%;">
+                    <tbody>
+                      <tr>
+                        <th style="padding: 0;padding-left: 5px;">Ship To:</th>
+                      </tr>
+                      <tr></tr>
+                      <tr>
+                        <td class="bigTextSize" id="shpd"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
                 <td id="inno" style="text-align: right;font-weight: 700;width: 50%;">
                   <p style="font-weight: 500;">Place of Supply: 07-Delhi</p>
                   <p>Invoice No.: 0000</p>
@@ -696,7 +709,14 @@
         }
 
         let add = `${pt.add && ('<br/>' + pt.add + (pt.pin && (', ' + pt.pin)))}`;
-        doc.querySelector("#ptd").innerHTML = `<b style='font-size: 16px;'>${ods.cn}</b>${add}${pt.mn1 && ('<br/>Contact No.: ' + pt.mn1)}${gstz && ('<br/>GSTIN Number: ' + gst)}${gst && ('<br/>State: ' + stgst)}`;
+        if (ods.badd) {
+          let badd = `<br/>${ods.badd}${ods.bpin ? ', ' + ods.bpin : ''}`;
+          doc.querySelector("#ptd").innerHTML = `<b style='font-size: 16px;'>${ods.cn}</b>${badd}${pt.mn1 && ('<br/>Contact No.: ' + pt.mn1)}${gstz && ('<br/>GSTIN Number: ' + gst)}${gst && ('<br/>State: ' + stgst)}`;
+          doc.querySelector("#shpd").innerHTML = `<b style='font-size: 16px;'>${ods.cn}</b>${add}`;
+        } else {
+          doc.querySelector("#ptd").innerHTML = `<b style='font-size: 16px;'>${ods.cn}</b>${add}${pt.mn1 && ('<br/>Contact No.: ' + pt.mn1)}${gstz && ('<br/>GSTIN Number: ' + gst)}${gst && ('<br/>State: ' + stgst)}`;
+          doc.querySelector("#shpd").innerHTML = '';
+        }
 
         doc.querySelector("#inno").innerHTML = `<p style='font-weight: 500;'>${gst && ('Place of Supply: ' + stgst)}</p><p>Invoice No.: ${ods?.eid || ods.id}</p><p>Date: ${ods.dt}</p>`;
         let od1 = Object.keys(ods.od); let samplebulk = typeof ods.pc[Object.keys(ods.pc)[0]] == 'number';
