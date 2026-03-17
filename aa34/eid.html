@@ -170,9 +170,9 @@ async function load() {
     }
   } catch(e) { console.log('Website err', e); }
 
-  // Trim dupPool to last 500 e-IDs (highest e-ID numbers)
-  dupPool.sort((a, b) => b.eid - a.eid);
-  dupPool = dupPool.slice(0, 500);
+  // Trim dupPool to last 500 e-IDs by number range (e.g. if max is 23578, check 23078-23578)
+  let maxEid = dupPool.reduce((mx, e) => Math.max(mx, e.eid), 0);
+  dupPool = dupPool.filter(e => e.eid >= maxEid - 500);
 
   // Deduplicate by eid (if same eid in both, prefer website as it's the origin)
   let map = {};
