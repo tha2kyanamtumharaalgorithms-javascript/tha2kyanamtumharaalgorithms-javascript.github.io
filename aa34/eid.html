@@ -1,83 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
-<title>E-ID Tracker</title>
+<title>E-ID Continuity</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="om.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <style>
-  body { background: #f5f5f5; margin: 0; }
-  .header { background: #607d8b; color: #fff; padding: 10px 12px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
-  .header select, .header button { padding: 6px 10px; border: none; border-radius: 4px; font-size: 14px; }
-  .header select { background: #fff; }
-  .header .back-btn { background: #2196F3; color: #fff; cursor: pointer; }
-  .header .back-btn:hover { background: #1976D2; }
-  .header .src-label { font-size: 11px; color: #cfd8dc; }
-  .container { max-width: 600px; margin: 0 auto; padding: 8px; }
-
-  /* Issues Section */
-  .issues-box { background: #fff; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); overflow: hidden; }
-  .issues-header { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 15px; }
-  .issues-header .badge { font-size: 12px; padding: 2px 10px; border-radius: 10px; font-weight: 600; }
-  .issues-header .badge.error { background: #ffebee; color: #c62828; }
-  .issues-header .badge.ok { background: #e8f5e9; color: #2e7d32; }
-  .issues-body { padding: 0 14px 10px; }
-  .issue-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; border-top: 1px solid #f0f0f0; }
-  .issue-item:first-child { border-top: none; }
-  .issue-item input[type="checkbox"] { margin-top: 3px; cursor: pointer; }
-  .issue-item.resolved { opacity: 0.4; text-decoration: line-through; }
-  .issue-text { flex: 1; font-size: 13px; }
-  .issue-text .eid-num { font-weight: 600; color: #c62828; }
-  .issue-text .eid-num.dup { color: #e65100; }
-  .issue-text .detail { color: #666; font-size: 11px; display: block; }
-  .toggle-resolved { font-size: 11px; color: #999; cursor: pointer; border: none; background: none; padding: 0 14px 10px; }
-  .toggle-resolved:hover { color: #333; }
-
-  /* Summary */
-  .summary { background: #fff; border-radius: 8px; padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
-  .summary h3 { margin: 0 0 6px; font-size: 16px; color: #333; }
-  .summary .stats { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: #555; }
-  .summary .stats b { color: #000; }
-  .src-info { font-size: 11px; color: #888; margin-top: 6px; }
-
-  /* Month cards */
-  .month-card { background: #fff; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); overflow: hidden; }
-  .month-head { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
-  .month-head:hover { background: #f9f9f9; }
-  .month-head .name { font-weight: 600; font-size: 15px; }
-  .month-head .range { font-size: 12px; color: #666; }
-  .month-head .count { font-size: 12px; background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 10px; }
-  .month-head .count.has-gap { background: #ffebee; color: #c62828; }
-  .month-body { padding: 0 14px 12px; display: none; }
-  .month-body.open { display: block; }
-  .missing-label { font-size: 12px; font-weight: 600; color: #c62828; margin: 6px 0 4px; }
-  .missing-ids { display: flex; flex-wrap: wrap; gap: 4px; }
-  .missing-ids span { background: #ffcdd2; color: #b71c1c; font-size: 12px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
-  .eid-list { max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; margin-top: 6px; }
-  .eid-list table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .eid-list th { background: #f5f5f5; padding: 4px 8px; text-align: left; position: sticky; top: 0; }
-  .eid-list td { padding: 4px 8px; border-top: 1px solid #f0f0f0; }
-  .tag-off { background: #e8f5e9; color: #2e7d32; font-size: 10px; padding: 1px 5px; border-radius: 3px; }
-  .tag-web { background: #e3f2fd; color: #1565c0; font-size: 10px; padding: 1px 5px; border-radius: 3px; }
-  .no-data { text-align: center; color: #999; padding: 40px 10px; font-size: 14px; }
+  body { background: #f5f5f5; margin: 0; font-family: -apple-system, sans-serif; }
+  .header { background: #607d8b; color: #fff; padding: 10px 12px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 5; }
+  .header button { padding: 6px 10px; border: none; border-radius: 4px; font-size: 14px; background: #2196F3; color: #fff; cursor: pointer; }
+  .container { max-width: 500px; margin: 0 auto; padding: 10px; }
+  .status { text-align: center; padding: 20px; border-radius: 8px; margin-bottom: 10px; font-size: 15px; font-weight: 600; }
+  .status.ok { background: #e8f5e9; color: #2e7d32; }
+  .status.bad { background: #ffebee; color: #c62828; }
+  .status .big { font-size: 28px; display: block; margin-bottom: 4px; }
+  .section { background: #fff; border-radius: 8px; margin-bottom: 10px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .section h3 { margin: 0 0 8px; font-size: 14px; color: #333; }
+  .range { font-size: 13px; color: #555; margin-bottom: 6px; }
+  .range b { color: #000; }
+  .gap { background: #fff3e0; border-left: 3px solid #e65100; padding: 6px 10px; margin: 4px 0; font-size: 13px; border-radius: 0 4px 4px 0; }
+  .gap .nums { color: #c62828; font-weight: 600; }
+  .no-gaps { color: #2e7d32; font-size: 13px; }
   .loading { text-align: center; padding: 40px; color: #666; }
+  .tag { font-size: 10px; padding: 1px 5px; border-radius: 3px; font-weight: 600; }
+  .tag.off { background: #e8f5e9; color: #2e7d32; }
+  .tag.web { background: #e3f2fd; color: #1565c0; }
+  .eid-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; border-bottom: 1px solid #f5f5f5; }
+  .eid-row:last-child { border: none; }
+  .recent-box { max-height: 180px; overflow-y: auto; margin-top: 6px; }
 </style>
 
 <body>
   <div class="header">
-    <button class="back-btn" onclick="history.back()">&#10094; Back</button>
-    <select id="fySelect" onchange="loadData()"></select>
-    <span class="src-label">Source: Firebase (Offline + Website)</span>
+    <button onclick="history.back()">&#10094; Back</button>
+    <span style="font-size:14px;font-weight:600;">E-ID Continuity Tracker</span>
   </div>
 
   <div class="container">
-    <div id="issuesDiv"></div>
-    <div id="summaryDiv"></div>
-    <div id="monthsDiv"><div class="no-data">Loading...</div></div>
+    <div id="content"><div class="loading">Loading...</div></div>
   </div>
 
 <script>
-// --- Firebase Setup: Two separate databases ---
 const offlineApp = firebase.initializeApp({
   apiKey: "AIzaSyBVnlwEnclUCBVs6xMVnAbmB8I_CWwlPCc",
   databaseURL: "https://offline-app-e9b72-default-rtdb.asia-southeast1.firebasedatabase.app"
@@ -88,364 +51,157 @@ const websiteApp = firebase.initializeApp({
 const offlineDb = firebase.app('offlineApp').database();
 const websiteDb = firebase.app('websiteApp').database();
 
-const MONTHS = ['April','May','June','July','August','September','October','November','December','January','February','March'];
 const MONTH_NUMS = [4,5,6,7,8,9,10,11,12,1,2,3];
 
-// Load resolved states from localStorage
-function getResolved() {
-  try { return JSON.parse(localStorage.getItem('eidResolved') || '{}'); } catch(e) { return {}; }
+// Get current FY code
+function getFY() {
+  let d = new Date(), y = d.getFullYear(), m = d.getMonth() + 1;
+  let s = m >= 4 ? y : y - 1;
+  return String(s).slice(2) + String(s + 1).slice(2);
 }
-function saveResolved(obj) { localStorage.setItem('eidResolved', JSON.stringify(obj)); }
-function getDupResolved() {
-  try { return JSON.parse(localStorage.getItem('eidDupResolved') || '{}'); } catch(e) { return {}; }
-}
-function saveDupResolved(obj) { localStorage.setItem('eidDupResolved', JSON.stringify(obj)); }
 
-let showResolved = false;
-
-// Populate fiscal year dropdown
-(function initFY() {
-  let sel = document.getElementById('fySelect');
-  let d = new Date();
-  let y = d.getFullYear();
-  let m = d.getMonth() + 1;
-  let curFYStart = m >= 4 ? y : y - 1;
-  for (let i = 0; i < 4; i++) {
-    let s = curFYStart - i;
-    let e = s + 1;
-    let opt = document.createElement('option');
-    let sy = String(s).slice(2), ey = String(e).slice(2);
-    opt.value = sy + ey;
-    opt.textContent = 'FY ' + s + '-' + ey;
-    sel.appendChild(opt);
+// Get current month and 2 previous months to check (not all 12)
+function getRecentMonths() {
+  let d = new Date(), m = d.getMonth() + 1; // 1-12
+  let months = [];
+  for (let i = 0; i < 3; i++) {
+    let mo = m - i;
+    if (mo <= 0) mo += 12;
+    months.push(mo);
   }
-  loadData();
-})();
-
-function toggleResolved() {
-  showResolved = !showResolved;
-  document.querySelectorAll('.issue-item.resolved').forEach(el => {
-    el.style.display = showResolved ? 'flex' : 'none';
-  });
-  let btn = document.getElementById('toggleResBtn');
-  if (btn) btn.textContent = showResolved ? 'Hide resolved' : 'Show resolved';
+  return months;
 }
 
-function resolveIssue(cb, eid) {
-  let res = getResolved();
-  if (cb.checked) { res[eid] = true; cb.closest('.issue-item').classList.add('resolved'); }
-  else { delete res[eid]; cb.closest('.issue-item').classList.remove('resolved'); }
-  saveResolved(res);
-  updateIssueBadge();
-}
-
-function resolveDup(cb, key) {
-  let res = getDupResolved();
-  if (cb.checked) { res[key] = true; cb.closest('.issue-item').classList.add('resolved'); }
-  else { delete res[key]; cb.closest('.issue-item').classList.remove('resolved'); }
-  saveDupResolved(res);
-  updateIssueBadge();
-}
-
-function updateIssueBadge() {
-  let unresolved = document.querySelectorAll('.issue-item:not(.resolved)').length;
-  let badge = document.getElementById('issueBadge');
-  if (badge) {
-    badge.className = unresolved > 0 ? 'badge error' : 'badge ok';
-    badge.textContent = unresolved > 0 ? unresolved + ' issue' + (unresolved > 1 ? 's' : '') : 'All clear';
-  }
-}
-
-// --- Fetch orders from Offline App Firebase ---
-async function fetchOfflineOrders(fy) {
-  let orders = [];
-  for (let mi = 0; mi < 12; mi++) {
-    let mNum = MONTH_NUMS[mi];
+async function fetchOfflineEids(fy, months) {
+  let eids = [];
+  for (let mNum of months) {
     let mStr = String(mNum).padStart(2, '0');
-    let monthKey = 's' + fy + mStr; // e.g. s252604
+    let monthKey = 's' + fy + mStr;
     try {
       let snap = await offlineDb.ref('data/orders/' + monthKey).once('value');
       let val = snap.val();
       if (val) {
         Object.values(val).forEach(ord => {
-          if (ord && ord.tot) {
-            orders.push({
-              id: ord.id,
-              cn: ord.cn || '',
-              tot: ord.tot,
-              inv: ord.inv ? Math.ceil(ord.inv[1]) : 0,
-              date: ord.dt || '',
-              eid: ord.eid ? Number(ord.eid) : 0,
-              month: mi,
-              source: ord._src === 'website' ? 'website' : 'offline'
-            });
+          if (ord && ord.eid) {
+            eids.push({ eid: Number(ord.eid), cn: ord.cn || '', source: 'offline', dt: ord.dt || '' });
           }
         });
       }
-    } catch (e) { console.log('Offline FB err ' + monthKey, e); }
+    } catch (e) { console.log('Offline err', e); }
   }
-  return orders;
+  return eids;
 }
 
-// --- Fetch orders from Website Dashboard Firebase ---
-// Website orders are keyed like "BillNo_25260400000001"
-// Filter by FY using startAt/endAt to avoid downloading all orders
-async function fetchWebsiteOrders(fy) {
-  let orders = [];
-  try {
-    // Query only keys matching this FY: BillNo_XXXX where XXXX = fy code
-    let startKey = 'BillNo_' + fy;
-    let endKey = 'BillNo_' + fy + '\uf8ff';
-    let snap = await websiteDb.ref('orders').orderByKey().startAt(startKey).endAt(endKey).once('value');
-    let val = snap.val();
-    if (!val) return orders;
-
-    Object.entries(val).forEach(([key, ord]) => {
-      if (!ord) return;
-      let odId = ord.id || key;
-      let idStr = String(odId).replace(/\D/g, '');
-      if (idStr.length >= 6) {
-        let mth = parseInt(idStr.slice(4, 6));
-        let mi = MONTH_NUMS.indexOf(mth);
-        if (mi >= 0) {
-          let tot = ord.tot || 0;
-          let cn = ord.cn || ord.nm || '';
-          let eid = ord.eid ? Number(ord.eid) : 0;
-          let inv = ord.inv ? Math.ceil(Array.isArray(ord.inv) ? ord.inv[1] : ord.inv) : 0;
-          if (tot) {
-            orders.push({
-              id: ord.id || Number(idStr),
-              cn: cn,
-              tot: tot,
-              inv: inv,
-              date: ord.dt || '',
-              eid: eid,
-              month: mi,
-              source: 'website'
-            });
+async function fetchWebsiteEids(fy, months) {
+  let eids = [];
+  for (let mNum of months) {
+    let mStr = String(mNum).padStart(2, '0');
+    let prefix = 'BillNo_' + fy + mStr;
+    try {
+      let snap = await websiteDb.ref('orders').orderByKey().startAt(prefix).endAt(prefix + '\uf8ff').once('value');
+      let val = snap.val();
+      if (val) {
+        Object.values(val).forEach(ord => {
+          if (ord && ord.eid) {
+            eids.push({ eid: Number(ord.eid), cn: ord.cn || ord.nm || '', source: 'website', dt: ord.dt || '' });
           }
-        }
+        });
       }
-    });
-  } catch (e) { console.log('Website FB err', e); }
-  return orders;
+    } catch (e) { console.log('Website err', e); }
+  }
+  return eids;
 }
 
-async function loadData() {
-  let fy = document.getElementById('fySelect').value;
-  let monthsDiv = document.getElementById('monthsDiv');
-  let summaryDiv = document.getElementById('summaryDiv');
-  let issuesDiv = document.getElementById('issuesDiv');
-  monthsDiv.innerHTML = '<div class="loading">Loading from Firebase...</div>';
-  summaryDiv.innerHTML = '';
-  issuesDiv.innerHTML = '';
-  try {
+async function load() {
+  let fy = getFY();
+  let months = getRecentMonths();
 
-  // Fetch from both Firebase databases in parallel
-  let [offlineOrders, websiteOrders] = await Promise.all([
-    fetchOfflineOrders(fy),
-    fetchWebsiteOrders(fy)
+  let [offEids, webEids] = await Promise.all([
+    fetchOfflineEids(fy, months),
+    fetchWebsiteEids(fy, months)
   ]);
 
-  // Deduplicate: if same order ID exists in both, prefer offline (has more complete data)
-  let orderMap = {};
-  for (let o of offlineOrders) { orderMap[o.id] = o; }
-  for (let o of websiteOrders) {
-    if (!orderMap[o.id]) { orderMap[o.id] = o; }
-    else if (!orderMap[o.id].eid && o.eid) { orderMap[o.id].eid = o.eid; } // merge eid if offline didn't have it
+  // Merge and deduplicate by eid number
+  let eidMap = {};
+  for (let e of offEids) {
+    if (e.eid) eidMap[e.eid] = e;
   }
-  let allOrdersList = Object.values(orderMap);
-
-  let offlineCount = offlineOrders.length;
-  let websiteCount = websiteOrders.filter(o => !offlineOrders.find(x => x.id === o.id)).length; // unique website orders
-
-  // Separate into e-ID entries and all orders
-  let allEids = [];
-  let allOrders = [];
-  let monthData = {};
-  for (let mi = 0; mi < 12; mi++) monthData[mi] = [];
-
-  for (let ord of allOrdersList) {
-    allOrders.push(ord);
-    if (ord.eid) {
-      let entry = { eid: ord.eid, orderId: ord.id, date: ord.date, cn: ord.cn, month: ord.month, source: ord.source };
-      monthData[ord.month].push(entry);
-      allEids.push(entry);
-    }
+  for (let e of webEids) {
+    if (e.eid && !eidMap[e.eid]) eidMap[e.eid] = e;
   }
 
-  // Sort
-  allEids.sort((a, b) => a.eid - b.eid);
-  for (let mi = 0; mi < 12; mi++) monthData[mi].sort((a, b) => a.eid - b.eid);
+  let all = Object.values(eidMap).sort((a, b) => a.eid - b.eid);
 
-  // Find missing e-IDs
-  let globalMin = allEids.length ? allEids[0].eid : 0;
-  let globalMax = allEids.length ? allEids[allEids.length - 1].eid : 0;
-  let eidSet = new Set(allEids.map(e => e.eid));
-  let allMissing = [];
-  let rangeTooBig = false;
-  if (globalMin && globalMax && (globalMax - globalMin) < 100000) {
-    for (let i = globalMin; i <= globalMax; i++) {
-      if (!eidSet.has(i)) allMissing.push(i);
-    }
-  } else if (globalMin && globalMax) {
-    rangeTooBig = true;
-    // Range too large - find gaps between consecutive e-IDs instead
-    for (let idx = 1; idx < allEids.length; idx++) {
-      let gap = allEids[idx].eid - allEids[idx - 1].eid;
-      if (gap > 1 && gap <= 100) {
-        for (let i = allEids[idx - 1].eid + 1; i < allEids[idx].eid; i++) {
-          allMissing.push(i);
-        }
-      } else if (gap > 100) {
-        // Large gap - just note the range
-        allMissing.push({ range: true, from: allEids[idx - 1].eid + 1, to: allEids[idx].eid - 1, count: gap - 1 });
+  // Find gaps in continuity
+  let gaps = [];
+  for (let i = 1; i < all.length; i++) {
+    let diff = all[i].eid - all[i - 1].eid;
+    if (diff > 1) {
+      let missing = [];
+      if (diff <= 20) {
+        for (let n = all[i - 1].eid + 1; n < all[i].eid; n++) missing.push(n);
       }
+      gaps.push({
+        after: all[i - 1].eid,
+        before: all[i].eid,
+        count: diff - 1,
+        missing: missing
+      });
     }
   }
 
-  // Find duplicate orders (same cn + tot + inv amount)
-  let duplicates = [];
-  let seen = {};
-  for (let o of allOrders) {
-    let cn = (o.cn || '').trim().toLowerCase();
-    let key = cn + '|' + o.tot + '|' + o.inv;
-    if (!cn) continue;
-    if (seen[key]) {
-      let existing = duplicates.find(d => d.key === key);
-      if (existing) { existing.orders.push(o); }
-      else { duplicates.push({ key: key, orders: [seen[key], o] }); }
-    } else { seen[key] = o; }
+  let latest = all.length ? all[all.length - 1].eid : '-';
+  let first = all.length ? all[0].eid : '-';
+  let total = all.length;
+  let offCount = offEids.filter(e => e.eid).length;
+  let webCount = webEids.filter(e => e.eid).length;
+
+  // Get last 15 e-IDs
+  let recent = all.slice(-15).reverse();
+
+  let html = '';
+
+  // Status banner
+  if (gaps.length === 0 && all.length) {
+    html += `<div class="status ok"><span class="big">&#10003;</span>No breaks in continuity</div>`;
+  } else if (gaps.length > 0) {
+    html += `<div class="status bad"><span class="big">&#9888;</span>${gaps.length} gap${gaps.length > 1 ? 's' : ''} found</div>`;
   }
 
-  // --- RENDER ISSUES ---
-  let resolved = getResolved();
-  let dupResolved = getDupResolved();
-
-  // Count actual missing (ranges count as 1 issue each)
-  let missingCount = allMissing.reduce((sum, item) => sum + (item.range ? 1 : 1), 0);
-  let totalIssues = missingCount + duplicates.length;
-
-  if (totalIssues > 0) {
-    let missingHtml = '';
-    for (let item of allMissing) {
-      if (item.range) {
-        // Large gap - show as a range
-        let rangeKey = item.from + '-' + item.to;
-        let isRes = resolved[rangeKey];
-        missingHtml += `<div class="issue-item ${isRes ? 'resolved' : ''}" style="${isRes && !showResolved ? 'display:none' : ''}">
-          <input type="checkbox" ${isRes ? 'checked' : ''} onchange="resolveIssue(this, '${rangeKey}')">
-          <div class="issue-text">
-            <span class="eid-num">${item.count} missing E-IDs: ${item.from} to ${item.to}</span>
-            <span class="detail">Large gap between consecutive invoices</span>
-          </div>
-        </div>`;
-      } else {
-        let isRes = resolved[item];
-        missingHtml += `<div class="issue-item ${isRes ? 'resolved' : ''}" style="${isRes && !showResolved ? 'display:none' : ''}">
-          <input type="checkbox" ${isRes ? 'checked' : ''} onchange="resolveIssue(this, ${item})">
-          <div class="issue-text">
-            <span class="eid-num">E-ID ${item} is missing</span>
-            <span class="detail">Expected in sequence ${globalMin} - ${globalMax}</span>
-          </div>
-        </div>`;
-      }
-    }
-
-    let dupHtml = '';
-    for (let dup of duplicates) {
-      let isRes = dupResolved[dup.key];
-      let orderIds = dup.orders.map(o => o.id).join(', ');
-      let o = dup.orders[0];
-      dupHtml += `<div class="issue-item ${isRes ? 'resolved' : ''}" style="${isRes && !showResolved ? 'display:none' : ''}">
-        <input type="checkbox" ${isRes ? 'checked' : ''} onchange="resolveDup(this, '${dup.key.replace(/'/g, "\\'")}')">
-        <div class="issue-text">
-          <span class="eid-num dup">Possible duplicate: ${o.cn}</span>
-          <span class="detail">Qty: ${o.tot}, Amount: ${o.inv} | Orders: ${orderIds}</span>
-          <span class="detail">Dates: ${dup.orders.map(x => x.date).join(' & ')} | Sources: ${dup.orders.map(x => x.source).join(', ')}</span>
-        </div>
-      </div>`;
-    }
-
-    let unresolvedCount = allMissing.filter(item => !resolved[item.range ? (item.from + '-' + item.to) : item]).length + duplicates.filter(d => !dupResolved[d.key]).length;
-    issuesDiv.innerHTML = `<div class="issues-box">
-      <div class="issues-header">Issues <span id="issueBadge" class="badge ${unresolvedCount > 0 ? 'error' : 'ok'}">${unresolvedCount > 0 ? unresolvedCount + ' issue' + (unresolvedCount > 1 ? 's' : '') : 'All clear'}</span></div>
-      <div class="issues-body">${missingHtml}${dupHtml}</div>
-      <button id="toggleResBtn" class="toggle-resolved" onclick="toggleResolved()">Show resolved</button>
-    </div>`;
-  } else if (allEids.length) {
-    issuesDiv.innerHTML = `<div class="issues-box">
-      <div class="issues-header">Issues <span id="issueBadge" class="badge ok">All clear</span></div>
-      <div class="issues-body" style="padding:10px 14px;font-size:13px;color:#2e7d32;">No missing e-IDs and no duplicate orders detected.</div>
-    </div>`;
-  }
-
-  // --- RENDER SUMMARY ---
-  summaryDiv.innerHTML = `<div class="summary">
-    <h3>FY ${fy.slice(0,2)}/${fy.slice(2,4)} - E-ID Summary</h3>
-    <div class="stats">
-      <div>Total: <b>${allEids.length}</b></div>
-      <div>Range: <b>${globalMin || '-'}</b> to <b>${globalMax || '-'}</b></div>
-      <div>Expected: <b>${globalMax - globalMin + 1 || 0}</b></div>
-      <div style="color:${allMissing.length ? '#c62828' : '#2e7d32'}">Missing: <b>${allMissing.reduce((s, item) => s + (item.range ? item.count : 1), 0)}</b></div>
-      <div style="color:${duplicates.length ? '#e65100' : '#2e7d32'}">Duplicates: <b>${duplicates.length}</b></div>
-    </div>
-    <div class="src-info">Offline App: ${offlineCount} orders | Website: ${websiteCount} orders (from Firebase)</div>
+  // Range info
+  html += `<div class="section">
+    <h3>Current Range</h3>
+    <div class="range">Latest: <b>${latest}</b> &nbsp;|&nbsp; First: <b>${first}</b> &nbsp;|&nbsp; Total: <b>${total}</b></div>
+    <div class="range"><span class="tag off">Offline</span> ${offCount} &nbsp; <span class="tag web">Website</span> ${webCount}</div>
   </div>`;
 
-  // --- RENDER MONTH CARDS ---
-  let html = '';
-  for (let mi = 0; mi < 12; mi++) {
-    let entries = monthData[mi];
-    if (!entries.length) {
-      html += `<div class="month-card"><div class="month-head" style="opacity:0.5"><span class="name">${MONTHS[mi]}</span><span class="range">No orders</span></div></div>`;
-      continue;
-    }
-
-    let mMin = entries[0].eid;
-    let mMax = entries[entries.length - 1].eid;
-    let mSet = new Set(entries.map(e => e.eid));
-    let mMissing = [];
-    let mRange = mMax - mMin;
-    if (mRange < 100000) {
-      for (let i = mMin; i <= mMax; i++) { if (!mSet.has(i)) mMissing.push(i); }
-    } else {
-      // Large range - find gaps between consecutive entries
-      for (let idx = 1; idx < entries.length; idx++) {
-        let gap = entries[idx].eid - entries[idx - 1].eid;
-        if (gap > 1 && gap <= 50) {
-          for (let i = entries[idx - 1].eid + 1; i < entries[idx].eid; i++) mMissing.push(i);
-        } else if (gap > 50) {
-          mMissing.push('...' + (gap - 1) + ' missing (' + (entries[idx - 1].eid + 1) + '-' + (entries[idx].eid - 1) + ')');
-        }
+  // Gaps section - only show if there are gaps
+  if (gaps.length > 0) {
+    html += `<div class="section"><h3>Continuity Breaks</h3>`;
+    for (let g of gaps) {
+      if (g.missing.length) {
+        html += `<div class="gap">Missing <span class="nums">${g.missing.join(', ')}</span><br>Between ${g.after} and ${g.before}</div>`;
+      } else {
+        html += `<div class="gap"><span class="nums">${g.count} missing</span> between ${g.after} and ${g.before}</div>`;
       }
     }
-    let hasGap = mMissing.length > 0;
-
-    html += `<div class="month-card">
-      <div class="month-head" onclick="this.nextElementSibling.classList.toggle('open')">
-        <span class="name">${MONTHS[mi]}</span>
-        <span class="range">${mMin} &rarr; ${mMax}</span>
-        <span class="count ${hasGap ? 'has-gap' : ''}">${entries.length} orders${hasGap ? ' | ' + mMissing.length + ' missing' : ''}</span>
-      </div>
-      <div class="month-body">
-        ${mMissing.length ? '<div class="missing-label">Missing E-IDs in this month:</div><div class="missing-ids">' + mMissing.map(id => '<span>' + id + '</span>').join('') + '</div>' : '<div style="font-size:12px;color:#2e7d32;margin-bottom:4px;">No gaps</div>'}
-        <div class="eid-list">
-          <table>
-            <thead><tr><th>E-ID</th><th>Order ID</th><th>Customer</th><th>Date</th><th>Source</th></tr></thead>
-            <tbody>${entries.map(e => `<tr><td><b>${e.eid}</b></td><td>${e.orderId}</td><td>${e.cn}</td><td>${e.date}</td><td><span class="${e.source === 'offline' ? 'tag-off' : 'tag-web'}">${e.source === 'offline' ? 'App' : 'Web'}</span></td></tr>`).join('')}</tbody>
-          </table>
-        </div>
-      </div>
-    </div>`;
+    html += `</div>`;
   }
 
-  monthsDiv.innerHTML = allEids.length ? html : '<div class="no-data">No e-invoice orders found for this fiscal year.</div>';
-  } catch (err) {
-    console.error('loadData error:', err);
-    monthsDiv.innerHTML = '<div class="no-data" style="color:#c62828;">Error: ' + err.message + '<br><br><small>Check console for details</small></div>';
+  // Recent e-IDs
+  html += `<div class="section"><h3>Recent E-IDs</h3><div class="recent-box">`;
+  for (let e of recent) {
+    html += `<div class="eid-row"><span><b>${e.eid}</b> ${e.cn}</span><span class="tag ${e.source === 'offline' ? 'off' : 'web'}">${e.source === 'offline' ? 'App' : 'Web'}</span></div>`;
   }
+  html += `</div></div>`;
+
+  document.getElementById('content').innerHTML = html;
 }
+
+load().catch(err => {
+  document.getElementById('content').innerHTML = '<div class="loading" style="color:#c62828;">Error: ' + err.message + '</div>';
+  console.error(err);
+});
 </script>
 </body>
 </html>
