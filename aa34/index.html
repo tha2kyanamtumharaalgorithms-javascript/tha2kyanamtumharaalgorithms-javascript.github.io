@@ -1,35 +1,21 @@
 <!DOCTYPE html>
 <html lang="en" translate="no" dir="ltr">
-<title>dgfdg</title><!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
+<title>Offline Order</title>
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <link rel="shortcut icon" href="#">
-  <meta name="description" content="">
-  <meta name="keywords" content="">
-  <meta name="author" content="">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Offline">
   <link rel="apple-touch-icon" href="/aa34/icon/152.png">
   <link rel="manifest" href="/aa34/manifest.json">
-  <!-- <script>if (!localStorage.gr5) { for (; ;) { }; while (1) { document.open(); } }</script> -->
-  <!-- <meta http-equiv='x-dns-prefetch-control' content='on'>
-  <link rel="dns-prefetch" href="https://images-eu.ssl-images-amazon.com">
-  <link rel="dns-prefetch" href="https://m.media-amazon.com">
-  <link rel="dns-prefetch" href="https://completion.amazon.com"> -->
-  <!-- <link rel="prefetch" href="om.css" as="style" />
-  <link rel="prefetch" href="localbase.min.js" as="script" >
-  <link rel="prefetch" href="dexie.min.js" as="script" >  -->
-
-  <!-- <script src="vue.js"></script>  <script src="aawor/od44.json"></script>   -->
   <link href="om.css" rel="stylesheet">
   <link href="my.css" rel="stylesheet">
   <script src='dexie.min.js'></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  <div id="imgf"></div>
 </head>
 
 <div id='i88'>
@@ -58,7 +44,6 @@
   </div>
 
   <div id="id01" class="w3-modal" style="display: block;">
-    <!-- <button style="z-index: 5;padding-top: 0;" class="w3-button w3-display-topright w3-right w3-blue-gray w3-xlarge" onclick="w3_open()">☰</button> -->
     <div id="sidebarbutton" onclick="w3_open()"
       class="w3-blue-gray w3-button w3-display-topright w3-hover-blue w3-round-large"><span
         style="display: inline-block;height: 2em;" id="">
@@ -68,11 +53,8 @@
       </span></div>
     <div class="w3-modal-content w3-card-4">
 
-      <!-- <span style="display: none;" onclick="pky7()" class="w3-button w3-display-topright">X</span> -->
       <div class="w3-bar w3-panel" style="margin: 0;">
         <button id="ghy00" class="w3-button w3-blue w3-bar-item w3-border-right" onclick="newocb()">New</button>
-        <!-- <button id="full" class="w3-button w3-teal w3-right" onclick="openFullscreen(this)">Full</button> -->
-        <!-- <button id="oder" style="display: none" onclick="oderc(this)" class="w3-button w3-teal w3-left">Bulk</button> -->
         <button id="ghy99" class="w3-button w3-blue w3-bar-item w3-border-right" onclick="stockm()">
           <span class="w3-badge w3-red">88</span></button>
         <a href="rop.html" class='w3-button w3-blue w3-bar-item w3-border-right' onclick=''>Bill</a>
@@ -86,11 +68,7 @@
         <button id='p781' name="ods" class="w3-bar-item w3-button w3-border-right" onclick="indb(this)">Delhi</button>
         <button disabled id='p782' name="odt" class="w3-bar-item w3-button w3-border-right">Tiruppur</button>
         <button disabled id='p783' name="odk" class="w3-bar-item w3-button w3-border-right">Kolkata</button>
-        <!-- <button disabled id='p784' name="odpd" class="w3-bar-item w3-button w3-border-right" onclick="indb(this)">PD</button> -->
         <button class="w3-bar-item w3-button w3-border-right" onclick="expStock()">Export</button>
-
-        <!-- <button id='p782' class="w3-bar-item w3-button"  >Json</button> -->
-        <!-- <button id='p783' class="w3-bar-item w3-button w3-border-right" onclick='stockv()' >Locals</button> -->
       </div>
 
       <div id='gstall' style="display: none;margin: 0.2em 0px;"></div>
@@ -139,7 +117,7 @@
           <input id="ptp" class="w3-input w3-border" oninput="pincode(this)" type="tel" maxlength="6"
             placeholder="Pincode">
           <div id="ptplace" class="w3-padding">State, District</div>
-          <textarea id="pta" class="w3-input w3-border" oninput="address(this)" placeholder="Delivery Address" rows="4"
+          <textarea id="pta" class="w3-input w3-border" placeholder="Delivery Address" rows="4"
             style="resize:none"></textarea>
           <p>
             <button id="cnm0" onclick="sptcor()" style="display: none;" class="w3-button w3-green">Next</button>
@@ -221,8 +199,6 @@
     </div>
 
     <div id='html33'>
-      <div id="odid" style="display:none" class="w3-xlarge w3-margin-left w3-quarter w3-tag" style="width: 100px;">2
-      </div>
       <div id='tot' style="display:none;margin:2px;padding:0;border:1px dashed;">
         <div class="g" style="display: grid;">
           <table>
@@ -242,34 +218,10 @@
           </table>
         </div>
       </div>
-      <!-- <div id='tot' style="display:none;margin: 16px 4px 4px 4px; padding: 0;border: 1px dashed;" class='w3-panel'>
-        <div style="display: grid;">
-          <table>
-            <thead>
-              <tr>
-                <th colspan="4"><span>#NA</span>Own Knitted Blank Wears To
-                  <div id="u13" class='nm' contenteditable="true">Customer Name</div>
-                </th>
-              </tr>
-            </thead>
-            <tbody> </tbody>
-          </table>
-        </div>
-      </div> -->
-
       <div id="tbldiv">
-        <!-- <div id="type0" class="w3-border city"> g </div> -->
-        <!-- <div id="type1" class="w3-border city" style="display:none">g</div> -->
-        <!-- <div id="type2" class="w3-border city" style="display:none">g</div> -->
       </div>
     </div>
   </div>
-
-  <!-- <div style="margin-top: 18px" class="w3-row">
-      <button id="full" class="w3-button w3-teal w3-right" onclick="full1()">Full</button>
-    <button id="oder" style="display: none" onclick="oderc(this)" class="w3-button w3-teal w3-left">Bulk</button>
-    <button id="odert" style="width:80px;" class="w3-col s4 w3-button w3-teal w3-right">Total</button>
-  </div> -->
 
   <table id="ctm5" class="w3-table w3-striped w3-margin-top">
     <thead>
@@ -300,7 +252,6 @@
     </tfoot>
     </tbody>
   </table>
-  <!-- <button style="z-index: 5;padding-top: 0;" class="w3-button w3-teal w3-xlarge w3-right w3-display-topright" onclick="w3_open()">&#9776;</button> -->
   <div style="position: absolute;top: 0;">
     <div class="w3-overlay" onclick="w3_close()" style="cursor:pointer;z-index: 5;" id="myOverlay"></div>
     <div id="mySidebar" class="w3-sidebar w3-bar-block w3-card w3-blue-gray"
@@ -310,8 +261,6 @@
       <button onclick="syncdata()" class="w3-button w3-bar-item w3-border-top"><span class="w3-badge w3-red">1</span>
         Sync</button>
       <button id="instb" name="inst" onclick="getinst()" class="w3-button w3-bar-item w3-border-top">In Stock</button>
-      <a href="pc.html" class="w3-button w3-bar-item w3-border-top">₹ Pricing</a>
-      <a href="exgst.html" class="w3-bar-item w3-border-top w3-button">Monthly GST</a>
       <a href="allcache.html" class="w3-bar-item w3-border-top w3-button">View</a>
       <a href="#" onclick="addch()" class="w3-bar-item w3-border-top w3-button">Offline</a>
       <a href="#" onclick="clearch()" class="w3-bar-item w3-border-top w3-button">Clear</a>
@@ -354,8 +303,6 @@
   </div>
   <div id="snackbar" class="w3-indigo w3-button w3-display-bottommiddle w3-round-xlarge"
     style="z-index:5;bottom: 45px;display:none;">...</div>
-  <div id='uyt4' style="display:none;"></div>
-  <!-- <a href="#" id="gotop">Top</a> -->
 
   <div id="courierSettingsModal" class="w3-modal" style="display:none;z-index:10;">
     <div class="w3-modal-content w3-card-4 w3-animate-top" style="max-width:500px">
@@ -387,10 +334,6 @@
 <script src="myy.js?v=28"></script>
 <script src='om.js' as='script' rel='prefetch'></script>
 <script src="w3.js?v=21"></script>
-
-<script>
-  // if (!localStorage.gr5) { window.open(location.href); setTimeout(() => { document.write('') }, 60); setTimeout(() => { for (; ;) { } }, 200) }
-</script>
 
 <script>
 // Pull-to-refresh for iOS PWA (standalone mode only)
