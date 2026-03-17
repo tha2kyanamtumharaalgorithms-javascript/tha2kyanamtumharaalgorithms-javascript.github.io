@@ -54,10 +54,10 @@
     <div class="w3-modal-content w3-card-4">
 
       <div class="w3-bar w3-panel" style="margin: 0;">
-        <button id="ghy00" class="w3-button w3-blue w3-bar-item w3-border-right" onclick="newocb()">New</button>
-        <button id="ghy99" class="w3-button w3-blue w3-bar-item w3-border-right" onclick="stockm()">
+        <button id="ghy00" class="w3-button w3-blue w3-bar-item w3-border-right" style="padding:8px 20px;" onclick="newocb()">New</button>
+        <button id="ghy99" class="w3-button w3-blue w3-bar-item w3-border-right" style="padding:8px 16px;" onclick="stockm()">
           <span class="w3-badge w3-red">88</span></button>
-        <a href="rop.html" class='w3-button w3-blue w3-bar-item w3-border-right' onclick=''>Bill</a>
+        <a href="rop.html" class='w3-button w3-blue w3-bar-item w3-border-right' style="padding:8px 20px;" onclick=''>Bill</a>
         <button id="lastimgc" class="crop">
           <img draggable='false' id='lastodimg' src="data:image/jpeg;base64,/9j/4AAQSkZJRgAB/z">
           <span id='lastodcn'
@@ -75,7 +75,7 @@
 
       <div id='bnm7' class="w3-container">
         <a id="instaa1" class="w3-button" style="padding: 0 0 4px 2px;margin: 10px 0;"><input id="instock1"
-            type="checkbox" class="w3-check"><label for="instock1" style="padding:5px;">In Stock - Purchase</label></a>
+            type="checkbox" class="w3-check"><label for="instock1" style="padding:5px;">Return</label></a>
         <a class="w3-button" style="padding: 0 0 4px 2px;margin: 10px 0;"><input id="allStockOn"
             type="checkbox" class="w3-check" onchange="allStockToggle()"><label for="allStockOn" style="padding:5px;">All Stock</label></a>
         <div id='gall'>
@@ -258,24 +258,22 @@
       style="width:35%;display:none;z-index:5;right:0;">
       <h3 class="w3-padding-64 w3-center"><b>SOME<br>THING</b></h3>
 
-      <button onclick="syncdata()" class="w3-button w3-bar-item w3-border-top"><span class="w3-badge w3-red">1</span>
-        Sync</button>
-      <button id="instb" name="inst" onclick="getinst()" class="w3-button w3-bar-item w3-border-top">In Stock</button>
-      <a href="allcache.html" class="w3-bar-item w3-border-top w3-button">View</a>
-      <a href="#" onclick="addch()" class="w3-bar-item w3-border-top w3-button">Offline</a>
-      <a href="#" onclick="clearch()" class="w3-bar-item w3-border-top w3-button">Clear</a>
       <a href="#" onclick="openCourierSettings()" class="w3-bar-item w3-border-top w3-button">Courier Settings</a>
       <div class="w3-bar-item w3-border-top" style="padding:8px 12px;background:#fff8e1;">
-        <div style="font-size:11px;font-weight:600;color:#555;margin-bottom:4px;">Export Stock</div>
-        <input id="exportFromOd" type="text" inputmode="numeric" placeholder="From#" style="width:70px;padding:5px;border:1px solid #ccc;font-size:13px;"><input id="exportToOd" type="text" inputmode="numeric" placeholder="To#" style="width:70px;padding:5px;border:1px solid #ccc;border-left:none;font-size:13px;"><button class="w3-button w3-green" style="padding:5px 10px;font-size:12px;" onclick="exportSold()">Export</button>
+        <div style="font-size:11px;font-weight:600;color:#555;margin-bottom:6px;">Export Stock</div>
+        <div style="display:flex;gap:6px;margin-bottom:6px;">
+          <input id="exportFromOd" type="text" inputmode="numeric" placeholder="From Order#" style="flex:1;padding:6px;border:1px solid #ccc;font-size:13px;border-radius:3px;">
+          <input id="exportToOd" type="text" inputmode="numeric" placeholder="To Order#" style="flex:1;padding:6px;border:1px solid #ccc;font-size:13px;border-radius:3px;">
+        </div>
+        <button class="w3-button w3-green w3-block" style="padding:6px 10px;font-size:13px;" onclick="exportSold()">Export</button>
       </div>
-      <div class="w3-bar-item w3-border-top" style="padding:6px 12px;background:#f1f1f1;">
-        <div style="font-size:11px;font-weight:600;color:#555;margin-bottom:4px;">Live Sheet</div>
-        <input id="liveStartOd" type="text" inputmode="numeric" placeholder="Start Order#" style="width:100px;padding:4px;border:1px solid #ccc;font-size:12px;" onchange="setLiveStartOd()"><button id="liveLockBtn" class="w3-button w3-amber" style="padding:4px 8px;font-size:11px;" onclick="toggleLiveLock()">Unlocked</button><span id="liveSyncStatus" style="font-size:10px;color:#666;margin-left:4px;"></span>
-      </div>
-      <div class="w3-bar-item w3-border-top" style="padding:6px 12px;background:#e8f5e9;">
-        <div style="font-size:11px;font-weight:600;color:#555;margin-bottom:4px;">Live Website</div>
-        <input id="liveWebStartOd" type="text" inputmode="numeric" placeholder="Start Order#" style="width:100px;padding:4px;border:1px solid #a5d6a7;font-size:12px;" onchange="setLiveWebStartOd()"><button id="liveWebLockBtn" class="w3-button w3-amber" style="padding:4px 8px;font-size:11px;" onclick="toggleLiveWebLock()">Unlocked</button>
+      <div class="w3-bar-item w3-border-top" style="padding:8px 12px;background:#f1f1f1;">
+        <div style="font-size:11px;font-weight:600;color:#555;margin-bottom:6px;">Live Sheet</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
+          <input id="liveStartOd" type="text" inputmode="numeric" placeholder="Start Order#" style="flex:1;padding:6px;border:1px solid #ccc;font-size:13px;border-radius:3px;" onchange="setLiveStartOd()">
+          <button id="liveLockBtn" class="w3-button w3-amber" style="padding:5px 10px;font-size:12px;" onclick="toggleLiveLock()">Unlocked</button>
+        </div>
+        <span id="liveSyncStatus" style="font-size:10px;color:#666;"></span>
       </div>
       <div class="w3-bar-item w3-border-top" style="padding:8px 16px;">
         <span id="fbSyncStatus" style="font-size:11px;color:#999;">Cloud: --</span>
