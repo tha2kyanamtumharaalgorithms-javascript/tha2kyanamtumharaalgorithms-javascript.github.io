@@ -294,7 +294,7 @@ function tot() {
       document.getElementById('dis').value = disx;
       othch[2] = disx;
     }
-    if (ptd && ptd.ptc && odqt) {
+    if (ptd && ptd.ptc && odqt && document.getElementById('ptcOn').checked) {
       tchx = dec2(odqt * ptd.ptc);
       document.getElementById('tch').value = tchx;
       othch[0] = tchx;
