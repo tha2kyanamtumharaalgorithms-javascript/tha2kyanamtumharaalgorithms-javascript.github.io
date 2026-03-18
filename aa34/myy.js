@@ -1589,8 +1589,7 @@ function ppdToggle() {
 function ptcToggle() {
   let on = document.getElementById('ptcOn').checked;
   document.getElementById('ptcAmt').style.display = on ? '' : 'none';
-  if (!on) { document.getElementById('ptcAmt').value = ''; document.getElementById('tch').value = ''; }
-  tot();
+  if (!on) document.getElementById('ptcAmt').value = '';
 }
 
 let allStockItems = [];
