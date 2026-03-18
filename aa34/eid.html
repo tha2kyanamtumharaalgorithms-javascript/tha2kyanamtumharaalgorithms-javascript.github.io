@@ -23,7 +23,7 @@
   .miss-list b { display: block; margin-bottom: 4px; font-size: 13px; }
 
   table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-  th { background: #eceff1; padding: 8px 12px; text-align: left; font-size: 13px; color: #333; position: sticky; top: 46px; z-index: 4; }
+  th { background: #eceff1; padding: 8px 12px; text-align: left; font-size: 13px; color: #333; position: sticky; top: 50px; z-index: 4; }
   td { padding: 6px 12px; border-top: 1px solid #f0f0f0; font-size: 13px; }
   .src { font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 600; }
   .src.app { background: #e8f5e9; color: #2e7d32; }
@@ -41,6 +41,7 @@
   <div class="header">
     <button onclick="history.back()">&#10094; Back</button>
     <span class="title">E-ID Tracker</span>
+    <button id="dlBtn" onclick="downloadCSV()" style="background:#4CAF50;display:none">&#8595; CSV</button>
     <select id="monthSel" onchange="load()"></select>
   </div>
   <div class="box">
@@ -260,6 +261,24 @@ async function load() {
   }
 
   document.getElementById('out').innerHTML = html;
+  window._eidData = all;
+  document.getElementById('dlBtn').style.display = all.length ? '' : 'none';
+}
+
+function downloadCSV() {
+  let data = window._eidData;
+  if (!data || !data.length) return;
+  let month = document.getElementById('monthSel');
+  let mName = month.options[month.selectedIndex].text;
+  let csv = 'E-ID,Source\n';
+  for (let i = data.length - 1; i >= 0; i--) {
+    csv += data[i].eid + ',' + (data[i].source === 'app' ? 'Offline App' : 'Website') + '\n';
+  }
+  let blob = new Blob([csv], {type: 'text/csv'});
+  let a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'EID_' + mName + '.csv';
+  a.click();
 }
 </script>
 </body>
