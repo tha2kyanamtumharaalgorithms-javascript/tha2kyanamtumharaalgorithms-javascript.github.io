@@ -214,8 +214,10 @@ async function awbFetchRocketBox() {
     let formData = new FormData();
     formData.append('t', 'list');
 
-    const res = await fetch(rkbUrl, { method: 'POST', body: formData });
-    const data = await res.json();
+    const res = await fetch(rkbUrl, { method: 'POST', body: formData, redirect: 'follow' });
+    const text = await res.text();
+    if (!text) { console.log('RocketBox: empty response'); return allOrders; }
+    const data = JSON.parse(text);
 
     if (Array.isArray(data)) {
       data.forEach(pkg => {
