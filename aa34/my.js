@@ -39,7 +39,7 @@ async function getods(gd) {
         let nub = i.id.toString();
         nub = nub.slice(4, 6) + Number(nub.slice(-7));
         let utag = (i._user && i._user !== getAppUser()) ? "<br><span style='font-size:9px;color:#673ab7;font-weight:400;'>" + i._user.slice(0,4) + "</span>" : '';
-        hmtl0 = "<li " + book[0] + " id=s" + i.id + " " + "tabindex=" + i.pt + " " + ifz + ">" + inp + ' ' + "<b onclick='goadd(" + i.pt + ',' + i.id + ")'>" + nub + '. ' + i.cn + '</b>' + vtag + "<span onclick='opodli(this)'>" + i.tot + ' ' + due + ' ' + i.dt.slice(0, 6) + utag + "</span></li>" + hmtl0;
+        hmtl0 = "<li " + book[0] + " id=s" + i.id + " " + "tabindex=" + i.pt + " data-amt=" + Math.ceil(i.inv[1]) + " " + ifz + ">" + inp + ' ' + "<b onclick='goadd(" + i.pt + ',' + i.id + ")'>" + nub + '. ' + i.cn + '</b>' + vtag + "<span onclick='opodli(this)'>" + i.tot + ' ' + due + ' ' + i.dt.slice(0, 6) + utag + "</span></li>" + hmtl0;
       });
     }
     document.getElementById('oderli').innerHTML = hmtl0;
@@ -504,7 +504,7 @@ async function indb(d) {
   selg = d.name;
   document.getElementById('gstall').style.display = 'block';
   // selgo(selg);
-  document.getElementById('gstall').innerHTML = "<div class='w3-blue-gray' style='display:flex;position: sticky;top: -50px;z-index: 6;'><div class='w3-bar-item w3-button w3-border-right' onclick='delod()'>Del</div><button class='w3-button w3-bar-item w3-border-right' onclick='omprint()'>Print</button>" + "<div id='st91' class='w3-dropdown-hover'> <button class='w3-button w3-border-right'>Status</button><div id='st92' class='w3-hide w3-bar-block w3-border'><a href='#' onclick='unpingen()' class='w3-bar-item w3-button'>NoneGenerate</a> <a href='#' onclick='unpin()' class='w3-bar-item w3-button'>None</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Payment Pending</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Under Production</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Printing</a><a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Part Quantity</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Pending</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>In Transit</a><a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>COD</a> <input onchange='chnot(1,this)' id='inp5' name='od84' class='w3-border w3-bar-item' type='text' style='padding:5px;display:none' placeholder='Write other...'></div></div>" + "<button onclick='printadd()' class='w3-button'>DTDC</button>" + "</div>" + "<div id='tre6'><ul id='oderli' class='w3-ul'></ul></div>";
+  document.getElementById('gstall').innerHTML = "<div class='w3-blue-gray' style='display:flex;position: sticky;top: -50px;z-index: 6;'><div class='w3-bar-item w3-button w3-border-right' onclick='delod()'>Del</div><button class='w3-button w3-bar-item w3-border-right' onclick='omprint()'>Print</button>" + "<div id='st91' class='w3-dropdown-hover'> <button class='w3-button w3-border-right'>Status</button><div id='st92' class='w3-hide w3-bar-block w3-border'><a href='#' onclick='unpingen()' class='w3-bar-item w3-button'>NoneGenerate</a> <a href='#' onclick='unpin()' class='w3-bar-item w3-button'>None</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Payment Pending</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Under Production</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Printing</a><a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Part Quantity</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>Pending</a> <a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>In Transit</a><a href='#' onclick='chnot(0,this)' class='w3-bar-item w3-button'>COD</a> <input onchange='chnot(1,this)' id='inp5' name='od84' class='w3-border w3-bar-item' type='text' style='padding:5px;display:none' placeholder='Write other...'></div></div>" + "<button onclick='printadd()' class='w3-button'>DTDC</button>" + "<span id='selTotal' style='padding:8px;font-weight:700;color:#fff;'></span>" + "</div>" + "<div id='tre6'><ul id='oderli' class='w3-ul'></ul></div>";
 
   // status toggle
   document.getElementById('st91').addEventListener('click', (v) => {
@@ -642,6 +642,17 @@ function selod(h) {
     })();
   }
   console.log(selod5, secid);
+  let stEl = document.getElementById('selTotal');
+  if (stEl) {
+    let sel = Object.keys(selod5);
+    if (sel.length) {
+      let sum = 0;
+      sel.forEach(id => { let li = document.getElementById('s' + id.slice(3)); if (li) sum += Number(li.dataset.amt || 0); });
+      stEl.textContent = sum.toLocaleString('en-IN') + '₹';
+    } else {
+      stEl.textContent = '';
+    }
+  }
 }
 
 let pd2;
