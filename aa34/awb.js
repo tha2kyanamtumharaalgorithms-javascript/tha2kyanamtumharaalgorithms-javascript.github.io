@@ -169,7 +169,7 @@ async function awbFetchShipRocket() {
 
 async function awbRefreshShpToken() {
   try {
-    let res = await fetch('__COURIER_LAMBDA_URL__/token'); // TODO: Replace with new Lambda Function URL
+    let res = await fetch('https://anlof6ho4kmtewslnyk34ip2f40pedjp.lambda-url.ap-south-1.on.aws/token'); // TODO: Replace with new Lambda Function URL
     let v = await res.json();
     localStorage.shipr1 = '{"a":"Bearer ' + v[0] + '"}';
     localStorage.setItem('shpdt', Date.now());
@@ -182,7 +182,7 @@ async function awbRefreshShpToken() {
 // ============ DELHIVERY: Fetch shipments via Lambda ============
 
 async function awbFetchDelhivery() {
-  const lambdaBase = '__COURIER_LAMBDA_URL__'; // TODO: Replace with new Lambda Function URL
+  const lambdaBase = 'https://anlof6ho4kmtewslnyk34ip2f40pedjp.lambda-url.ap-south-1.on.aws'; // TODO: Replace with new Lambda Function URL
   let allOrders = [];
 
   try {
@@ -423,7 +423,7 @@ async function awbCancel(orderId, courierType) {
       }
     } else if (courierType === 'dl' || courierType?.startsWith('dl')) {
       // Delhivery: cancel via Lambda
-      let lambdaUrl = '__COURIER_LAMBDA_URL__/del/cancel'; // TODO: Replace with new Lambda Function URL
+      let lambdaUrl = 'https://anlof6ho4kmtewslnyk34ip2f40pedjp.lambda-url.ap-south-1.on.aws/del/cancel'; // TODO: Replace with new Lambda Function URL
       let res = await fetch(lambdaUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

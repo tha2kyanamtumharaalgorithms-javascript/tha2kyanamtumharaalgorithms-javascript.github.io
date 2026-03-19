@@ -15,6 +15,7 @@ const env = process.env;
 
 // Delhivery token mapping: dl0=Surface(A), dl1=Express(C), dl2=10KG(B)
 const DL_TOKENS = { dl0: env.DL_TOKEN_A, dl1: env.DL_TOKEN_C, dl2: env.DL_TOKEN_B };
+let rkbTokenOverride = ''; // Updated at runtime by Google Script's rkb() trigger
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -149,7 +150,7 @@ async function rkbPricing(query) {
 
   const r = await nfetch('https://api.rocketbox.in/api/shipment/charges/', {
     method: 'POST',
-    headers: { 'Authorization': env.RKB_TOKEN, 'Content-Type': 'application/json' },
+    headers: { 'Authorization': rkbTokenOverride || env.RKB_TOKEN, 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
   return r.body;
@@ -251,6 +252,12 @@ export const handler = async (event) => {
   const q = event.queryStringParameters || {};
 
   try {
+    // --- RocketBox: Token update from Google Script ---
+    if (q.rkb) {
+      rkbTokenOverride = 'Bearer ' + q.rkb;
+      return res({ ok: true, msg: 'RKB token updated' });
+    }
+
     // --- ShipRocket: Token refresh ---
     if (path === '/token' || path === '/token/') {
       const token = await shpLogin();

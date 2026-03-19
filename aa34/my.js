@@ -97,7 +97,7 @@ var od = {};
 
 // shp
 if (((Date.now() > (Number(localStorage.shpdt) + 40000000)) || (!localStorage.shpdt))) {
-  fetch('__COURIER_LAMBDA_URL__/token').then((v) => v.json())
+  fetch('https://anlof6ho4kmtewslnyk34ip2f40pedjp.lambda-url.ap-south-1.on.aws/token').then((v) => v.json())
     .then((v) => {
       localStorage.shipr1 = '{"a":"Bearer ' + v[0] + '"}';
       localStorage.setItem('shpdt', Date.now());
