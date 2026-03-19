@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<title>AWB Courier Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="om.css">
+<style>
+  body { background: #f5f5f5; margin: 0; font-family: -apple-system, sans-serif; }
+  .header { background: #455a64; color: #fff; padding: 10px 12px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 5; }
+  .header button { padding: 6px 10px; border: none; border-radius: 4px; font-size: 14px; background: #2196F3; color: #fff; cursor: pointer; }
+  .header .title { font-size: 14px; font-weight: 600; flex: 1; }
+  .box { max-width: 960px; margin: 10px auto; padding: 0 8px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0; background: #fff; border-radius: 8px 8px 0 0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 0; }
+  .tabs button { flex: 1; padding: 10px 8px; border: none; background: #fff; font-size: 13px; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; }
+  .tabs button.active { color: #2196F3; border-bottom-color: #2196F3; }
+
+  /* Summary cards */
+  .summary { display: flex; gap: 8px; padding: 10px 0; flex-wrap: wrap; }
+  .summary .card { flex: 1; min-width: 100px; background: #fff; border-radius: 8px; padding: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .summary .card b { display: block; font-size: 22px; color: #000; }
+  .summary .card span { font-size: 11px; color: #555; }
+  .card-warn { background: #fff3cd !important; }
+  .card-red { background: #f8d7da !important; }
+  .card-grey { background: #e9ecef !important; }
+
+  /* Table */
+  .tbl-wrap { border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; background: #fff; min-width: 700px; }
+  th { background: #eceff1; padding: 6px 8px; text-align: left; font-size: 11px; color: #333; white-space: nowrap; }
+  td { padding: 5px 8px; border-top: 1px solid #f0f0f0; font-size: 12px; white-space: nowrap; }
+
+  /* Status badges */
+  .st { display: inline-block; font-size: 9px; padding: 1px 5px; border-radius: 8px; font-weight: 600; }
+  .st-green { background: #c8e6c9; color: #2e7d32; }
+  .st-blue { background: #bbdefb; color: #1565c0; }
+  .st-red { background: #ffcdd2; color: #c62828; }
+  .st-yellow { background: #fff9c4; color: #f57f17; }
+
+  .track-link { color: #1565C0; text-decoration: none; font-weight: 600; }
+  .loading { text-align: center; padding: 40px; color: #666; font-size: 14px; }
+
+  /* Snackbar */
+  .snack { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #323232; color: #fff; padding: 8px 20px; border-radius: 6px; font-size: 13px; z-index: 99; display: none; }
+
+  @media screen and (max-width: 428px) {
+    .summary { gap: 4px; }
+    .summary .card { min-width: 80px; padding: 6px; }
+    .summary .card b { font-size: 18px; }
+    .summary .card span { font-size: 10px; }
+    th, td { font-size: 11px; padding: 4px 4px !important; }
+  }
+</style>
+
+<body>
+  <div class="header">
+    <button onclick="history.back()">&#10094; Back</button>
+    <span class="title">AWB Courier Dashboard</span>
+    <button onclick="awbRefresh()" style="background:#4CAF50">&#x21bb; Refresh</button>
+  </div>
+
+  <div class="box">
+    <div class="tabs" id="awbTabs">
+      <button class="active" onclick="awbSwitchTab('all',this)">All</button>
+      <button onclick="awbSwitchTab('scheduled',this)">Scheduled</button>
+      <button onclick="awbSwitchTab('transit',this)">In-Transit</button>
+      <button onclick="awbSwitchTab('delivered',this)">Delivered</button>
+    </div>
+
+    <div class="summary">
+      <div class="card card-warn"><b id="awbNotPicked">...</b><span>Not picked (3+ days)</span></div>
+      <div class="card card-red"><b id="awbTotalDeducted">...</b><span>Total deducted cost</span></div>
+      <div class="card card-grey"><b id="awbTotalCollected">&mdash;</b><span>Total collected cost</span></div>
+    </div>
+
+    <div id="out"><div class="loading">Loading from couriers...</div></div>
+  </div>
+
+  <div class="snack" id="snack"></div>
+
+<script>
+// ============ SHIPROCKET TOKEN ============
+let shipr1 = '';
+try { shipr1 = JSON.parse(localStorage.shipr1).a; } catch(e) {}
+
+// Refresh token if expired (>11 hours)
+if (!localStorage.shpdt || Date.now() > Number(localStorage.shpdt) + 40000000) {
+  fetch('https://dsfdyyhqqgvk6duva445txkioq0jzoqe.lambda-url.ap-south-1.on.aws')
+    .then(r => r.json()).then(v => {
+      localStorage.shipr1 = '{"a":"Bearer ' + v[0] + '"}';
+      localStorage.setItem('shpdt', Date.now());
+      shipr1 = 'Bearer ' + v[0];
+    });
+}
+
+let awbData = [];
+let awbCurrentTab = 'all';
+let awbLoading = false;
+
+// ============ SNACKBAR ============
+function snackbar(msg, ms) {
+  let el = document.getElementById('snack');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', ms || 1500);
+}
+
+// ============ INIT: FETCH ALL ============
+awbFetchAll();
+
+async function awbFetchAll() {
+  if (awbLoading) return;
+  awbLoading = true;
+  awbData = [];
+
+  try {
+    const [shpResults, dlResults, rkbResults] = await Promise.allSettled([
+      awbFetchShipRocket(),
+      awbFetchDelhivery(),
+      awbFetchRocketBox()
+    ]);
+
+    if (shpResults.status === 'fulfilled' && shpResults.value) awbData.push(...shpResults.value);
+    if (dlResults.status === 'fulfilled' && dlResults.value) awbData.push(...dlResults.value);
+    if (rkbResults.status === 'fulfilled' && rkbResults.value) awbData.push(...rkbResults.value);
+
+    awbData.sort((a, b) => new Date(b.orderDate || 0) - new Date(a.orderDate || 0));
+
+    if (!awbData.length) {
+      document.getElementById('out').innerHTML = '<div class="loading">No shipments found from courier APIs</div>';
+    } else {
+      awbRender(awbCurrentTab);
+    }
+  } catch (e) {
+    console.log('AWB fetch error:', e);
+    document.getElementById('out').innerHTML = '<div class="loading" style="color:red">Error: ' + e.message + '</div>';
+  }
+  awbLoading = false;
+}
+
+// ============ SHIPROCKET ============
+async function awbFetchShipRocket() {
+  if (!shipr1) return [];
+  const headers = { 'Content-Type': 'application/json', 'Authorization': shipr1 };
+  let allOrders = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    try {
+      const url = 'https://apiv2.shiprocket.in/v1/external/orders?page=' + page + '&per_page=50';
+      const res = await fetch(url, { method: 'GET', headers });
+
+      if (res.status === 401) {
+        await awbRefreshShpToken();
+        return awbFetchShipRocket();
+      }
+
+      const data = await res.json();
+
+      if (data.data && data.data.length) {
+        data.data.forEach(order => {
+          let shipment = order.shipments?.[0] || {};
+          let awb = shipment.awb || '';
+          let status = shipment.status || order.status || 'NEW';
+
+          allOrders.push({
+            id: order.id,
+            awb: awb,
+            dl: 'shp',
+            courierName: shipment.courier_name || 'ShipRocket',
+            buyer: order.customer_name || '',
+            mobile: order.customer_phone || '',
+            status: awbNormalizeStatus(status),
+            statusRaw: status,
+            orderDate: order.created_at || '',
+            tch: Number(shipment.freight_charge || 0),
+            och: Number(shipment.weight_charges || 0),
+            otherCharges: Number(shipment.cod_charges || 0) + Number(shipment.rto_charges || 0) + Number(shipment.other_charges || 0),
+            trackUrl: awb ? 'https://www.shiprocket.in/shipment-tracking/' + awb : '',
+            cancelled: (status === 'CANCELED' || status === 'CANCELLED'),
+            invoiceAmount: Number(order.total || 0)
+          });
+        });
+
+        let meta = data.meta || {};
+        if (meta.last_page && page < meta.last_page) page++;
+        else if (data.data.length === 50) page++;
+        else hasMore = false;
+      } else {
+        hasMore = false;
+      }
+    } catch (e) {
+      console.log('ShipRocket page ' + page + ' error:', e);
+      hasMore = false;
+    }
+  }
+
+  console.log('ShipRocket: ' + allOrders.length + ' orders');
+  return allOrders;
+}
+
+async function awbRefreshShpToken() {
+  try {
+    let res = await fetch('https://dsfdyyhqqgvk6duva445txkioq0jzoqe.lambda-url.ap-south-1.on.aws');
+    let v = await res.json();
+    localStorage.shipr1 = '{"a":"Bearer ' + v[0] + '"}';
+    localStorage.setItem('shpdt', Date.now());
+    shipr1 = 'Bearer ' + v[0];
+  } catch (e) { console.log('Token refresh error:', e); }
+}
+
+// ============ DELHIVERY ============
+async function awbFetchDelhivery() {
+  let allOrders = [];
+  try {
+    const url = 'https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws/del/shipments';
+    const res = await fetch(url, { method: 'GET' });
+    const data = await res.json();
+
+    if (Array.isArray(data)) {
+      data.forEach(pkg => {
+        let status = pkg.status || pkg.Status || '';
+        allOrders.push({
+          id: pkg.client_order_id || pkg.order_id || pkg.refnum || '',
+          awb: pkg.waybill || pkg.awb || '',
+          dl: 'dl',
+          courierName: 'Delhivery',
+          buyer: pkg.consignee_name || pkg.name || '',
+          mobile: pkg.consignee_phone || pkg.phone || '',
+          status: awbNormalizeStatus(status),
+          statusRaw: status,
+          orderDate: pkg.order_date || pkg.added_on || '',
+          tch: Number(pkg.charges?.freight_charge || pkg.total_amount || 0),
+          och: Number(pkg.charges?.weight_charge || 0),
+          otherCharges: Number(pkg.charges?.cod_charge || 0) + Number(pkg.charges?.other_charge || 0),
+          trackUrl: (pkg.waybill || pkg.awb) ? 'https://www.delhivery.com/track/package/' + (pkg.waybill || pkg.awb) : '',
+          cancelled: (status === 'Cancelled' || status === 'RTO'),
+          invoiceAmount: Number(pkg.total_amount || pkg.invoice_amount || 0)
+        });
+      });
+    }
+  } catch (e) { console.log('Delhivery fetch error:', e); }
+
+  console.log('Delhivery: ' + allOrders.length + ' orders');
+  return allOrders;
+}
+
+// ============ ROCKETBOX ============
+async function awbFetchRocketBox() {
+  let allOrders = [];
+  try {
+    const rkbUrl = 'https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec';
+    let formData = new FormData();
+    formData.append('t', 'list');
+
+    const res = await fetch(rkbUrl, { method: 'POST', body: formData });
+    const data = await res.json();
+
+    if (Array.isArray(data)) {
+      data.forEach(pkg => {
+        let status = pkg.status || '';
+        allOrders.push({
+          id: pkg.order_id || pkg.id || '',
+          awb: pkg.awb || pkg.tracking_id || pkg.label_url || '',
+          dl: 'rkb',
+          courierName: pkg.courier_name || 'RocketBox',
+          buyer: pkg.recipient_name || pkg.buyer_name || '',
+          mobile: pkg.recipient_phone || pkg.mobile || '',
+          status: awbNormalizeStatus(status),
+          statusRaw: status,
+          orderDate: pkg.order_date || pkg.created_at || '',
+          tch: Number(pkg.freight_charge || pkg.rate || 0),
+          och: Number(pkg.weight_charge || 0),
+          otherCharges: Number(pkg.other_charges || 0),
+          trackUrl: pkg.tracking_url || pkg.label_url || '',
+          cancelled: (status === 'Cancelled'),
+          invoiceAmount: Number(pkg.invoice_value || 0)
+        });
+      });
+    }
+  } catch (e) { console.log('RocketBox fetch error:', e); }
+
+  console.log('RocketBox: ' + allOrders.length + ' orders');
+  return allOrders;
+}
+
+// ============ STATUS NORMALIZATION ============
+function awbNormalizeStatus(raw) {
+  if (!raw) return 'Unknown';
+  let s = raw.toLowerCase().trim();
+  if (s === 'delivered' || s === 'dl_delivered') return 'Delivered';
+  if (s.includes('transit') || s === 'shipped' || s === 'in_transit') return 'In Transit';
+  if (s.includes('out for delivery') || s === 'out_for_delivery') return 'Out for Delivery';
+  if (s.includes('pickup') || s === 'ready to ship' || s === 'manifested' || s === 'new' || s === 'created' || s === 'ready_to_ship' || s === 'booked') return 'Pickup Scheduled';
+  if (s.includes('not picked') || s === 'pickup_error') return 'Not Picked';
+  if (s.includes('cancel') || s === 'canceled') return 'Cancelled';
+  if (s.includes('rto') || s === 'returned') return 'RTO';
+  if (s === 'pending' || s === 'processing') return 'Pending';
+  return raw;
+}
+
+// ============ TAB SWITCHING ============
+function awbSwitchTab(tab, btn) {
+  awbCurrentTab = tab;
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  awbRender(tab);
+}
+
+// ============ RENDER ============
+function awbRender(tab) {
+  let filtered = awbData;
+  if (tab === 'scheduled') filtered = awbData.filter(d => ['Pickup Scheduled', 'Not Picked', 'Pending', 'Ready to Ship', 'Booked'].includes(d.status));
+  else if (tab === 'transit') filtered = awbData.filter(d => ['In Transit', 'Out for Delivery'].includes(d.status));
+  else if (tab === 'delivered') filtered = awbData.filter(d => d.status === 'Delivered');
+
+  let html = '';
+  if (!filtered.length) {
+    html = '<div class="loading">No shipments in this category</div>';
+  } else {
+    html = '<div class="tbl-wrap"><table><thead><tr><th>Track</th><th>AWB</th><th>Mobile</th><th>Buyer</th><th>Cancel</th><th>Order ID</th><th>Ship Cost</th><th>Extra Wt.</th><th>Other</th><th>Collected</th></tr></thead><tbody>';
+
+    filtered.forEach(d => {
+      let trackLink = d.trackUrl
+        ? '<a href="' + d.trackUrl + '" target="_blank" class="track-link">' + d.courierName + '</a>'
+        : d.courierName;
+
+      let awbDisplay = d.awb || '\u2014';
+      if (typeof awbDisplay === 'object') awbDisplay = JSON.stringify(awbDisplay);
+      if (awbDisplay.length > 20) awbDisplay = awbDisplay.slice(0, 20) + '...';
+
+      let cancelBtn = d.cancelled
+        ? '<span style="color:#999;font-size:10px">Cancelled</span>'
+        : '<button style="padding:2px 8px;border:none;border-radius:4px;background:#ef5350;color:#fff;font-size:11px;cursor:pointer" onclick="awbCancel(\'' + d.id + '\',\'' + d.dl + '\')">Cancel</button>';
+
+      let stClass = 'st-yellow';
+      if (d.status === 'Delivered') stClass = 'st-green';
+      else if (['In Transit', 'Out for Delivery'].includes(d.status)) stClass = 'st-blue';
+      else if (['Not Picked', 'RTO', 'Cancelled'].includes(d.status)) stClass = 'st-red';
+
+      let statusBadge = '<span class="st ' + stClass + '">' + d.status + '</span>';
+
+      html += '<tr>' +
+        '<td style="white-space:nowrap">' + trackLink + '</td>' +
+        '<td title="' + (d.awb || '') + '">' + awbDisplay + '</td>' +
+        '<td><a href="tel:' + d.mobile + '">' + (d.mobile || '\u2014') + '</a></td>' +
+        '<td>' + (d.buyer || '\u2014') + '</td>' +
+        '<td>' + cancelBtn + '</td>' +
+        '<td>' + d.id + ' ' + statusBadge + '</td>' +
+        '<td>' + d.tch + '\u20B9</td>' +
+        '<td>' + d.och + '\u20B9</td>' +
+        '<td>' + d.otherCharges + '\u20B9</td>' +
+        '<td>\u2014</td>' +
+        '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+  }
+
+  document.getElementById('out').innerHTML = html;
+  awbCalcSummary(filtered);
+}
+
+// ============ SUMMARY ============
+function awbCalcSummary(data) {
+  let threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+  let now = Date.now();
+
+  let notPicked = data.filter(d => {
+    let isScheduled = ['Pickup Scheduled', 'Not Picked', 'Pending', 'Ready to Ship', 'Booked'].includes(d.status);
+    if (!isScheduled) return false;
+    let bookTime = d.orderDate ? new Date(d.orderDate).getTime() : 0;
+    if (!bookTime || isNaN(bookTime)) return false;
+    return (now - bookTime) > threeDaysMs;
+  }).length;
+
+  let totalDeducted = data.reduce((sum, d) => sum + (d.tch || 0) + (d.och || 0) + (d.otherCharges || 0), 0);
+
+  document.getElementById('awbNotPicked').textContent = notPicked;
+  document.getElementById('awbTotalDeducted').textContent = Math.ceil(totalDeducted).toLocaleString('en-IN') + '\u20B9';
+}
+
+// ============ CANCEL ============
+async function awbCancel(orderId, courierType) {
+  let rec = awbData.find(d => String(d.id) === String(orderId));
+  if (!rec) return;
+
+  if (!confirm('Cancel shipment?\nOrder: ' + orderId + '\nCourier: ' + rec.courierName + '\nAWB: ' + (rec.awb || 'N/A') + '\nBuyer: ' + rec.buyer)) return;
+
+  try {
+    if (courierType === 'shp') {
+      let res = await fetch('https://apiv2.shiprocket.in/v1/external/orders/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': shipr1 },
+        body: JSON.stringify({ ids: [orderId] })
+      });
+      let data = await res.json();
+      if (res.ok) { rec.status = 'Cancelled'; rec.cancelled = true; snackbar('ShipRocket order cancelled'); }
+      else { alert('Cancel failed: ' + (data.message || JSON.stringify(data))); return; }
+    } else if (courierType === 'dl' || courierType?.startsWith('dl')) {
+      let res = await fetch('https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws/del/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ waybill: rec.awb, order_id: orderId })
+      });
+      let data = await res.json();
+      if (res.ok) { rec.status = 'Cancelled'; rec.cancelled = true; snackbar('Delhivery order cancelled'); }
+      else { alert('Cancel failed: ' + (data.message || data.error || JSON.stringify(data))); return; }
+    } else if (courierType === 'rkb') {
+      let formData = new FormData();
+      formData.append('t', 'cancel');
+      formData.append('order_id', orderId);
+      formData.append('awb', rec.awb);
+      let res = await fetch('https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec', { method: 'POST', body: formData });
+      let data = await res.json();
+      if (res.ok) { rec.status = 'Cancelled'; rec.cancelled = true; snackbar('RocketBox order cancelled'); }
+      else { alert('Cancel failed: ' + (data.message || JSON.stringify(data))); return; }
+    }
+    awbRender(awbCurrentTab);
+  } catch (e) {
+    console.log('Cancel error:', e);
+    alert('Cancel failed: ' + e.message);
+  }
+}
+
+// ============ REFRESH ============
+function awbRefresh() {
+  if (awbLoading) return;
+  snackbar('Refreshing from couriers...');
+  document.getElementById('out').innerHTML = '<div class="loading">Loading from couriers...</div>';
+  awbFetchAll();
+}
+</script>
+</body>
+</html>
