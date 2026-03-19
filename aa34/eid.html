@@ -98,12 +98,12 @@ function shortEid(raw) {
 
 const STATES = {"01":"Jammu & Kashmir","02":"Himachal Pradesh","03":"Punjab","04":"Chandigarh","05":"Uttarakhand","06":"Haryana","07":"Delhi","08":"Rajasthan","09":"Uttar Pradesh","10":"Bihar","11":"Sikkim","12":"Arunachal Pradesh","13":"Nagaland","14":"Manipur","15":"Mizoram","16":"Tripura","17":"Meghalaya","18":"Assam","19":"West Bengal","20":"Jharkhand","21":"Odisha","22":"Chhattisgarh","23":"Madhya Pradesh","24":"Gujarat","25":"Daman & Diu","26":"D&N Haveli","27":"Maharashtra","29":"Karnataka","30":"Goa","31":"Lakshadweep","32":"Kerala","33":"Tamil Nadu","34":"Puducherry","35":"A&N Islands","36":"Telangana","37":"Andhra Pradesh","38":"Ladakh","97":"Other Territory"};
 
-function getState(gstin, address) {
+function getState(gstin) {
   if (gstin && gstin.length >= 2) {
     let code = gstin.slice(0, 2);
     if (STATES[code]) return STATES[code];
   }
-  return '';
+  return 'Delhi';
 }
 
 // Format date like "25 Mar" from "25/Mar/2024", "25/07/2024", or timestamp
@@ -211,7 +211,7 @@ async function load() {
             taxable, total,
             gstAmt: Math.round(total - taxable),
             gstin: ord.gstno || '',
-            state: getState(ord.gstno, ord.add || '')
+            state: getState(ord.gstno)
           };
           if (isCurrentMonth) entries.push(entry);
           dupPool.push(entry);
