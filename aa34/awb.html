@@ -83,16 +83,6 @@
 let shipr1 = '';
 try { shipr1 = JSON.parse(localStorage.shipr1).a; } catch(e) {}
 
-// Refresh token if expired (>11 hours)
-if (!localStorage.shpdt || Date.now() > Number(localStorage.shpdt) + 40000000) {
-  fetch('https://dsfdyyhqqgvk6duva445txkioq0jzoqe.lambda-url.ap-south-1.on.aws')
-    .then(r => r.json()).then(v => {
-      localStorage.shipr1 = '{"a":"Bearer ' + v[0] + '"}';
-      localStorage.setItem('shpdt', Date.now());
-      shipr1 = 'Bearer ' + v[0];
-    });
-}
-
 let awbData = [];
 let awbCurrentTab = 'all';
 let awbLoading = false;
@@ -105,8 +95,29 @@ function snackbar(msg, ms) {
   setTimeout(() => el.style.display = 'none', ms || 1500);
 }
 
-// ============ INIT: FETCH ALL ============
-awbFetchAll();
+// ============ INIT: Get token first, then fetch ============
+async function awbInit() {
+  // Always fetch a fresh token from Lambda before loading data
+  try {
+    let res = await fetch('https://dsfdyyhqqgvk6duva445txkioq0jzoqe.lambda-url.ap-south-1.on.aws');
+    let v = await res.json();
+    localStorage.shipr1 = '{"a":"Bearer ' + v[0] + '"}';
+    localStorage.setItem('shpdt', Date.now());
+    shipr1 = 'Bearer ' + v[0];
+  } catch(e) {
+    console.log('Token fetch error:', e);
+    // Fall back to cached token if available
+  }
+
+  if (!shipr1) {
+    document.getElementById('out').innerHTML = '<div class="loading" style="color:red">Could not get ShipRocket token. Check internet connection.</div>';
+    return;
+  }
+
+  awbFetchAll();
+}
+
+awbInit();
 
 async function awbFetchAll() {
   if (awbLoading) return;
