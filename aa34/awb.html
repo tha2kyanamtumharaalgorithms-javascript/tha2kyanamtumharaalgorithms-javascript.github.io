@@ -79,10 +79,6 @@
   <div class="snack" id="snack"></div>
 
 <script>
-// ============ SHIPROCKET TOKEN ============
-let shipr1 = '';
-try { shipr1 = JSON.parse(localStorage.shipr1).a; } catch(e) {}
-
 let awbData = [];
 let awbCurrentTab = 'all';
 let awbLoading = false;
@@ -95,29 +91,9 @@ function snackbar(msg, ms) {
   setTimeout(() => el.style.display = 'none', ms || 1500);
 }
 
-// ============ INIT: Get token first, then fetch ============
-async function awbInit() {
-  // Always fetch a fresh token from Lambda before loading data
-  try {
-    let res = await fetch('https://dsfdyyhqqgvk6duva445txkioq0jzoqe.lambda-url.ap-south-1.on.aws');
-    let v = await res.json();
-    localStorage.shipr1 = '{"a":"Bearer ' + v[0] + '"}';
-    localStorage.setItem('shpdt', Date.now());
-    shipr1 = 'Bearer ' + v[0];
-  } catch(e) {
-    console.log('Token fetch error:', e);
-    // Fall back to cached token if available
-  }
-
-  if (!shipr1) {
-    document.getElementById('out').innerHTML = '<div class="loading" style="color:red">Could not get ShipRocket token. Check internet connection.</div>';
-    return;
-  }
-
-  awbFetchAll();
-}
-
-awbInit();
+// ============ INIT ============
+// All API calls go through Lambdas (no direct courier API calls — CORS blocks them)
+awbFetchAll();
 
 async function awbFetchAll() {
   if (awbLoading) return;
@@ -149,76 +125,49 @@ async function awbFetchAll() {
   awbLoading = false;
 }
 
-// ============ SHIPROCKET ============
+// ============ SHIPROCKET (via Lambda proxy — direct API blocked by CORS) ============
+const SHP_LAMBDA = 'https://dsfdyyhqqgvk6duva445txkioq0jzoqe.lambda-url.ap-south-1.on.aws';
+
 async function awbFetchShipRocket() {
-  if (!shipr1) return [];
-  const headers = { 'Content-Type': 'application/json', 'Authorization': shipr1 };
   let allOrders = [];
-  let page = 1;
-  let hasMore = true;
 
-  while (hasMore) {
-    try {
-      const url = 'https://apiv2.shiprocket.in/v1/external/orders?page=' + page + '&per_page=50';
-      const res = await fetch(url, { method: 'GET', headers });
+  try {
+    // Fetch orders through Lambda proxy: GET /orders
+    // Lambda proxies to ShipRocket API using its stored token
+    const res = await fetch(SHP_LAMBDA + '/orders');
+    const data = await res.json();
 
-      if (res.status === 401) {
-        await awbRefreshShpToken();
-        return awbFetchShipRocket();
-      }
+    if (Array.isArray(data)) {
+      data.forEach(order => {
+        let shipment = (order.shipments && order.shipments[0]) || {};
+        let awb = shipment.awb || order.awb || '';
+        let status = shipment.status || order.status || 'NEW';
 
-      const data = await res.json();
-
-      if (data.data && data.data.length) {
-        data.data.forEach(order => {
-          let shipment = order.shipments?.[0] || {};
-          let awb = shipment.awb || '';
-          let status = shipment.status || order.status || 'NEW';
-
-          allOrders.push({
-            id: order.id,
-            awb: awb,
-            dl: 'shp',
-            courierName: shipment.courier_name || 'ShipRocket',
-            buyer: order.customer_name || '',
-            mobile: order.customer_phone || '',
-            status: awbNormalizeStatus(status),
-            statusRaw: status,
-            orderDate: order.created_at || '',
-            tch: Number(shipment.freight_charge || 0),
-            och: Number(shipment.weight_charges || 0),
-            otherCharges: Number(shipment.cod_charges || 0) + Number(shipment.rto_charges || 0) + Number(shipment.other_charges || 0),
-            trackUrl: awb ? 'https://www.shiprocket.in/shipment-tracking/' + awb : '',
-            cancelled: (status === 'CANCELED' || status === 'CANCELLED'),
-            invoiceAmount: Number(order.total || 0)
-          });
+        allOrders.push({
+          id: order.id || order.order_id,
+          awb: awb,
+          dl: 'shp',
+          courierName: shipment.courier_name || 'ShipRocket',
+          buyer: order.customer_name || order.buyer_name || '',
+          mobile: order.customer_phone || order.mobile || '',
+          status: awbNormalizeStatus(status),
+          statusRaw: status,
+          orderDate: order.created_at || order.order_date || '',
+          tch: Number(shipment.freight_charge || order.freight_charge || 0),
+          och: Number(shipment.weight_charges || order.weight_charges || 0),
+          otherCharges: Number(shipment.cod_charges || 0) + Number(shipment.rto_charges || 0) + Number(shipment.other_charges || 0),
+          trackUrl: awb ? 'https://www.shiprocket.in/shipment-tracking/' + awb : '',
+          cancelled: (status === 'CANCELED' || status === 'CANCELLED'),
+          invoiceAmount: Number(order.total || 0)
         });
-
-        let meta = data.meta || {};
-        if (meta.last_page && page < meta.last_page) page++;
-        else if (data.data.length === 50) page++;
-        else hasMore = false;
-      } else {
-        hasMore = false;
-      }
-    } catch (e) {
-      console.log('ShipRocket page ' + page + ' error:', e);
-      hasMore = false;
+      });
     }
+  } catch (e) {
+    console.log('ShipRocket fetch error:', e);
   }
 
   console.log('ShipRocket: ' + allOrders.length + ' orders');
   return allOrders;
-}
-
-async function awbRefreshShpToken() {
-  try {
-    let res = await fetch('https://dsfdyyhqqgvk6duva445txkioq0jzoqe.lambda-url.ap-south-1.on.aws');
-    let v = await res.json();
-    localStorage.shipr1 = '{"a":"Bearer ' + v[0] + '"}';
-    localStorage.setItem('shpdt', Date.now());
-    shipr1 = 'Bearer ' + v[0];
-  } catch (e) { console.log('Token refresh error:', e); }
 }
 
 // ============ DELHIVERY ============
@@ -401,9 +350,9 @@ async function awbCancel(orderId, courierType) {
 
   try {
     if (courierType === 'shp') {
-      let res = await fetch('https://apiv2.shiprocket.in/v1/external/orders/cancel', {
+      let res = await fetch(SHP_LAMBDA + '/cancel', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': shipr1 },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: [orderId] })
       });
       let data = await res.json();
