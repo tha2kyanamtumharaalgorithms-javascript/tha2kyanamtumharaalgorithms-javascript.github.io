@@ -1603,3 +1603,15 @@ function allStockToggle() {
     allStockItems = [];
   }
 }
+
+let odAllStockItems = [];
+function odAllStockToggle() {
+  let inx = (navigator.platform === 'iPhone') ? 'text' : 'number';
+  if (document.getElementById('odAllStock').checked) {
+    odAllStockItems = document.querySelectorAll('#tbldiv input[type="button"]');
+    odAllStockItems.forEach(v => v.setAttribute('type', inx));
+  } else {
+    odAllStockItems.forEach(v => v.setAttribute('type', 'button'));
+    odAllStockItems = [];
+  }
+}

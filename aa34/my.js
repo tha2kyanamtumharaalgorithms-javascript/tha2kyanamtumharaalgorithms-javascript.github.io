@@ -388,6 +388,7 @@ async function newc1() {
   for (let u in selod5) { let mx = document.getElementById(u); if (mx) { mx.checked = false; } }
   totqt = []; od = {}; zsr = {};
   ptd = {}; pk8 = 0; ptods = []; ptid = 0; selod5 = {};
+  document.getElementById('odAllStock').checked = false; odAllStockItems = [];
 }
 
 function gonext() {
