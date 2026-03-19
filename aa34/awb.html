@@ -135,8 +135,11 @@ async function awbFetchShipRocket() {
     // Fetch orders through Lambda proxy: GET /orders
     // Lambda proxies to ShipRocket API using its stored token
     const res = await fetch(SHP_LAMBDA + '/orders');
-    const data = await res.json();
+    const raw = await res.json();
+    console.log('ShipRocket raw response keys:', Object.keys(raw || {}), 'type:', typeof raw);
 
+    // ShipRocket API returns { data: [...], meta: {...} } — orders are inside data.data
+    const data = Array.isArray(raw) ? raw : (raw?.data || []);
     if (Array.isArray(data)) {
       data.forEach(order => {
         let shipment = (order.shipments && order.shipments[0]) || {};
@@ -177,6 +180,7 @@ async function awbFetchDelhivery() {
     const url = SHP_LAMBDA + '/del/shipments';
     const res = await fetch(url, { method: 'GET' });
     const data = await res.json();
+    console.log('Delhivery response: status=' + res.status, 'items=' + (Array.isArray(data) ? data.length : typeof data), Array.isArray(data) ? '' : JSON.stringify(data).substring(0, 200));
 
     if (Array.isArray(data)) {
       data.forEach(pkg => {
@@ -215,7 +219,9 @@ async function awbFetchRocketBox() {
     formData.append('t', 'list');
 
     const res = await fetch(rkbUrl, { method: 'POST', body: formData, redirect: 'follow' });
+    console.log('RocketBox response: status=' + res.status, 'url=' + res.url, 'type=' + res.headers.get('content-type'));
     const text = await res.text();
+    console.log('RocketBox body (' + text.length + ' chars):', text.substring(0, 300));
     if (!text) { console.log('RocketBox: empty response'); return allOrders; }
     const data = JSON.parse(text);
 
