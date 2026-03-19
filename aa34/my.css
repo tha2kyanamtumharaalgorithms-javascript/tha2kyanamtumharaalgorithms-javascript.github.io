@@ -630,3 +630,99 @@ ul#plist li {
     min-width: 44px;
   }
 }
+
+/* AWB Dashboard */
+#awbDash {
+  padding-bottom: 40px;
+}
+
+.awb-tab {
+  font-weight: 600;
+  border-bottom: 3px solid transparent !important;
+}
+
+.awb-tab-active {
+  border-bottom: 3px solid #2196F3 !important;
+  color: #2196F3 !important;
+}
+
+.awb-summary {
+  display: flex;
+  gap: 8px;
+  padding: 10px 8px;
+  flex-wrap: wrap;
+}
+
+.awb-card {
+  flex: 1;
+  min-width: 100px;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.awb-card b {
+  display: block;
+  font-size: 22px;
+}
+
+.awb-card span {
+  font-size: 11px;
+  color: #555;
+}
+
+.awb-card-warn { background: #fff3cd; }
+.awb-card-red { background: #f8d7da; }
+.awb-card-grey { background: #e9ecef; }
+
+.awb-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 4px;
+}
+
+#awbTable th {
+  font-size: 11px;
+  padding: 6px 4px !important;
+  white-space: nowrap;
+}
+
+#awbTable td {
+  padding: 6px 4px !important;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.awb-track-link {
+  color: #1565C0;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.awb-status {
+  display: inline-block;
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 8px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.awb-st-green { background: #c8e6c9; color: #2e7d32; }
+.awb-st-blue { background: #bbdefb; color: #1565c0; }
+.awb-st-red { background: #ffcdd2; color: #c62828; }
+.awb-st-yellow { background: #fff9c4; color: #f57f17; }
+
+@media screen and (max-width: 428px) {
+  .awb-summary {
+    gap: 4px;
+    padding: 6px 4px;
+  }
+  .awb-card {
+    min-width: 80px;
+    padding: 6px;
+  }
+  .awb-card b { font-size: 18px; }
+  .awb-card span { font-size: 10px; }
+  #awbTable th, #awbTable td { font-size: 11px; padding: 4px 2px !important; }
+}
