@@ -82,6 +82,7 @@
 let awbData = [];
 let awbCurrentTab = 'all';
 let awbLoading = false;
+const SHP_LAMBDA = 'https://anlof6ho4kmtewslnyk34ip2f40pedjp.lambda-url.ap-south-1.on.aws';
 
 // ============ SNACKBAR ============
 function snackbar(msg, ms) {
@@ -126,7 +127,6 @@ async function awbFetchAll() {
 }
 
 // ============ SHIPROCKET (via Lambda proxy — direct API blocked by CORS) ============
-const SHP_LAMBDA = 'https://anlof6ho4kmtewslnyk34ip2f40pedjp.lambda-url.ap-south-1.on.aws'; // TODO: Replace with new Lambda Function URL
 
 async function awbFetchShipRocket() {
   let allOrders = [];
