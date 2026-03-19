@@ -255,8 +255,8 @@ async function awbFetchRocketBox() {
 
 // ============ STATUS NORMALIZATION ============
 function awbNormalizeStatus(raw) {
-  if (!raw) return 'Unknown';
-  let s = raw.toLowerCase().trim();
+  if (!raw && raw !== 0) return 'Unknown';
+  let s = String(raw).toLowerCase().trim();
   if (s === 'delivered' || s === 'dl_delivered') return 'Delivered';
   if (s.includes('transit') || s === 'shipped' || s === 'in_transit') return 'In Transit';
   if (s.includes('out for delivery') || s === 'out_for_delivery') return 'Out for Delivery';
