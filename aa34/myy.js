@@ -1046,6 +1046,7 @@ async function addch() {
   p + "allcache.html",
   p + "my.js",
   p + "myy.js",
+  p + "awb.js",
   p + "om.js",
   p + "w3.js",
   p + "dexie.min.js",
