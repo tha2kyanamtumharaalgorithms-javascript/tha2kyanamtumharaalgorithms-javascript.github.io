@@ -1078,7 +1078,7 @@ async function getcor(k) {
   }
   let urlx = 'https://apiv2.shiprocket.in/v1/external/open/postcode/details?postcode=' + ptd.pin;
   let optx = { method: 'GET', redirect: 'follow', headers: { 'Content-Type': 'application/json', 'Authorization': shipr1 } };
-  let urlx1 = 'https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws/pin/' + ptd.pin;
+  let urlx1 = '__COURIER_LAMBDA_URL__/pin/' + ptd.pin;
   Promise.all[fetch(urlx, optx).then((v) => v.json()).then((v) => { dlid.c = v.postcode_details.city; dlid.s = v.postcode_details.state; }),
     fetch(urlx1).then((v) => v.json()).then((v) => {
       if (v.location.length) {
@@ -1176,7 +1176,7 @@ async function gosh(obj1, obj2, obj3) {
     }),
     new Promise(rez => {
       let list = "";
-      dlurl = 'https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws';//.join('');
+      dlurl = '__COURIER_LAMBDA_URL__';//.join('');
       fetch(dlurl + "?" + new URLSearchParams(obj1), { method: 'GET', signal })
         .then(res => res.json())
         .then((v) => {
@@ -1504,7 +1504,7 @@ async function dlfn(v, id) {
       myd = '';
     } else if ((id == 'dl0') || (id == 'dl1') || (id == 'dl2')) {
       dlid.book = new Dl0(x); dlid.book.order = jm + dlid.book.order;
-      dlurl = "https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws/del/" + id;
+      dlurl = "__COURIER_LAMBDA_URL__/del/" + id;
       myd = 'format=json&data=' + JSON.stringify(dlid.book);
     }
     dlid.url = dlurl;

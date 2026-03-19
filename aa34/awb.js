@@ -169,7 +169,7 @@ async function awbFetchShipRocket() {
 
 async function awbRefreshShpToken() {
   try {
-    let res = await fetch('https://dsfdyyhqqgvk6duva445txkioq0jzoqe.lambda-url.ap-south-1.on.aws');
+    let res = await fetch('__COURIER_LAMBDA_URL__/token'); // TODO: Replace with new Lambda Function URL
     let v = await res.json();
     localStorage.shipr1 = '{"a":"Bearer ' + v[0] + '"}';
     localStorage.setItem('shpdt', Date.now());
@@ -182,7 +182,7 @@ async function awbRefreshShpToken() {
 // ============ DELHIVERY: Fetch shipments via Lambda ============
 
 async function awbFetchDelhivery() {
-  const lambdaBase = 'https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws';
+  const lambdaBase = '__COURIER_LAMBDA_URL__'; // TODO: Replace with new Lambda Function URL
   let allOrders = [];
 
   try {
@@ -423,7 +423,7 @@ async function awbCancel(orderId, courierType) {
       }
     } else if (courierType === 'dl' || courierType?.startsWith('dl')) {
       // Delhivery: cancel via Lambda
-      let lambdaUrl = 'https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws/del/cancel';
+      let lambdaUrl = '__COURIER_LAMBDA_URL__/del/cancel'; // TODO: Replace with new Lambda Function URL
       let res = await fetch(lambdaUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
