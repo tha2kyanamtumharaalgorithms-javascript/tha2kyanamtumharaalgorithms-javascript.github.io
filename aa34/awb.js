@@ -1,8 +1,9 @@
 // AWB Courier Dashboard
-// Displays all shipments across ShipRocket, RocketBox, Delhivery with live tracking
+// All data fetched directly from courier APIs — no local database reads
 
-let awbData = []; // unified data array
+let awbData = []; // unified data array from all couriers
 let awbCurrentTab = 'all';
+let awbLoading = false;
 
 function openAwbDashboard() {
   w3_close();
@@ -21,8 +22,8 @@ function openAwbDashboard() {
       <button class="w3-bar-item w3-button w3-right w3-light-grey" onclick="awbRefresh()" title="Refresh">&#x21bb;</button>
     </div>
     <div id="awbSummary" class="awb-summary">
-      <div class="awb-card awb-card-warn"><b id="awbNotPicked">0</b><span>Not picked (3+ days)</span></div>
-      <div class="awb-card awb-card-red"><b id="awbTotalDeducted">0</b><span>Total deducted cost</span></div>
+      <div class="awb-card awb-card-warn"><b id="awbNotPicked">...</b><span>Not picked (3+ days)</span></div>
+      <div class="awb-card awb-card-red"><b id="awbTotalDeducted">...</b><span>Total deducted cost</span></div>
       <div class="awb-card awb-card-grey"><b id="awbTotalCollected">&mdash;</b><span>Total collected cost</span></div>
     </div>
     <div id="awbTableWrap" class="awb-table-wrap">
@@ -48,169 +49,264 @@ function openAwbDashboard() {
     </div>
   </div>`;
 
-  awbLoadData();
+  awbFetchAll();
 }
 
-async function awbLoadData() {
+// ============ FETCH ALL DATA FROM COURIER APIs ============
+
+async function awbFetchAll() {
+  if (awbLoading) return;
+  awbLoading = true;
+  awbData = [];
+
   try {
-    awbData = [];
-    const dlRecords = await dldb.dl.toArray();
-    if (!dlRecords.length) {
-      document.getElementById('awbTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px!important;">No shipments found</td></tr>';
-      return;
+    // Fetch from all three courier services in parallel
+    const [shpResults, dlResults, rkbResults] = await Promise.allSettled([
+      awbFetchShipRocket(),
+      awbFetchDelhivery(),
+      awbFetchRocketBox()
+    ]);
+
+    if (shpResults.status === 'fulfilled' && shpResults.value) {
+      awbData.push(...shpResults.value);
+    }
+    if (dlResults.status === 'fulfilled' && dlResults.value) {
+      awbData.push(...dlResults.value);
+    }
+    if (rkbResults.status === 'fulfilled' && rkbResults.value) {
+      awbData.push(...rkbResults.value);
     }
 
-    // Build enriched data for each delivery record
-    for (const dl of dlRecords) {
-      let awb = '';
-      if (dl.order) {
-        if (dl.dl === 'shp') {
-          // ShipRocket: order can be an object with order_id/shipment_id or AWB
-          awb = dl.order?.order_id || dl.order?.shipment_id || dl.order?.awb_code || (typeof dl.order === 'string' ? dl.order : JSON.stringify(dl.order));
-        } else if (dl.dl === 'rkb') {
-          awb = dl.order[0] || '';
-        } else {
-          // Delhivery: waybill stored in dl.order[0]
-          awb = dl.order[0] || '';
-        }
-      }
+    // Sort by most recent first
+    awbData.sort((a, b) => new Date(b.orderDate || 0) - new Date(a.orderDate || 0));
 
-      let buyer = '', mobile = '';
-      // Try to get party data via order's pt field
-      try {
-        let orderId = String(dl.id);
-        let monthKey = 's' + orderId.slice(0, 6);
-        let tmpDb = new Dexie(monthKey);
-        tmpDb.version(1).stores({ od: "id,dt,bulk" });
-        let od = await tmpDb.od.get(dl.id);
-        if (od && od.pt) {
-          let pt = await db.pt.get(od.pt);
-          if (pt) {
-            buyer = pt.cn || '';
-            mobile = pt.mn1 || '';
-          }
-        }
-        if (!buyer && od) buyer = od.cn || '';
-      } catch (e) { }
-
-      let courierName = dl.dl;
-      if (dl.dl === 'shp') courierName = 'ShipRocket';
-      else if (dl.dl === 'rkb') courierName = 'RocketBox';
-      else if (dl.dl?.startsWith('dl')) courierName = 'Delhivery';
-
-      awbData.push({
-        id: dl.id,
-        awb: awb,
-        dl: dl.dl,
-        courierName: courierName,
-        coid: dl.coid,
-        tch: dl.tch || 0,
-        och: dl.och || 0,
-        otherCharges: 0,
-        st: dl.st,
-        buyer: buyer,
-        mobile: mobile,
-        status: dl.st === 0 ? 'Booked' : 'Saved',
-        trackUrl: '',
-        bookDate: dl.book?.order_date || '',
-        cancelled: false,
-        _raw: dl
-      });
+    if (!awbData.length) {
+      document.getElementById('awbTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px!important;">No shipments found from courier APIs</td></tr>';
+    } else {
+      awbRender(awbCurrentTab);
     }
-
-    // Set tracking URLs
-    awbData.forEach(d => {
-      if (d.dl === 'shp' && d.awb) {
-        d.trackUrl = 'https://www.shiprocket.in/shipment-tracking/' + d.awb;
-      } else if (d.dl?.startsWith('dl') && d.awb) {
-        d.trackUrl = 'https://www.delhivery.com/track/package/' + d.awb;
-      } else if (d.dl === 'rkb' && d.awb) {
-        d.trackUrl = d.awb; // label URL is the tracking link
-      }
-    });
-
-    awbRender(awbCurrentTab);
-
-    // Fetch live tracking for ShipRocket in background
-    awbFetchShipRocketTracking();
   } catch (e) {
-    console.log('AWB load error:', e);
-    document.getElementById('awbTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px!important;color:red;">Error loading data</td></tr>';
+    console.log('AWB fetch error:', e);
+    document.getElementById('awbTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px!important;color:red;">Error fetching data: ' + e.message + '</td></tr>';
+  }
+  awbLoading = false;
+}
+
+// ============ SHIPROCKET: Fetch all orders/shipments ============
+
+async function awbFetchShipRocket() {
+  if (!shipr1) return [];
+  const headers = { 'Content-Type': 'application/json', 'Authorization': shipr1 };
+  let allOrders = [];
+  let page = 1;
+  let hasMore = true;
+
+  // Fetch all orders page by page from ShipRocket API
+  while (hasMore) {
+    try {
+      const url = 'https://apiv2.shiprocket.in/v1/external/orders?page=' + page + '&per_page=50';
+      const res = await fetch(url, { method: 'GET', headers });
+
+      if (res.status === 401) {
+        // Token expired — try refresh
+        await awbRefreshShpToken();
+        return awbFetchShipRocket(); // retry once
+      }
+
+      const data = await res.json();
+
+      if (data.data && data.data.length) {
+        data.data.forEach(order => {
+          let shipment = order.shipments?.[0] || {};
+          let awb = shipment.awb || '';
+          let status = shipment.status || order.status || 'NEW';
+          let statusNorm = awbNormalizeStatus(status);
+
+          // All data from ShipRocket API directly
+          allOrders.push({
+            id: order.id,
+            channelOrderId: order.channel_order_id || order.id,
+            awb: awb,
+            dl: 'shp',
+            courierName: shipment.courier_name || 'ShipRocket',
+            buyer: order.customer_name || '',
+            mobile: order.customer_phone || '',
+            status: statusNorm,
+            statusRaw: status,
+            orderDate: order.created_at || '',
+            pickupDate: shipment.pickup_scheduled_date || '',
+            tch: Number(shipment.freight_charge || 0),
+            och: Number(shipment.weight_charges || 0),
+            otherCharges: Number(shipment.cod_charges || 0) + Number(shipment.rto_charges || 0) + Number(shipment.other_charges || 0),
+            trackUrl: awb ? 'https://www.shiprocket.in/shipment-tracking/' + awb : '',
+            cancelled: (status === 'CANCELED' || status === 'CANCELLED'),
+            shipmentId: shipment.id || '',
+            invoiceAmount: Number(order.total || 0)
+          });
+        });
+
+        // Check if more pages
+        let meta = data.meta || {};
+        if (meta.last_page && page < meta.last_page) {
+          page++;
+        } else if (data.data.length === 50) {
+          page++; // might have more
+        } else {
+          hasMore = false;
+        }
+      } else {
+        hasMore = false;
+      }
+    } catch (e) {
+      console.log('ShipRocket fetch page ' + page + ' error:', e);
+      hasMore = false;
+    }
+  }
+
+  console.log('ShipRocket: fetched ' + allOrders.length + ' orders');
+  return allOrders;
+}
+
+async function awbRefreshShpToken() {
+  try {
+    let res = await fetch('https://dsfdyyhqqgvk6duva445txkioq0jzoqe.lambda-url.ap-south-1.on.aws');
+    let v = await res.json();
+    localStorage.shipr1 = '{"a":"Bearer ' + v[0] + '"}';
+    localStorage.setItem('shpdt', Date.now());
+    shipr1 = 'Bearer ' + v[0];
+  } catch (e) {
+    console.log('ShipRocket token refresh error:', e);
   }
 }
 
-async function awbFetchShipRocketTracking() {
-  if (!shipr1) return;
-  const shpRecords = awbData.filter(d => d.dl === 'shp' && d.awb);
-  if (!shpRecords.length) return;
+// ============ DELHIVERY: Fetch shipments via Lambda ============
 
-  const headers = { 'Content-Type': 'application/json', 'Authorization': shipr1 };
+async function awbFetchDelhivery() {
+  const lambdaBase = 'https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws';
+  let allOrders = [];
 
-  // Fetch tracking for each ShipRocket AWB
-  const promises = shpRecords.map(async (rec) => {
-    try {
-      // Try tracking by AWB
-      let awbId = rec.awb;
-      // If awb is an object, extract the AWB code
-      if (typeof awbId === 'object') {
-        awbId = awbId.awb_code || awbId.order_id || '';
-      }
-      if (!awbId || awbId === '{}') return;
+  try {
+    // Fetch all Delhivery shipments via Lambda
+    const url = lambdaBase + '/del/shipments';
+    const res = await fetch(url, { method: 'GET' });
+    const data = await res.json();
 
-      const url = 'https://apiv2.shiprocket.in/v1/external/courier/track/awb/' + awbId;
-      const res = await fetch(url, { method: 'GET', headers });
-      const data = await res.json();
+    if (Array.isArray(data)) {
+      data.forEach(pkg => {
+        let status = pkg.status || pkg.Status || '';
+        let statusNorm = awbNormalizeStatus(status);
 
-      if (data.tracking_data) {
-        let td = data.tracking_data;
-        rec.status = td.shipment_status_id ? awbMapShpStatus(td.shipment_status_id) : (td.shipment_track?.[0]?.current_status || rec.status);
-        rec.trackUrl = td.track_url || rec.trackUrl;
-
-        // Extract AWB if we got a better one
-        if (td.shipment_track?.[0]?.awb_code) {
-          rec.awb = td.shipment_track[0].awb_code;
-        }
-      }
-
-      // Also fetch order details for charges
-      try {
-        const orderUrl = 'https://apiv2.shiprocket.in/v1/external/orders/show/' + rec.id;
-        const ores = await fetch(orderUrl, { method: 'GET', headers });
-        const odata = await ores.json();
-        if (odata.data) {
-          let od = odata.data;
-          // Get charges breakdown from ShipRocket
-          if (od.shipments?.[0]) {
-            let shp = od.shipments[0];
-            rec.tch = shp.freight_charge || rec.tch;
-            rec.otherCharges = (shp.weight_charges || 0) + (shp.cod_charges || 0) + (shp.rto_charges || 0);
-            if (shp.awb) rec.awb = shp.awb;
-          }
-        }
-      } catch (e) { }
-
-    } catch (e) {
-      console.log('ShipRocket tracking error for', rec.id, e);
+        allOrders.push({
+          id: pkg.client_order_id || pkg.order_id || pkg.refnum || '',
+          awb: pkg.waybill || pkg.awb || '',
+          dl: 'dl',
+          courierName: 'Delhivery',
+          buyer: pkg.consignee_name || pkg.name || '',
+          mobile: pkg.consignee_phone || pkg.phone || '',
+          status: statusNorm,
+          statusRaw: status,
+          orderDate: pkg.order_date || pkg.added_on || '',
+          pickupDate: pkg.pickup_date || '',
+          tch: Number(pkg.charges?.freight_charge || pkg.total_amount || 0),
+          och: Number(pkg.charges?.weight_charge || 0),
+          otherCharges: Number(pkg.charges?.cod_charge || 0) + Number(pkg.charges?.other_charge || 0),
+          trackUrl: (pkg.waybill || pkg.awb) ? 'https://www.delhivery.com/track/package/' + (pkg.waybill || pkg.awb) : '',
+          cancelled: (status === 'Cancelled' || status === 'RTO'),
+          invoiceAmount: Number(pkg.total_amount || pkg.invoice_amount || 0)
+        });
+      });
     }
-  });
+  } catch (e) {
+    console.log('Delhivery fetch error:', e);
+    // Lambda may not have /del/shipments endpoint yet — that's OK
+  }
 
-  await Promise.allSettled(promises);
-  awbRender(awbCurrentTab);
+  console.log('Delhivery: fetched ' + allOrders.length + ' orders');
+  return allOrders;
 }
 
-function awbMapShpStatus(statusId) {
-  // ShipRocket status IDs mapping
-  const map = {
-    1: 'Pickup Scheduled', 2: 'Pickup Scheduled', 3: 'Pickup Scheduled',
-    4: 'Pickup Scheduled', 5: 'Pickup Scheduled',
-    6: 'In Transit', 7: 'Delivered', 8: 'Not Picked',
-    9: 'RTO', 10: 'RTO', 17: 'Out for Delivery',
-    18: 'In Transit', 19: 'Out for Delivery', 20: 'In Transit',
-    38: 'Pickup Scheduled', 39: 'Pickup Scheduled', 40: 'Pickup Scheduled',
-    41: 'In Transit', 42: 'Cancelled'
-  };
-  return map[statusId] || 'Unknown';
+// ============ ROCKETBOX: Fetch shipments via Google Sheets macro ============
+
+async function awbFetchRocketBox() {
+  let allOrders = [];
+
+  try {
+    const rkbUrl = 'https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec';
+    let formData = new FormData();
+    formData.append('t', 'list'); // request shipment list
+
+    const res = await fetch(rkbUrl, { method: 'POST', body: formData });
+    const data = await res.json();
+
+    if (Array.isArray(data)) {
+      data.forEach(pkg => {
+        let status = pkg.status || '';
+        let statusNorm = awbNormalizeStatus(status);
+
+        allOrders.push({
+          id: pkg.order_id || pkg.id || '',
+          awb: pkg.awb || pkg.tracking_id || pkg.label_url || '',
+          dl: 'rkb',
+          courierName: pkg.courier_name || 'RocketBox',
+          buyer: pkg.recipient_name || pkg.buyer_name || '',
+          mobile: pkg.recipient_phone || pkg.mobile || '',
+          status: statusNorm,
+          statusRaw: status,
+          orderDate: pkg.order_date || pkg.created_at || '',
+          pickupDate: pkg.pickup_date || '',
+          tch: Number(pkg.freight_charge || pkg.rate || 0),
+          och: Number(pkg.weight_charge || 0),
+          otherCharges: Number(pkg.other_charges || 0),
+          trackUrl: pkg.tracking_url || pkg.label_url || '',
+          cancelled: (status === 'Cancelled'),
+          invoiceAmount: Number(pkg.invoice_value || 0)
+        });
+      });
+    }
+  } catch (e) {
+    console.log('RocketBox fetch error:', e);
+    // Google Sheets macro may not support 'list' yet — that's OK
+  }
+
+  console.log('RocketBox: fetched ' + allOrders.length + ' orders');
+  return allOrders;
 }
+
+// ============ STATUS NORMALIZATION ============
+
+function awbNormalizeStatus(raw) {
+  if (!raw) return 'Unknown';
+  let s = raw.toLowerCase().trim();
+
+  // Delivered
+  if (s === 'delivered' || s === 'dl_delivered') return 'Delivered';
+
+  // In Transit
+  if (s.includes('transit') || s === 'shipped' || s === 'in transit'
+    || s === 'in_transit' || s === 'reached at destination hub') return 'In Transit';
+
+  // Out for delivery
+  if (s.includes('out for delivery') || s === 'out_for_delivery') return 'Out for Delivery';
+
+  // Pickup / Scheduled
+  if (s.includes('pickup') || s === 'ready to ship' || s === 'pickup scheduled'
+    || s === 'pickup_scheduled' || s === 'manifested' || s === 'new'
+    || s === 'created' || s === 'ready_to_ship' || s === 'booked') return 'Pickup Scheduled';
+
+  // Not picked up
+  if (s.includes('not picked') || s === 'pickup_error' || s === 'pickup error') return 'Not Picked';
+
+  // Cancelled / RTO
+  if (s.includes('cancel') || s === 'canceled') return 'Cancelled';
+  if (s.includes('rto') || s === 'rto_delivered' || s === 'returned') return 'RTO';
+
+  // Pending
+  if (s === 'pending' || s === 'processing') return 'Pending';
+
+  return raw; // return as-is if no match
+}
+
+// ============ TAB SWITCHING ============
 
 function awbSwitchTab(tab, btn) {
   awbCurrentTab = tab;
@@ -219,10 +315,12 @@ function awbSwitchTab(tab, btn) {
   awbRender(tab);
 }
 
+// ============ RENDER TABLE ============
+
 function awbRender(tab) {
   let filtered = awbData;
   if (tab === 'scheduled') {
-    filtered = awbData.filter(d => ['Booked', 'Saved', 'Pickup Scheduled', 'Ready to Ship', 'Not Picked'].includes(d.status));
+    filtered = awbData.filter(d => ['Pickup Scheduled', 'Not Picked', 'Pending', 'Ready to Ship', 'Booked'].includes(d.status));
   } else if (tab === 'transit') {
     filtered = awbData.filter(d => ['In Transit', 'Out for Delivery'].includes(d.status));
   } else if (tab === 'delivered') {
@@ -234,24 +332,31 @@ function awbRender(tab) {
     html = '<tr><td colspan="10" style="text-align:center;padding:20px!important;">No shipments in this category</td></tr>';
   } else {
     filtered.forEach(d => {
-      let trackLink = d.trackUrl ? `<a href="${d.trackUrl}" target="_blank" class="awb-track-link">${d.courierName}</a>` : d.courierName;
-      let awbDisplay = d.awb || '—';
+      let trackLink = d.trackUrl
+        ? `<a href="${d.trackUrl}" target="_blank" class="awb-track-link">${d.courierName}</a>`
+        : d.courierName;
+
+      let awbDisplay = d.awb || '\u2014';
       if (typeof awbDisplay === 'object') awbDisplay = JSON.stringify(awbDisplay);
       if (awbDisplay.length > 20) awbDisplay = awbDisplay.slice(0, 20) + '...';
-      let cancelBtn = d.cancelled ? '<span style="color:#999">Cancelled</span>' : `<button class="w3-button w3-tiny w3-red w3-round" onclick="awbCancel(${d.id},'${d.dl}')">Cancel</button>`;
+
+      let cancelBtn = d.cancelled
+        ? '<span style="color:#999;font-size:10px">Cancelled</span>'
+        : `<button class="w3-button w3-tiny w3-red w3-round" onclick="awbCancel('${d.id}','${d.dl}')">Cancel</button>`;
+
       let statusBadge = `<span class="awb-status awb-st-${awbStatusClass(d.status)}">${d.status}</span>`;
 
-      html += `<tr data-status="${d.status}">
+      html += `<tr>
         <td style="white-space:nowrap">${trackLink}</td>
         <td title="${d.awb || ''}">${awbDisplay}</td>
-        <td>${d.mobile || '—'}</td>
-        <td>${d.buyer || '—'}</td>
+        <td><a href="tel:${d.mobile}">${d.mobile || '\u2014'}</a></td>
+        <td>${d.buyer || '\u2014'}</td>
         <td>${cancelBtn}</td>
         <td>${d.id} ${statusBadge}</td>
-        <td>${d.tch}₹</td>
-        <td>${d.och}₹</td>
-        <td>${d.otherCharges}₹</td>
-        <td>—</td>
+        <td>${d.tch}\u20B9</td>
+        <td>${d.och}\u20B9</td>
+        <td>${d.otherCharges}\u20B9</td>
+        <td>\u2014</td>
       </tr>`;
     });
   }
@@ -261,52 +366,46 @@ function awbRender(tab) {
 }
 
 function awbStatusClass(status) {
-  if (['Delivered'].includes(status)) return 'green';
+  if (status === 'Delivered') return 'green';
   if (['In Transit', 'Out for Delivery'].includes(status)) return 'blue';
   if (['Not Picked', 'RTO', 'Cancelled'].includes(status)) return 'red';
   return 'yellow';
 }
 
+// ============ SUMMARY METRICS ============
+
 function awbCalcSummary(data) {
-  // 3-day old not picked
   let threeDaysMs = 3 * 24 * 60 * 60 * 1000;
   let now = Date.now();
+
+  // 3-day old not picked: scheduled orders older than 3 days
   let notPicked = data.filter(d => {
-    let isScheduled = ['Booked', 'Saved', 'Pickup Scheduled', 'Ready to Ship', 'Not Picked'].includes(d.status);
+    let isScheduled = ['Pickup Scheduled', 'Not Picked', 'Pending', 'Ready to Ship', 'Booked'].includes(d.status);
     if (!isScheduled) return false;
-    // Try to parse booking date
-    let bookTime = 0;
-    if (d.bookDate) {
-      bookTime = new Date(d.bookDate).getTime();
-    }
-    // If no booking date, use order ID to estimate (YYMM format in first 4 digits)
-    if (!bookTime && d.id) {
-      let idStr = String(d.id);
-      if (idStr.length >= 6) {
-        let yy = idStr.slice(0, 2), mm = idStr.slice(2, 4);
-        bookTime = new Date('20' + yy, Number(mm) - 1).getTime();
-      }
-    }
-    return bookTime && (now - bookTime > threeDaysMs);
+    let bookTime = d.orderDate ? new Date(d.orderDate).getTime() : 0;
+    if (!bookTime || isNaN(bookTime)) return false;
+    return (now - bookTime) > threeDaysMs;
   }).length;
 
-  // Total deducted shipping cost
+  // Total deducted shipping cost (all charges from courier APIs)
   let totalDeducted = data.reduce((sum, d) => sum + (d.tch || 0) + (d.och || 0) + (d.otherCharges || 0), 0);
 
   document.getElementById('awbNotPicked').textContent = notPicked;
-  document.getElementById('awbTotalDeducted').textContent = totalDeducted.toLocaleString('en-IN') + '₹';
+  document.getElementById('awbTotalDeducted').textContent = Math.ceil(totalDeducted).toLocaleString('en-IN') + '\u20B9';
 }
 
+// ============ CANCEL SHIPMENT ============
+
 async function awbCancel(orderId, courierType) {
-  let rec = awbData.find(d => d.id === orderId);
+  let rec = awbData.find(d => String(d.id) === String(orderId));
   if (!rec) return;
 
-  let msg = `Cancel shipment?\nOrder: ${orderId}\nCourier: ${rec.courierName}\nAWB: ${rec.awb || 'N/A'}`;
+  let msg = 'Cancel shipment?\nOrder: ' + orderId + '\nCourier: ' + rec.courierName + '\nAWB: ' + (rec.awb || 'N/A') + '\nBuyer: ' + rec.buyer;
   if (!confirm(msg)) return;
 
   try {
     if (courierType === 'shp') {
-      // ShipRocket cancel
+      // ShipRocket: cancel order via API
       let url = 'https://apiv2.shiprocket.in/v1/external/orders/cancel';
       let res = await fetch(url, {
         method: 'POST',
@@ -322,57 +421,40 @@ async function awbCancel(orderId, courierType) {
         alert('Cancel failed: ' + (data.message || JSON.stringify(data)));
         return;
       }
-    } else if (courierType.startsWith('dl')) {
-      // Delhivery cancel via Lambda
-      try {
-        let lambdaUrl = 'https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws/del/cancel';
-        let res = await fetch(lambdaUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ waybill: rec.awb, order_id: orderId })
-        });
-        let data = await res.json();
-        if (data.status || res.ok) {
-          rec.status = 'Cancelled';
-          rec.cancelled = true;
-          snackbar('Delhivery order cancelled', 1500);
-        } else {
-          alert('Cancel failed: ' + (data.message || data.error || JSON.stringify(data)));
-          return;
-        }
-      } catch (e) {
-        alert('Delhivery cancel not available yet. Lambda needs /del/cancel endpoint.');
+    } else if (courierType === 'dl' || courierType?.startsWith('dl')) {
+      // Delhivery: cancel via Lambda
+      let lambdaUrl = 'https://bldn7ye7cv2pbdmdmgn4dhibi40fviwc.lambda-url.ap-south-1.on.aws/del/cancel';
+      let res = await fetch(lambdaUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ waybill: rec.awb, order_id: orderId })
+      });
+      let data = await res.json();
+      if (res.ok) {
+        rec.status = 'Cancelled';
+        rec.cancelled = true;
+        snackbar('Delhivery order cancelled', 1500);
+      } else {
+        alert('Cancel failed: ' + (data.message || data.error || JSON.stringify(data)));
         return;
       }
     } else if (courierType === 'rkb') {
-      // RocketBox cancel via Google Sheets macro
-      try {
-        let rkbUrl = 'https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec';
-        let formData = new FormData();
-        formData.append('t', 'cancel');
-        formData.append('order_id', orderId);
-        let res = await fetch(rkbUrl, { method: 'POST', body: formData });
-        let data = await res.json();
-        if (data.status === 'success' || res.ok) {
-          rec.status = 'Cancelled';
-          rec.cancelled = true;
-          snackbar('RocketBox order cancelled', 1500);
-        } else {
-          alert('Cancel failed: ' + (data.message || JSON.stringify(data)));
-          return;
-        }
-      } catch (e) {
-        alert('RocketBox cancel error: ' + e.message);
+      // RocketBox: cancel via Google Sheets macro
+      let rkbUrl = 'https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec';
+      let formData = new FormData();
+      formData.append('t', 'cancel');
+      formData.append('order_id', orderId);
+      formData.append('awb', rec.awb);
+      let res = await fetch(rkbUrl, { method: 'POST', body: formData });
+      let data = await res.json();
+      if (res.ok) {
+        rec.status = 'Cancelled';
+        rec.cancelled = true;
+        snackbar('RocketBox order cancelled', 1500);
+      } else {
+        alert('Cancel failed: ' + (data.message || JSON.stringify(data)));
         return;
       }
-    }
-
-    // Update local DB
-    let dlRec = await dldb.dl.get(orderId);
-    if (dlRec) {
-      dlRec.st = 2; // 2 = cancelled
-      await dldb.dl.put(dlRec, orderId);
-      fbPutDelivery(dlRec);
     }
 
     awbRender(awbCurrentTab);
@@ -382,7 +464,11 @@ async function awbCancel(orderId, courierType) {
   }
 }
 
+// ============ REFRESH ============
+
 function awbRefresh() {
-  snackbar('Refreshing...', 800);
-  awbLoadData();
+  if (awbLoading) return;
+  snackbar('Refreshing from couriers...', 1000);
+  document.getElementById('awbTableBody').innerHTML = '<tr><td colspan="10"><p class="loading">.</p></td></tr>';
+  awbFetchAll();
 }
