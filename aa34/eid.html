@@ -23,7 +23,7 @@
   .miss-list b { display: block; margin-bottom: 4px; font-size: 13px; }
 
   .tbl-wrap { border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; background: #fff; min-width: 700px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; min-width: 850px; }
   th { background: #eceff1; padding: 6px 8px; text-align: left; font-size: 11px; color: #333; white-space: nowrap; }
   td { padding: 5px 8px; border-top: 1px solid #f0f0f0; font-size: 12px; white-space: nowrap; }
   td.name-col { white-space: normal; max-width: 140px; word-break: break-word; }
@@ -161,7 +161,9 @@ async function load() {
                 taxable, total,
                 gstAmt: Math.round(total - taxable),
                 gstin: ord.gst || '',
-                state: getState(ord.gst, '')
+                state: getState(ord.gst),
+                shipping: 0,
+                courierType: ''
               };
               if (mo === mStr) entries.push(entry);
               dupPool.push(entry);
@@ -202,6 +204,13 @@ async function load() {
             total = Number(ord.ttpc) || Number(ord.tv) || 0;
             taxable = Math.round(total / 1.05);
           }
+          // Parse shipping charge from tch field
+          let shipping = 0;
+          if (ord.tch) {
+            let tchStr = String(ord.tch);
+            if (tchStr.includes(',')) shipping = Number(tchStr.split(',')[0]) || 0;
+            else shipping = Number(tchStr) || 0;
+          }
           let entry = {
             eid, fullEid: key, source: 'web',
             name: (ord.nm || '').trim().toLowerCase(),
@@ -211,7 +220,9 @@ async function load() {
             taxable, total,
             gstAmt: Math.round(total - taxable),
             gstin: ord.gstno || '',
-            state: getState(ord.gstno)
+            state: getState(ord.gstno),
+            shipping,
+            courierType: ord.odt || ''
           };
           if (isCurrentMonth) entries.push(entry);
           dupPool.push(entry);
@@ -299,12 +310,12 @@ async function load() {
   }
 
   if (total) {
-    html += `<div class="tbl-wrap"><table><thead><tr><th>E-ID</th><th>Full E-ID</th><th>Date</th><th>Buyer</th><th>State</th><th>Qty</th><th>Taxable</th><th>GST</th><th>Total</th><th>GSTIN</th><th>Source</th></tr></thead><tbody>`;
+    html += `<div class="tbl-wrap"><table><thead><tr><th>E-ID</th><th>Full E-ID</th><th>Date</th><th>Buyer</th><th>State</th><th>Qty</th><th>Taxable</th><th>GST</th><th>Total</th><th>Shipping</th><th>Courier</th><th>GSTIN</th><th>Source</th></tr></thead><tbody>`;
     for (let i = all.length - 1; i >= 0; i--) {
       let e = all[i];
       let displayName = e.name ? e.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '';
       let fmtDate = formatIndianDate(e.dt);
-      html += `<tr><td><b>${e.eid}</b></td><td>${e.fullEid || ''}</td><td>${fmtDate}</td><td class="name-col">${displayName}</td><td style="font-size:11px">${e.state || ''}</td><td>${e.qty}</td><td>${e.taxable ? e.taxable.toLocaleString('en-IN') : '-'}</td><td>${e.gstAmt ? e.gstAmt.toLocaleString('en-IN') : '-'}</td><td>${e.total ? e.total.toLocaleString('en-IN') : '-'}</td><td style="font-size:10px">${e.gstin || ''}</td><td><span class="src ${e.source}">${e.source === 'app' ? 'App' : 'Web'}</span></td></tr>`;
+      html += `<tr><td><b>${e.eid}</b></td><td>${e.fullEid || ''}</td><td>${fmtDate}</td><td class="name-col">${displayName}</td><td style="font-size:11px">${e.state || ''}</td><td>${e.qty}</td><td>${e.taxable ? e.taxable.toLocaleString('en-IN') : '-'}</td><td>${e.gstAmt ? e.gstAmt.toLocaleString('en-IN') : '-'}</td><td>${e.total ? e.total.toLocaleString('en-IN') : '-'}</td><td>${e.shipping ? e.shipping.toLocaleString('en-IN') : '0'}</td><td>${e.courierType || '-'}</td><td style="font-size:10px">${e.gstin || ''}</td><td><span class="src ${e.source}">${e.source === 'app' ? 'App' : 'Web'}</span></td></tr>`;
     }
     html += `</tbody></table></div>`;
   } else {
@@ -321,11 +332,11 @@ function downloadCSV() {
   if (!data || !data.length) return;
   let month = document.getElementById('monthSel');
   let mName = month.options[month.selectedIndex].text;
-  let csv = 'E-ID,Full E-ID,Date,Buyer,State,Qty,Taxable,GST,Total,GSTIN,Source\n';
+  let csv = 'E-ID,Full E-ID,Date,Buyer,State,Qty,Taxable,GST,Total,Shipping,Courier,GSTIN,Source\n';
   for (let i = data.length - 1; i >= 0; i--) {
     let e = data[i];
     let displayName = e.name ? e.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '';
-    csv += [e.eid, e.fullEid || '', formatIndianDate(e.dt), '"' + displayName + '"', '"' + (e.state || '') + '"', e.qty, e.taxable || '', e.gstAmt || '', e.total || '', e.gstin || '', e.source === 'app' ? 'Offline App' : 'Website'].join(',') + '\n';
+    csv += [e.eid, e.fullEid || '', formatIndianDate(e.dt), '"' + displayName + '"', '"' + (e.state || '') + '"', e.qty, e.taxable || '', e.gstAmt || '', e.total || '', e.shipping || 0, e.courierType || '', e.gstin || '', e.source === 'app' ? 'Offline App' : 'Website'].join(',') + '\n';
   }
   let blob = new Blob([csv], {type: 'text/csv'});
   let a = document.createElement('a');
