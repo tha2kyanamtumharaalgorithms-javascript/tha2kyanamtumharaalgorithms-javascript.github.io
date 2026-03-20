@@ -161,6 +161,9 @@ async function awbFetchShipRocket() {
           if (!scheduledStatuses.includes(normStatus)) return;
 
           let awb = shipment.awb || order.awb || '';
+
+          // Only keep orders that have an AWB assigned
+          if (!awb) return;
           allOrders.push({
             id: order.id,
             channelOrderId: order.channel_order_id || order.id,
@@ -198,7 +201,7 @@ async function awbFetchShipRocket() {
     }
   }
 
-  console.log('ShipRocket: ' + allOrders.length + ' scheduled orders kept (from ' + totalFetched + ' total, pages: ' + page + ')');
+  console.log('ShipRocket: ' + allOrders.length + ' orders with AWB + not picked (from ' + totalFetched + ' total, pages: ' + page + ')');
   return allOrders;
 }
 
