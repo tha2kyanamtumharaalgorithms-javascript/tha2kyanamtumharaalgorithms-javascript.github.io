@@ -279,13 +279,17 @@ function _listenMonth(mc) {
   fbRef.child('orders/' + mc).on('child_added', async (snap) => {
     const d = snap.val();
     if (d._dev === FB_DEVICE_ID) return;
-    const o = { ...d }; delete o._ts; delete o._dev;
+    const o = { ...d }; const fbTs = d._ts || 0; delete o._ts; delete o._dev;
     const tmpDb = new Dexie(mc);
     tmpDb.version(1).stores({ od: "id,dt,bulk" });
     const existing = await tmpDb.od.get(o.id);
     if (!existing) {
       await tmpDb.od.put(o, o.id);
       console.log('fb: new order from other device', mc, o.id);
+    } else if (existing.tot !== o.tot || JSON.stringify(existing.od) !== JSON.stringify(o.od)) {
+      // Update stale local data — Firebase has newer version
+      await tmpDb.od.put(o, o.id);
+      console.log('fb: stale order updated from cloud', mc, o.id);
     }
   });
 }
