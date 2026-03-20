@@ -63,9 +63,24 @@ async function shpLogin() {
 
 async function shpOrders(q) {
   const token = await shpLogin();
-  let page = q?.page || 1;
-  let perPage = q?.per_page || 50;
-  const r = await nfetch(`https://apiv2.shiprocket.in/v1/external/orders?page=${page}&per_page=${perPage}`, {
+  const params = new URLSearchParams();
+  params.set('page', q?.page || 1);
+  params.set('per_page', q?.per_page || 50);
+  // Pass through optional filter params
+  if (q?.status) params.set('status', q.status);
+  if (q?.filter) params.set('filter', q.filter);
+  if (q?.filter_by) params.set('filter_by', q.filter_by);
+  if (q?.sort) params.set('sort', q.sort);
+  if (q?.sort_by) params.set('sort_by', q.sort_by);
+  const r = await nfetch(`https://apiv2.shiprocket.in/v1/external/orders?${params}`, {
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+  });
+  return r.body;
+}
+
+async function shpOrderDetail(orderId) {
+  const token = await shpLogin();
+  const r = await nfetch(`https://apiv2.shiprocket.in/v1/external/orders/show/${orderId}`, {
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
   });
   return r.body;
@@ -81,15 +96,8 @@ async function shpCancel(body) {
   return r.body;
 }
 
-async function shpWeightDiscrepancies(q) {
-  const token = await shpLogin();
-  let page = q?.page || 1;
-  let perPage = q?.per_page || 50;
-  const r = await nfetch(`https://apiv2.shiprocket.in/v1/external/weight-discrepancies?page=${page}&per_page=${perPage}`, {
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
-  });
-  return r.body;
-}
+// Weight discrepancy endpoint removed — ShipRocket does NOT have a public API for this.
+// Weight dispute data is only available in the ShipRocket dashboard UI.
 
 async function shpBook(courierId, orderData) {
   const token = await shpLogin();
@@ -280,16 +288,17 @@ export const handler = async (event) => {
       return res(data);
     }
 
+    // --- ShipRocket: Order detail ---
+    if (path.match(/^\/orders\/show\/\d+$/)) {
+      const orderId = path.split('/').pop();
+      const data = await shpOrderDetail(orderId);
+      return res(data);
+    }
+
     // --- ShipRocket: Cancel ---
     if (path === '/cancel' || path === '/cancel/') {
       const body = JSON.parse(event.body || '{}');
       const data = await shpCancel(body);
-      return res(data);
-    }
-
-    // --- ShipRocket: Weight discrepancies ---
-    if (path === '/weight-discrepancies' || path === '/weight-discrepancies/') {
-      const data = await shpWeightDiscrepancies(q);
       return res(data);
     }
 
