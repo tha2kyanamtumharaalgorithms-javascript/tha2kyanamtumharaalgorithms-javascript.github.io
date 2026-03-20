@@ -142,9 +142,11 @@ async function awbFetchShipRocket() {
   let page = 1;
   let hasMore = true;
   let totalFetched = 0;
+  let emptyPages = 0; // consecutive pages with 0 matching orders
+  const MAX_PAGES = 5; // max 5 pages (1000 orders) — pending pickups are recent
   const scheduledStatuses = ['Pickup Scheduled', 'Not Picked', 'Pending', 'Ready to Ship', 'Booked'];
 
-  while (hasMore) {
+  while (hasMore && page <= MAX_PAGES) {
     try {
       const res = await fetch(SHP_LAMBDA + '/orders?page=' + page + '&per_page=200');
       const raw = await res.json();
@@ -152,9 +154,11 @@ async function awbFetchShipRocket() {
 
       if (Array.isArray(data) && data.length) {
         totalFetched += data.length;
+        let matchedThisPage = 0;
         data.forEach(order => {
           let shipment = (order.shipments && order.shipments[0]) || {};
-          let status = shipment.status || order.status || 'NEW';
+          // Prefer numeric status_code (real-time accurate) over string status (can be stale)
+          let status = shipment.status_code || order.status_code || shipment.status || order.status || 'NEW';
           let normStatus = awbNormalizeStatus(status);
 
           // Only keep scheduled/pending orders — skip delivered, in-transit, cancelled
@@ -164,6 +168,7 @@ async function awbFetchShipRocket() {
 
           // Only keep orders that have an AWB assigned
           if (!awb) return;
+          matchedThisPage++;
           allOrders.push({
             id: order.id,
             channelOrderId: order.channel_order_id || order.id,
@@ -173,7 +178,7 @@ async function awbFetchShipRocket() {
             buyer: order.customer_name || order.buyer_name || '',
             mobile: order.customer_phone || order.billing_phone || order.shipping_phone || '',
             status: normStatus,
-            statusRaw: status,
+            statusRaw: (shipment.status_code || '') + ' / ' + (shipment.status || order.status || ''),
             orderDate: order.created_at || order.order_date || '',
             tch: Number(shipment.shipping_charges || shipment.freight_charge || shipment.cost || 0),
             och: 0,
@@ -183,6 +188,10 @@ async function awbFetchShipRocket() {
             invoiceAmount: Number(order.total || 0)
           });
         });
+
+        // Stop early: if 2 consecutive pages had 0 matches, no point fetching more
+        if (matchedThisPage === 0) { emptyPages++; } else { emptyPages = 0; }
+        if (emptyPages >= 2) { hasMore = false; break; }
 
         let meta = raw?.meta || {};
         if (meta.last_page && page < meta.last_page) {
@@ -201,7 +210,7 @@ async function awbFetchShipRocket() {
     }
   }
 
-  console.log('ShipRocket: ' + allOrders.length + ' orders with AWB + not picked (from ' + totalFetched + ' total, pages: ' + page + ')');
+  console.log('ShipRocket: ' + allOrders.length + ' pending pickups (from ' + totalFetched + ' orders, ' + page + ' pages)');
   return allOrders;
 }
 
