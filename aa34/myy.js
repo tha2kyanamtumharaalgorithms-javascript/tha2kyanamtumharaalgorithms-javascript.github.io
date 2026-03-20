@@ -34,8 +34,9 @@ async function delod() {
     fbPutOrder(selg.slice(-1) + odno.slice(0, 6), shod11.od);
     debounceSyncLiveSheet();
     selod5 = {};
-    document.querySelector(`[name=${selg}]`).click();//await bulkdb.bk.delete(shod11.od.id);
     showUndoSnackbar();
+    let navBtn = document.querySelector(`[name=${selg}]`);
+    if (navBtn) navBtn.click(); else if (selg === 'inst') getinst();
   } catch (error) {
     alert('Error in del update fn:', error);
     console.error('Error in del update fn:', error);
