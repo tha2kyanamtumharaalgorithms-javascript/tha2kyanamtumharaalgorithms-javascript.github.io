@@ -204,12 +204,12 @@ async function load() {
             total = Number(ord.ttpc) || Number(ord.tv) || 0;
             taxable = Math.round(total / 1.05);
           }
-          // Parse shipping charge from tch field
+          // Parse shipping charge from tch field (format: "634.00z27,19" - number before 'z')
           let shipping = 0;
           if (ord.tch) {
             let tchStr = String(ord.tch);
-            if (tchStr.includes(',')) shipping = Number(tchStr.split(',')[0]) || 0;
-            else shipping = Number(tchStr) || 0;
+            let numPart = tchStr.split('z')[0];
+            shipping = parseFloat(numPart) || 0;
           }
           let entry = {
             eid, fullEid: key, source: 'web',
@@ -281,12 +281,16 @@ async function load() {
   let last = total ? all[total - 1].eid : '-';
   let appCount = all.filter(e => e.source === 'app').length;
   let webCount = all.filter(e => e.source === 'web').length;
+  let totalShipping = all.reduce((s, e) => s + (e.shipping || 0), 0);
+  let totalInvoice = all.reduce((s, e) => s + (e.total || 0), 0);
 
   html += `<div class="summary">
     <div class="row"><span>Total E-IDs</span><b>${total}</b></div>
     <div class="row"><span>Range</span><b>${first} &rarr; ${last}</b></div>
     <div class="row"><span>Offline App</span><b>${appCount}</b></div>
     <div class="row"><span>Website</span><b>${webCount}</b></div>
+    <div class="row"><span>Total Collected Shipping</span><b>&#8377;${totalShipping.toLocaleString('en-IN')}</b></div>
+    <div class="row"><span>Total Invoice Value</span><b>&#8377;${totalInvoice.toLocaleString('en-IN')}</b></div>
     <div class="row"><span>Duplicates (last 500)</span><span class="${dupGroups.length ? 'miss' : 'ok'}">${dupGroups.length}</span></div>
     <div class="row"><span>Missing</span><span class="${missing.length ? 'miss' : 'ok'}">${missing.length}</span></div>
   </div>`;
