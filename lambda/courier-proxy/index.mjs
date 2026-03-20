@@ -145,7 +145,16 @@ async function dlPricing(query) {
     rkbPricing(query)
   ]);
 
-  return '[' + rA.body + ',' + rC.body + ',' + rB.body + ',' + rRkb + ']';
+  // Ensure each Delhivery response is always an array (frontend expects v[0][0].total_amount)
+  // With the new md param, Delhivery may return a single object instead of an array
+  const wrapArray = (raw) => {
+    try {
+      const parsed = JSON.parse(raw);
+      return JSON.stringify(Array.isArray(parsed) ? parsed : [parsed]);
+    } catch { return raw; }
+  };
+
+  return '[' + wrapArray(rA.body) + ',' + wrapArray(rC.body) + ',' + wrapArray(rB.body) + ',' + rRkb + ']';
 }
 
 async function rkbPricing(query) {
