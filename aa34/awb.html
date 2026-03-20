@@ -114,7 +114,9 @@ async function awbFetchAll() {
     if (rkbResults.status === 'fulfilled' && rkbResults.value) awbData.push(...rkbResults.value);
 
     // Fetch shipping charges for ShipRocket orders via order detail API
-    await awbFetchShipRocketCharges();
+    // NOTE: Requires Lambda deploy of /orders/show/{id} route first.
+    // Uncomment after deploying Lambda update to AWS:
+    // await awbFetchShipRocketCharges();
 
     awbData.sort((a, b) => new Date(b.orderDate || 0) - new Date(a.orderDate || 0));
 
@@ -131,79 +133,14 @@ async function awbFetchAll() {
 }
 
 // ============ SHIPROCKET (via Lambda proxy — direct API blocked by CORS) ============
+// ShipRocket API does NOT support server-side status filtering.
+// We fetch all orders and filter client-side to keep only scheduled/pending.
 
 async function awbFetchShipRocket() {
   let allOrders = [];
   let page = 1;
   let hasMore = true;
-
-  while (hasMore) {
-    try {
-      // Fetch only scheduled/not-picked orders (status 1 = AWB Assigned)
-      const res = await fetch(SHP_LAMBDA + '/orders?page=' + page + '&per_page=200&status=1');
-      const raw = await res.json();
-      const data = Array.isArray(raw) ? raw : (raw?.data || []);
-
-      // If status filter returned 0 results on first page, retry without filter
-      if (page === 1 && (!Array.isArray(data) || data.length === 0)) {
-        console.log('ShipRocket: status=1 filter returned 0 results, trying without filter...');
-        return awbFetchShipRocketAll();
-      }
-
-      if (Array.isArray(data) && data.length) {
-        data.forEach(order => {
-          let shipment = (order.shipments && order.shipments[0]) || {};
-          let awb = shipment.awb || order.awb || '';
-          let status = shipment.status || order.status || 'NEW';
-          let normStatus = awbNormalizeStatus(status);
-
-          allOrders.push({
-            id: order.id,
-            channelOrderId: order.channel_order_id || order.id,
-            awb: awb,
-            dl: 'shp',
-            courierName: shipment.courier_name || 'ShipRocket',
-            buyer: order.customer_name || order.buyer_name || '',
-            mobile: order.customer_phone || order.billing_phone || order.shipping_phone || '',
-            status: normStatus,
-            statusRaw: status,
-            orderDate: order.created_at || order.order_date || '',
-            tch: Number(shipment.shipping_charges || shipment.freight_charge || shipment.cost || 0),
-            och: 0,
-            otherCharges: Number(shipment.cod_charges || 0) + Number(shipment.rto_charges || 0) + Number(shipment.other_charges || 0),
-            weightDiscrepancy: 0,
-            trackUrl: awb ? 'https://www.shiprocket.in/shipment-tracking/' + awb : '',
-            cancelled: (normStatus === 'Cancelled'),
-            invoiceAmount: Number(order.total || 0)
-          });
-        });
-
-        let meta = raw?.meta || {};
-        if (meta.last_page && page < meta.last_page) {
-          page++;
-        } else if (data.length === 200) {
-          page++;
-        } else {
-          hasMore = false;
-        }
-      } else {
-        hasMore = false;
-      }
-    } catch (e) {
-      console.log('ShipRocket fetch page ' + page + ' error:', e);
-      hasMore = false;
-    }
-  }
-
-  console.log('ShipRocket (filtered): ' + allOrders.length + ' orders (pages: ' + page + ')');
-  return allOrders;
-}
-
-// Fallback: fetch all orders and filter client-side to scheduled only
-async function awbFetchShipRocketAll() {
-  let allOrders = [];
-  let page = 1;
-  let hasMore = true;
+  let totalFetched = 0;
   const scheduledStatuses = ['Pickup Scheduled', 'Not Picked', 'Pending', 'Ready to Ship', 'Booked'];
 
   while (hasMore) {
@@ -213,15 +150,16 @@ async function awbFetchShipRocketAll() {
       const data = Array.isArray(raw) ? raw : (raw?.data || []);
 
       if (Array.isArray(data) && data.length) {
+        totalFetched += data.length;
         data.forEach(order => {
           let shipment = (order.shipments && order.shipments[0]) || {};
-          let awb = shipment.awb || order.awb || '';
           let status = shipment.status || order.status || 'NEW';
           let normStatus = awbNormalizeStatus(status);
 
-          // Only keep scheduled/pending orders
+          // Only keep scheduled/pending orders — skip delivered, in-transit, cancelled
           if (!scheduledStatuses.includes(normStatus)) return;
 
+          let awb = shipment.awb || order.awb || '';
           allOrders.push({
             id: order.id,
             channelOrderId: order.channel_order_id || order.id,
@@ -236,9 +174,8 @@ async function awbFetchShipRocketAll() {
             tch: Number(shipment.shipping_charges || shipment.freight_charge || shipment.cost || 0),
             och: 0,
             otherCharges: Number(shipment.cod_charges || 0) + Number(shipment.rto_charges || 0) + Number(shipment.other_charges || 0),
-            weightDiscrepancy: 0,
             trackUrl: awb ? 'https://www.shiprocket.in/shipment-tracking/' + awb : '',
-            cancelled: (normStatus === 'Cancelled'),
+            cancelled: false,
             invoiceAmount: Number(order.total || 0)
           });
         });
@@ -260,7 +197,7 @@ async function awbFetchShipRocketAll() {
     }
   }
 
-  console.log('ShipRocket (all→filtered): ' + allOrders.length + ' scheduled orders (pages: ' + page + ')');
+  console.log('ShipRocket: ' + allOrders.length + ' scheduled orders kept (from ' + totalFetched + ' total, pages: ' + page + ')');
   return allOrders;
 }
 
@@ -572,66 +509,158 @@ function awbRenderApiRef() {
   document.getElementById('out').innerHTML = `
   <div style="background:#fff;border-radius:8px;padding:12px;margin-top:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);font-size:12px;line-height:1.6">
 
-  <h3 style="margin:0 0 8px;color:#1565C0">ShipRocket API</h3>
-  <p style="margin:0 0 4px;color:#666;font-size:11px">Base: <code>apiv2.shiprocket.in/v1/external/</code> &nbsp;|&nbsp; Auth: Bearer token (valid 10 days)</p>
-  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:16px">
-    <tr style="background:#e3f2fd"><th style="width:60px">Method</th><th>Endpoint</th><th>Description</th><th style="width:80px">Status</th></tr>
-    <tr><td>POST</td><td><code>/auth/login</code></td><td>Get Bearer token (email + password)</td><td style="color:green">Working</td></tr>
-    <tr><td>GET</td><td><code>/orders?page=X&per_page=Y</code></td><td>List orders (shipping charges NOT included)</td><td style="color:green">Working</td></tr>
-    <tr><td>GET</td><td><code>/orders/show/{id}</code></td><td>Single order detail (may include charges)</td><td style="color:orange">Testing</td></tr>
-    <tr><td>POST</td><td><code>/orders/create/adhoc</code></td><td>Create ad-hoc order</td><td style="color:green">Working</td></tr>
-    <tr><td>POST</td><td><code>/orders/cancel</code></td><td>Cancel orders <code>{ids: [...]}</code></td><td style="color:green">Working</td></tr>
-    <tr><td>POST</td><td><code>/courier/assign/awb</code></td><td>Assign courier + get AWB</td><td style="color:green">Working</td></tr>
-    <tr><td>POST</td><td><code>/courier/generate/pickup</code></td><td>Schedule pickup</td><td style="color:green">Working</td></tr>
-    <tr><td>GET</td><td><code>/courier/serviceability/?pickup_postcode=X&delivery_postcode=Y&weight=Z&cod=0</code></td><td>Check available couriers + estimated charges</td><td style="color:green">Available</td></tr>
-    <tr><td>GET</td><td><code>/courier/track/shipment/{id}</code></td><td>Track by shipment ID</td><td style="color:green">Available</td></tr>
-    <tr><td>GET</td><td><code>/courier/track/awb/{awb}</code></td><td>Track by AWB number</td><td style="color:green">Available</td></tr>
-    <tr><td>POST</td><td><code>/courier/generate/label</code></td><td>Generate shipping label</td><td style="color:green">Available</td></tr>
-    <tr><td>POST</td><td><code>/manifests/generate</code></td><td>Generate manifest</td><td style="color:green">Available</td></tr>
-    <tr><td>POST</td><td><code>/orders/print/invoice</code></td><td>Generate invoice</td><td style="color:green">Available</td></tr>
-    <tr><td>GET</td><td><code>/products</code></td><td>List products</td><td style="color:green">Available</td></tr>
-    <tr><td>GET</td><td><code>/channels</code></td><td>List integrated channels</td><td style="color:green">Available</td></tr>
-    <tr><td>&mdash;</td><td>Weight discrepancy data</td><td>NOT available via API (dashboard only)</td><td style="color:red">No API</td></tr>
-    <tr><td>&mdash;</td><td>Billing / wallet transactions</td><td>NOT available via API (dashboard only)</td><td style="color:red">No API</td></tr>
-  </table>
-  <p style="margin:0 0 4px;color:#888;font-size:10px">Status codes: 1=AWB Assigned, 3=In Transit, 4=Delivered, 6=Cancelled, 7=OFD, 8=Not Picked, 17=Out for Pickup, 19=OFD</p>
+  <h3 style="margin:0 0 8px;color:#1565C0">ShipRocket API <span style="font-size:10px;color:#666;font-weight:400">(apiv2.shiprocket.in/v1/external/) &bull; Auth: Bearer token, valid 10 days</span></h3>
 
-  <h3 style="margin:16px 0 8px;color:#4CAF50">Delhivery API</h3>
-  <p style="margin:0 0 4px;color:#666;font-size:11px">Base: <code>track.delhivery.com/</code> &nbsp;|&nbsp; Auth: Token header &nbsp;|&nbsp; 3 accounts: Surface (dl0), Express (dl1), 10KG (dl2)</p>
-  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:16px">
-    <tr style="background:#e8f5e9"><th style="width:60px">Method</th><th>Endpoint</th><th>Description</th><th style="width:80px">Status</th></tr>
-    <tr><td>GET</td><td><code>/api/kinko/v1/invoice/charges/.json?o_pin=X&d_pin=Y&cgm=Z</code></td><td>Get pricing (weight in grams)</td><td style="color:green">Working</td></tr>
-    <tr><td>GET</td><td><code>/c/api/pin-codes/json/?filter_codes=X</code></td><td>Pincode lookup (city, state)</td><td style="color:green">Working</td></tr>
-    <tr><td>GET</td><td><code>/api/v1/packages/json/?verbose=2&page_size=200</code></td><td>List shipments (includes charges!)</td><td style="color:green">Working</td></tr>
-    <tr><td>POST</td><td><code>/api/cmu/create.json</code></td><td>Book shipment</td><td style="color:green">Working</td></tr>
-    <tr><td>POST</td><td><code>/api/p/edit</code></td><td>Cancel <code>{waybill, cancellation: true}</code></td><td style="color:green">Working</td></tr>
-    <tr><td>GET</td><td><code>/api/v1/packages/json/?waybill=X</code></td><td>Track by waybill</td><td style="color:green">Available</td></tr>
-  </table>
-  <p style="margin:0 0 4px;color:#888;font-size:10px">Delhivery returns actual freight charges in shipment list (unlike ShipRocket). Charges fields: TotalFreightCharges, ExcessWeightCharges, CODCharges</p>
-
-  <h3 style="margin:16px 0 8px;color:#FF9800">RocketBox API</h3>
-  <p style="margin:0 0 4px;color:#666;font-size:11px">Base: <code>api.rocketbox.in/</code> &nbsp;|&nbsp; Auth: Bearer token &nbsp;|&nbsp; Shipment ops via Google Apps Script</p>
-  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:16px">
-    <tr style="background:#fff3e0"><th style="width:60px">Method</th><th>Endpoint</th><th>Description</th><th style="width:80px">Status</th></tr>
-    <tr><td>POST</td><td><code>/api/shipment/charges/</code></td><td>Get pricing <code>{from_pincode, to_pincode, weight, ...}</code></td><td style="color:green">Working</td></tr>
-    <tr><td>POST</td><td>Google Apps Script <code>t=list</code></td><td>List shipments</td><td style="color:green">Working</td></tr>
-    <tr><td>POST</td><td>Google Apps Script <code>t=cancel</code></td><td>Cancel shipment</td><td style="color:green">Working</td></tr>
+  <b style="font-size:11px;color:#333">Authentication</b>
+  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:8px">
+    <tr style="background:#e3f2fd"><th style="width:50px">Method</th><th>Endpoint</th><th>What it does</th></tr>
+    <tr><td>POST</td><td><code>/auth/login</code></td><td>Login with email+password, returns Bearer token (valid 10 days)</td></tr>
   </table>
 
-  <h3 style="margin:16px 0 8px;color:#555">Lambda Proxy Routes</h3>
-  <p style="margin:0 0 4px;color:#666;font-size:11px">All routes via: <code>anlof6ho4kmtewslnyk34ip2f40pedjp.lambda-url.ap-south-1.on.aws</code></p>
+  <b style="font-size:11px;color:#333">Orders</b>
+  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:8px">
+    <tr style="background:#e3f2fd"><th style="width:50px">Method</th><th>Endpoint</th><th>What it does</th></tr>
+    <tr><td>GET</td><td><code>/orders?page=X&per_page=Y</code></td><td>List all orders (paginated). Does NOT include shipping charges. Does NOT support status filter.</td></tr>
+    <tr><td>GET</td><td><code>/orders/show/{id}</code></td><td>Get single order detail with all fields. Needs Lambda deploy to use.</td></tr>
+    <tr><td>POST</td><td><code>/orders/create/adhoc</code></td><td>Create ad-hoc order (for custom/manual orders)</td></tr>
+    <tr><td>POST</td><td><code>/orders/create</code></td><td>Create channel-specific order (linked to Shopify/WooCommerce etc.)</td></tr>
+    <tr><td>POST</td><td><code>/orders/cancel</code></td><td>Cancel orders. Body: <code>{ids: [123, 456]}</code></td></tr>
+    <tr><td>PATCH</td><td><code>/orders/address/{id}</code></td><td>Update delivery address of existing order</td></tr>
+    <tr><td>POST</td><td><code>/orders/update/pickup</code></td><td>Change pickup location for an order</td></tr>
+  </table>
+
+  <b style="font-size:11px;color:#333">Shipments & Courier</b>
+  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:8px">
+    <tr style="background:#e3f2fd"><th style="width:50px">Method</th><th>Endpoint</th><th>What it does</th></tr>
+    <tr><td>GET</td><td><code>/shipments</code></td><td>List all shipments with details</td></tr>
+    <tr><td>GET</td><td><code>/shipments/{id}</code></td><td>Get specific shipment detail</td></tr>
+    <tr><td>POST</td><td><code>/courier/assign/awb</code></td><td>Assign courier to shipment. Body: <code>{shipment_id, courier_id}</code>. Returns AWB code.</td></tr>
+    <tr><td>POST</td><td><code>/courier/generate/pickup</code></td><td>Schedule pickup. Body: <code>{shipment_id: [id]}</code></td></tr>
+    <tr><td>GET</td><td><code>/courier/serviceability/?pickup_postcode=X&delivery_postcode=Y&weight=Z&cod=0</code></td><td>Check which couriers can deliver + estimated shipping charges</td></tr>
+    <tr><td>GET</td><td><code>/courier/serviceability/international</code></td><td>Check international courier serviceability</td></tr>
+  </table>
+
+  <b style="font-size:11px;color:#333">Tracking</b>
+  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:8px">
+    <tr style="background:#e3f2fd"><th style="width:50px">Method</th><th>Endpoint</th><th>What it does</th></tr>
+    <tr><td>GET</td><td><code>/courier/track/shipment/{id}</code></td><td>Track shipment by ShipRocket shipment ID</td></tr>
+    <tr><td>GET</td><td><code>/courier/track/awb/{awb}</code></td><td>Track shipment by AWB number</td></tr>
+    <tr><td>POST</td><td><code>/courier/track</code></td><td>Track multiple AWBs in one call</td></tr>
+  </table>
+
+  <b style="font-size:11px;color:#333">Labels, Invoices & Manifests</b>
+  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:8px">
+    <tr style="background:#e3f2fd"><th style="width:50px">Method</th><th>Endpoint</th><th>What it does</th></tr>
+    <tr><td>POST</td><td><code>/courier/generate/label</code></td><td>Generate shipping label PDF</td></tr>
+    <tr><td>POST</td><td><code>/manifests/generate</code></td><td>Generate manifest for pickup</td></tr>
+    <tr><td>POST</td><td><code>/manifests/print</code></td><td>Print/download manifest PDF</td></tr>
+    <tr><td>POST</td><td><code>/orders/print/invoice</code></td><td>Generate invoice PDF for order</td></tr>
+  </table>
+
+  <b style="font-size:11px;color:#333">Returns & NDR</b>
+  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:8px">
+    <tr style="background:#e3f2fd"><th style="width:50px">Method</th><th>Endpoint</th><th>What it does</th></tr>
+    <tr><td>POST</td><td><code>/orders/create/return</code></td><td>Create a return order (reverse pickup)</td></tr>
+    <tr><td>GET</td><td><code>/return-orders</code></td><td>List all return orders</td></tr>
+    <tr><td>GET</td><td><code>/ndr</code></td><td>List NDR (Non-Delivery Report) shipments</td></tr>
+    <tr><td>POST</td><td><code>/ndr/{id}/action</code></td><td>Take action on NDR (re-attempt, return, etc.)</td></tr>
+  </table>
+
+  <b style="font-size:11px;color:#333">Products, Channels & Pickup</b>
+  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:8px">
+    <tr style="background:#e3f2fd"><th style="width:50px">Method</th><th>Endpoint</th><th>What it does</th></tr>
+    <tr><td>GET</td><td><code>/products</code></td><td>List all products in your catalog</td></tr>
+    <tr><td>POST</td><td><code>/products</code></td><td>Add new product to catalog</td></tr>
+    <tr><td>GET</td><td><code>/products/show/{id}</code></td><td>Get specific product details</td></tr>
+    <tr><td>GET</td><td><code>/channels</code></td><td>List all integrated channels (Shopify, WooCommerce, etc.)</td></tr>
+    <tr><td>GET</td><td><code>/settings/company/pickup</code></td><td>List all pickup locations/warehouses</td></tr>
+    <tr><td>POST</td><td><code>/settings/company/addpickup</code></td><td>Add new pickup location/warehouse</td></tr>
+  </table>
+
+  <b style="font-size:11px;color:#333">NOT available via API (dashboard only)</b>
+  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:8px">
+    <tr style="background:#ffebee"><th style="width:50px">&mdash;</th><th>Feature</th><th>Why</th></tr>
+    <tr><td>&mdash;</td><td>Weight discrepancy data</td><td>Only in ShipRocket dashboard > Billing > Weight Reconciliation. No API endpoint exists.</td></tr>
+    <tr><td>&mdash;</td><td>Billing / wallet transactions</td><td>Passbook, wallet balance, transaction history — dashboard only.</td></tr>
+    <tr><td>&mdash;</td><td>Server-side order status filter</td><td>The <code>?status=</code> param is ignored. Must filter client-side.</td></tr>
+    <tr><td>&mdash;</td><td>Shipping charges in orders list</td><td><code>shipping_charges</code> and <code>cost</code> fields return empty/"0.00" in list API.</td></tr>
+  </table>
+  <p style="margin:0 0 4px;color:#888;font-size:10px">Status codes: 1=AWB Assigned, 2=Label Created, 3=Shipped, 4=Delivered, 5=RTO, 6=Cancelled, 7=OFD, 8=Not Picked, 9=Undelivered, 17=Out for Pickup, 19=OFD, 20=Reached Hub</p>
+
+  <hr style="margin:16px 0;border:none;border-top:1px solid #e0e0e0">
+
+  <h3 style="margin:0 0 8px;color:#4CAF50">Delhivery API <span style="font-size:10px;color:#666;font-weight:400">(track.delhivery.com/) &bull; Auth: Token header &bull; 3 accounts: Surface, Express, 10KG</span></h3>
+
+  <b style="font-size:11px;color:#333">Pricing & Serviceability</b>
+  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:8px">
+    <tr style="background:#e8f5e9"><th style="width:50px">Method</th><th>Endpoint</th><th>What it does</th></tr>
+    <tr><td>GET</td><td><code>/api/kinko/v1/invoice/charges/.json?o_pin=X&d_pin=Y&cgm=Z</code></td><td>Get pricing. Weight in grams (cgm). Returns charges breakdown per service.</td></tr>
+    <tr><td>GET</td><td><code>/c/api/pin-codes/json/?filter_codes=X</code></td><td>Pincode lookup — returns city, state, serviceability (prepaid/COD/pickup/delivery)</td></tr>
+  </table>
+
+  <b style="font-size:11px;color:#333">Shipments</b>
+  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:8px">
+    <tr style="background:#e8f5e9"><th style="width:50px">Method</th><th>Endpoint</th><th>What it does</th></tr>
+    <tr><td>POST</td><td><code>/api/cmu/create.json</code></td><td>Create/book shipment. Accepts pickup & delivery details, weight, dimensions.</td></tr>
+    <tr><td>GET</td><td><code>/api/v1/packages/json/?verbose=2&page_size=200</code></td><td>List all shipments with full details. INCLUDES actual freight charges! (unlike ShipRocket)</td></tr>
+    <tr><td>POST</td><td><code>/api/p/edit</code></td><td>Edit or cancel shipment. Body: <code>{waybill: "X", cancellation: true}</code></td></tr>
+    <tr><td>GET</td><td><code>/waybill/api/fetch/json/</code></td><td>Generate/fetch waybill numbers for future use</td></tr>
+  </table>
+
+  <b style="font-size:11px;color:#333">Tracking</b>
+  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:8px">
+    <tr style="background:#e8f5e9"><th style="width:50px">Method</th><th>Endpoint</th><th>What it does</th></tr>
+    <tr><td>GET</td><td><code>/api/v1/packages/json/?waybill=X&verbose=2</code></td><td>Track single shipment by waybill (detailed scan history)</td></tr>
+    <tr><td>GET</td><td><code>/api/status/</code></td><td>Bulk status check for multiple waybills</td></tr>
+  </table>
+
+  <b style="font-size:11px;color:#333">Warehouses</b>
+  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:8px">
+    <tr style="background:#e8f5e9"><th style="width:50px">Method</th><th>Endpoint</th><th>What it does</th></tr>
+    <tr><td>GET</td><td><code>/api/backend/clientwarehouse/</code></td><td>List all registered warehouses/pickup points</td></tr>
+    <tr><td>POST</td><td><code>/api/backend/clientwarehouse/create/</code></td><td>Register new warehouse/pickup location</td></tr>
+  </table>
+  <p style="margin:0 0 4px;color:#888;font-size:10px">Charge fields in shipment response: TotalFreightCharges, ExcessWeightCharges, CODCharges, OtherCharges. Delhivery gives real shipping costs (unlike ShipRocket).</p>
+
+  <hr style="margin:16px 0;border:none;border-top:1px solid #e0e0e0">
+
+  <h3 style="margin:0 0 8px;color:#FF9800">RocketBox API <span style="font-size:10px;color:#666;font-weight:400">(api.rocketbox.in/) &bull; Auth: Bearer token</span></h3>
+
+  <b style="font-size:11px;color:#333">Direct API</b>
+  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:8px">
+    <tr style="background:#fff3e0"><th style="width:50px">Method</th><th>Endpoint</th><th>What it does</th></tr>
+    <tr><td>POST</td><td><code>/api/shipment/charges/</code></td><td>Get pricing. Body: <code>{from_pincode, to_pincode, weight, units, length, height, width, invoice_value}</code></td></tr>
+    <tr><td>POST</td><td><code>/api/shipment/create/</code></td><td>Create/book shipment with full details</td></tr>
+    <tr><td>GET</td><td><code>/api/shipment/list/</code></td><td>List shipments (may need query params for pagination)</td></tr>
+    <tr><td>GET</td><td><code>/api/shipment/track/{awb}/</code></td><td>Track shipment by AWB</td></tr>
+    <tr><td>POST</td><td><code>/api/shipment/cancel/</code></td><td>Cancel shipment</td></tr>
+  </table>
+
+  <b style="font-size:11px;color:#333">Via Google Apps Script (what we currently use)</b>
+  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:8px">
+    <tr style="background:#fff3e0"><th style="width:50px">Method</th><th>Endpoint</th><th>What it does</th></tr>
+    <tr><td>POST</td><td>Google Apps Script <code>t=list</code></td><td>List all RocketBox shipments (proxied through GAS)</td></tr>
+    <tr><td>POST</td><td>Google Apps Script <code>t=cancel</code></td><td>Cancel RocketBox shipment (proxied through GAS)</td></tr>
+  </table>
+  <p style="margin:0 0 4px;color:#888;font-size:10px">RocketBox has limited public API docs. Most ops currently go through Google Apps Script. Token refreshed via Lambda <code>?rkb=TOKEN</code>.</p>
+
+  <hr style="margin:16px 0;border:none;border-top:1px solid #e0e0e0">
+
+  <h3 style="margin:0 0 8px;color:#555">Lambda Proxy Routes <span style="font-size:10px;color:#666;font-weight:400">(anlof6ho4kmtewslnyk34ip2f40pedjp.lambda-url.ap-south-1.on.aws)</span></h3>
+  <p style="margin:0 0 4px;color:#c62828;font-size:11px;font-weight:600">After editing <code>lambda/courier-proxy/index.mjs</code> in repo, copy-paste to AWS Lambda console to deploy!</p>
   <table style="width:100%;min-width:auto;font-size:11px">
-    <tr style="background:#eceff1"><th style="width:80px">Route</th><th>Maps To</th><th>Description</th></tr>
+    <tr style="background:#eceff1"><th style="width:80px">Route</th><th>Maps To</th><th>What it does</th></tr>
     <tr><td><code>/token</code></td><td>ShipRocket</td><td>Get fresh auth token</td></tr>
-    <tr><td><code>/orders</code></td><td>ShipRocket</td><td>List orders (supports page, per_page, status, filter, sort params)</td></tr>
-    <tr><td><code>/orders/show/{id}</code></td><td>ShipRocket</td><td>Get single order detail</td></tr>
+    <tr><td><code>/orders</code></td><td>ShipRocket</td><td>List orders (page, per_page params). Status filter NOT supported by ShipRocket.</td></tr>
+    <tr><td><code>/orders/show/{id}</code></td><td>ShipRocket</td><td>Get single order detail. <b style="color:red">Needs Lambda deploy!</b></td></tr>
     <tr><td><code>/cancel</code></td><td>ShipRocket</td><td>Cancel orders</td></tr>
-    <tr><td><code>/shp/{courierId}</code></td><td>ShipRocket</td><td>Book shipment (create + AWB + pickup)</td></tr>
-    <tr><td><code>/price</code> or <code>/?o_pin=&d_pin=&cgm=</code></td><td>Delhivery + RocketBox</td><td>Get pricing from all 4 services</td></tr>
-    <tr><td><code>/pin/{code}</code></td><td>Delhivery</td><td>Pincode lookup</td></tr>
-    <tr><td><code>/del/shipments</code></td><td>Delhivery</td><td>Fetch shipments from all 3 accounts</td></tr>
-    <tr><td><code>/del/cancel</code></td><td>Delhivery</td><td>Cancel shipment</td></tr>
-    <tr><td><code>/del/dl0|dl1|dl2</code></td><td>Delhivery</td><td>Book shipment (by account type)</td></tr>
+    <tr><td><code>/shp/{courierId}</code></td><td>ShipRocket</td><td>Book shipment (creates order + assigns AWB + schedules pickup)</td></tr>
+    <tr><td><code>/price</code></td><td>Delhivery + RocketBox</td><td>Get pricing from all 4 services. Params: <code>o_pin, d_pin, cgm</code></td></tr>
+    <tr><td><code>/pin/{code}</code></td><td>Delhivery</td><td>Pincode lookup (city, state)</td></tr>
+    <tr><td><code>/del/shipments</code></td><td>Delhivery</td><td>Fetch shipments from all 3 Delhivery accounts in parallel</td></tr>
+    <tr><td><code>/del/cancel</code></td><td>Delhivery</td><td>Cancel shipment by waybill</td></tr>
+    <tr><td><code>/del/dl0|dl1|dl2</code></td><td>Delhivery</td><td>Book shipment (dl0=Surface, dl1=Express, dl2=10KG)</td></tr>
+    <tr><td><code>?rkb=TOKEN</code></td><td>RocketBox</td><td>Update RocketBox token at runtime</td></tr>
   </table>
 
   </div>`;
