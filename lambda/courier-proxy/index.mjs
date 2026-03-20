@@ -137,10 +137,11 @@ async function dlPricing(query) {
   const baseUrl = 'https://track.delhivery.com/api/kinko/v1/invoice/charges/.json?' + qs;
 
   // Fetch 3 Delhivery services + RocketBox in parallel (same order as Google Script: a, c, b)
+  // Delhivery requires md param: S=Surface, E=Express
   const [rA, rC, rB, rRkb] = await Promise.all([
-    nfetch(baseUrl, { headers: { 'Authorization': env.DL_TOKEN_A, 'Content-Type': 'application/json' } }),
-    nfetch(baseUrl, { headers: { 'Authorization': env.DL_TOKEN_C, 'Content-Type': 'application/json' } }),
-    nfetch(baseUrl, { headers: { 'Authorization': env.DL_TOKEN_B, 'Content-Type': 'application/json' } }),
+    nfetch(baseUrl + '&md=S', { headers: { 'Authorization': env.DL_TOKEN_A, 'Content-Type': 'application/json' } }),
+    nfetch(baseUrl + '&md=E', { headers: { 'Authorization': env.DL_TOKEN_C, 'Content-Type': 'application/json' } }),
+    nfetch(baseUrl + '&md=S', { headers: { 'Authorization': env.DL_TOKEN_B, 'Content-Type': 'application/json' } }),
     rkbPricing(query)
   ]);
 
