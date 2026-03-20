@@ -151,6 +151,20 @@ async function awbFetchShipRocket() {
       const data = Array.isArray(raw) ? raw : (raw?.data || []);
 
       if (Array.isArray(data) && data.length) {
+        // Debug: log first order structure to find correct field names
+        if (page === 1 && data[0]) {
+          let o = data[0], s = o.shipments?.[0] || {};
+          console.log('DEBUG ShipRocket order keys:', Object.keys(o));
+          console.log('DEBUG ShipRocket order.others:', JSON.stringify(o.others));
+          console.log('DEBUG ShipRocket shipment keys:', Object.keys(s));
+          console.log('DEBUG ShipRocket shipment object:', JSON.stringify(s));
+          console.log('DEBUG ShipRocket order sample:', JSON.stringify({
+            id: o.id, channel_order_id: o.channel_order_id,
+            customer_phone: o.customer_phone, billing_phone: o.billing_phone,
+            freight_charge: o.freight_charge, total: o.total, total_charges: o.total_charges,
+            shipping_charges: o.shipping_charges, sub_total: o.sub_total
+          }));
+        }
         data.forEach(order => {
           let shipment = (order.shipments && order.shipments[0]) || {};
           let awb = shipment.awb || order.awb || '';
@@ -214,6 +228,11 @@ async function awbFetchWeightDiscrepancies() {
       const data = Array.isArray(raw) ? raw : (raw?.data || []);
 
       if (Array.isArray(data) && data.length) {
+        // Debug: log first discrepancy item to find correct field names
+        if (page === 1 && data[0]) {
+          console.log('DEBUG Discrepancy item keys:', Object.keys(data[0]));
+          console.log('DEBUG Discrepancy first item:', JSON.stringify(data[0]));
+        }
         data.forEach(item => {
           let awb = item.awb || item.awb_number || item.awb_code || '';
           if (awb) {
