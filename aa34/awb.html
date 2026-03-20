@@ -154,7 +154,8 @@ async function awbFetchShipRocket() {
         totalFetched += data.length;
         data.forEach(order => {
           let shipment = (order.shipments && order.shipments[0]) || {};
-          let status = shipment.status || order.status || 'NEW';
+          // Prefer numeric status_code (real-time accurate) over string status (can be stale)
+          let status = shipment.status_code || order.status_code || shipment.status || order.status || 'NEW';
           let normStatus = awbNormalizeStatus(status);
 
           // Only keep scheduled/pending orders — skip delivered, in-transit, cancelled
@@ -173,7 +174,7 @@ async function awbFetchShipRocket() {
             buyer: order.customer_name || order.buyer_name || '',
             mobile: order.customer_phone || order.billing_phone || order.shipping_phone || '',
             status: normStatus,
-            statusRaw: status,
+            statusRaw: (shipment.status_code || '') + ' / ' + (shipment.status || order.status || ''),
             orderDate: order.created_at || order.order_date || '',
             tch: Number(shipment.shipping_charges || shipment.freight_charge || shipment.cost || 0),
             och: 0,
