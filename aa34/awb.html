@@ -112,6 +112,18 @@ async function awbFetchAll() {
     if (dlResults.status === 'fulfilled' && dlResults.value) awbData.push(...dlResults.value);
     if (rkbResults.status === 'fulfilled' && rkbResults.value) awbData.push(...rkbResults.value);
 
+    // Fetch weight discrepancies and merge into ShipRocket orders
+    try {
+      const discrepancies = await awbFetchWeightDiscrepancies();
+      awbData.forEach(d => {
+        if (d.dl === 'shp' && d.awb && discrepancies[d.awb]) {
+          d.weightDiscrepancy = discrepancies[d.awb].charge;
+        }
+      });
+    } catch (e) {
+      console.log('Weight discrepancy merge error:', e);
+    }
+
     awbData.sort((a, b) => new Date(b.orderDate || 0) - new Date(a.orderDate || 0));
 
     if (!awbData.length) {
@@ -130,47 +142,109 @@ async function awbFetchAll() {
 
 async function awbFetchShipRocket() {
   let allOrders = [];
+  let page = 1;
+  let hasMore = true;
 
-  try {
-    // Fetch orders through Lambda proxy: GET /orders
-    // Lambda proxies to ShipRocket API using its stored token
-    const res = await fetch(SHP_LAMBDA + '/orders');
-    const raw = await res.json();
-    console.log('ShipRocket raw response keys:', Object.keys(raw || {}), 'type:', typeof raw);
+  while (hasMore) {
+    try {
+      const res = await fetch(SHP_LAMBDA + '/orders?page=' + page + '&per_page=200');
+      const raw = await res.json();
+      const data = Array.isArray(raw) ? raw : (raw?.data || []);
 
-    // ShipRocket API returns { data: [...], meta: {...} } — orders are inside data.data
-    const data = Array.isArray(raw) ? raw : (raw?.data || []);
-    if (Array.isArray(data)) {
-      data.forEach(order => {
-        let shipment = (order.shipments && order.shipments[0]) || {};
-        let awb = shipment.awb || order.awb || '';
-        let status = shipment.status || order.status || 'NEW';
+      if (Array.isArray(data) && data.length) {
+        data.forEach(order => {
+          let shipment = (order.shipments && order.shipments[0]) || {};
+          let awb = shipment.awb || order.awb || '';
+          let status = shipment.status || order.status || 'NEW';
+          let normStatus = awbNormalizeStatus(status);
 
-        allOrders.push({
-          id: order.id || order.order_id,
-          awb: awb,
-          dl: 'shp',
-          courierName: shipment.courier_name || 'ShipRocket',
-          buyer: order.customer_name || order.buyer_name || '',
-          mobile: order.customer_phone || order.mobile || '',
-          status: awbNormalizeStatus(status),
-          statusRaw: status,
-          orderDate: order.created_at || order.order_date || '',
-          tch: Number(shipment.freight_charge || order.freight_charge || 0),
-          och: Number(shipment.weight_charges || order.weight_charges || 0),
-          otherCharges: Number(shipment.cod_charges || 0) + Number(shipment.rto_charges || 0) + Number(shipment.other_charges || 0),
-          trackUrl: awb ? 'https://www.shiprocket.in/shipment-tracking/' + awb : '',
-          cancelled: (status === 'CANCELED' || status === 'CANCELLED'),
-          invoiceAmount: Number(order.total || 0)
+          allOrders.push({
+            id: order.id,
+            channelOrderId: order.channel_order_id || order.id,
+            awb: awb,
+            dl: 'shp',
+            courierName: shipment.courier_name || 'ShipRocket',
+            buyer: order.customer_name || order.buyer_name || '',
+            mobile: order.customer_phone || order.billing_phone || order.shipping_phone || '',
+            status: normStatus,
+            statusRaw: status,
+            orderDate: order.created_at || order.order_date || '',
+            tch: Number(shipment.freight_charge || shipment.charge || order.freight_charge || 0),
+            och: Number(shipment.weight_charges || order.weight_charges || 0),
+            otherCharges: Number(shipment.cod_charges || 0) + Number(shipment.rto_charges || 0) + Number(shipment.other_charges || 0),
+            weightDiscrepancy: 0,
+            trackUrl: awb ? 'https://www.shiprocket.in/shipment-tracking/' + awb : '',
+            cancelled: (normStatus === 'Cancelled'),
+            invoiceAmount: Number(order.total || 0)
+          });
         });
-      });
+
+        let meta = raw?.meta || {};
+        if (meta.last_page && page < meta.last_page) {
+          page++;
+        } else if (data.length === 200) {
+          page++;
+        } else {
+          hasMore = false;
+        }
+      } else {
+        hasMore = false;
+      }
+    } catch (e) {
+      console.log('ShipRocket fetch page ' + page + ' error:', e);
+      hasMore = false;
     }
-  } catch (e) {
-    console.log('ShipRocket fetch error:', e);
   }
 
-  console.log('ShipRocket: ' + allOrders.length + ' orders');
+  console.log('ShipRocket: ' + allOrders.length + ' orders (pages: ' + page + ')');
   return allOrders;
+}
+
+// ============ SHIPROCKET WEIGHT DISCREPANCIES ============
+
+async function awbFetchWeightDiscrepancies() {
+  let discrepancies = {};
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    try {
+      const res = await fetch(SHP_LAMBDA + '/weight-discrepancies?page=' + page + '&per_page=50');
+      const raw = await res.json();
+      console.log('Weight discrepancy page ' + page + ' raw:', JSON.stringify(raw).substring(0, 500));
+      const data = Array.isArray(raw) ? raw : (raw?.data || []);
+
+      if (Array.isArray(data) && data.length) {
+        data.forEach(item => {
+          let awb = item.awb || item.awb_number || item.awb_code || '';
+          if (awb) {
+            discrepancies[awb] = {
+              charge: Number(item.charged_amount || item.excess_weight_charge || item.amount || item.discrepancy_charge || 0),
+              declaredWeight: Number(item.applied_weight || item.declared_weight || 0),
+              billedWeight: Number(item.billed_weight || item.actual_weight || item.charged_weight || 0)
+            };
+          }
+        });
+
+        let meta = raw?.meta || {};
+        if (meta.last_page && page < meta.last_page) {
+          page++;
+        } else if (data.length === 50) {
+          page++;
+        } else {
+          hasMore = false;
+        }
+      } else {
+        hasMore = false;
+      }
+    } catch (e) {
+      console.log('Weight discrepancies fetch error:', e);
+      hasMore = false;
+    }
+  }
+
+  console.log('Weight discrepancies: ' + Object.keys(discrepancies).length + ' AWBs');
+  return discrepancies;
 }
 
 // ============ DELHIVERY ============
@@ -256,6 +330,33 @@ async function awbFetchRocketBox() {
 // ============ STATUS NORMALIZATION ============
 function awbNormalizeStatus(raw) {
   if (!raw && raw !== 0) return 'Unknown';
+
+  // ShipRocket numeric status codes
+  const numericMap = {
+    1: 'Pickup Scheduled',   // AWB Assigned
+    2: 'Pickup Scheduled',   // Label Created
+    3: 'In Transit',         // Shipped
+    4: 'Delivered',
+    5: 'RTO',                // RTO Initiated
+    6: 'Cancelled',
+    7: 'Out for Delivery',
+    8: 'Not Picked',         // Pickup Exception
+    9: 'Not Picked',         // Undelivered
+    10: 'Pending',
+    11: 'Pickup Scheduled',  // Pickup Queued
+    12: 'In Transit',        // Return In Transit
+    13: 'Delivered',         // RTO Delivered
+    17: 'Pickup Scheduled',  // Out for Pickup
+    18: 'In Transit',
+    19: 'Out for Delivery',
+    20: 'In Transit',        // Reached Destination Hub
+    21: 'Pickup Scheduled',  // Pickup Rescheduled
+    22: 'Cancelled',         // Cancellation Requested
+    38: 'In Transit',        // Reached Destination Hub
+  };
+  let num = Number(raw);
+  if (!isNaN(num) && numericMap[num]) return numericMap[num];
+
   let s = String(raw).toLowerCase().trim();
   if (s === 'delivered' || s === 'dl_delivered') return 'Delivered';
   if (s.includes('transit') || s === 'shipped' || s === 'in_transit') return 'In Transit';
@@ -315,9 +416,9 @@ function awbRender(tab) {
         '<td><a href="tel:' + d.mobile + '">' + (d.mobile || '\u2014') + '</a></td>' +
         '<td>' + (d.buyer || '\u2014') + '</td>' +
         '<td>' + cancelBtn + '</td>' +
-        '<td>' + d.id + ' ' + statusBadge + '</td>' +
+        '<td>' + (d.channelOrderId || d.id) + ' ' + statusBadge + '</td>' +
         '<td>' + d.tch + '\u20B9</td>' +
-        '<td>' + d.och + '\u20B9</td>' +
+        '<td>' + (d.weightDiscrepancy || d.och || 0) + '\u20B9</td>' +
         '<td>' + d.otherCharges + '\u20B9</td>' +
         '<td>\u2014</td>' +
         '</tr>';
@@ -343,7 +444,7 @@ function awbCalcSummary(data) {
     return (now - bookTime) > threeDaysMs;
   }).length;
 
-  let totalDeducted = data.reduce((sum, d) => sum + (d.tch || 0) + (d.och || 0) + (d.otherCharges || 0), 0);
+  let totalDeducted = data.reduce((sum, d) => sum + (d.tch || 0) + (d.weightDiscrepancy || d.och || 0) + (d.otherCharges || 0), 0);
 
   document.getElementById('awbNotPicked').textContent = notPicked;
   document.getElementById('awbTotalDeducted').textContent = Math.ceil(totalDeducted).toLocaleString('en-IN') + '\u20B9';

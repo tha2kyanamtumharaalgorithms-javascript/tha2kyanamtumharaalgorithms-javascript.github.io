@@ -81,6 +81,16 @@ async function shpCancel(body) {
   return r.body;
 }
 
+async function shpWeightDiscrepancies(q) {
+  const token = await shpLogin();
+  let page = q?.page || 1;
+  let perPage = q?.per_page || 50;
+  const r = await nfetch(`https://apiv2.shiprocket.in/v1/external/weight-discrepancies?page=${page}&per_page=${perPage}`, {
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+  });
+  return r.body;
+}
+
 async function shpBook(courierId, orderData) {
   const token = await shpLogin();
   const auth = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
@@ -274,6 +284,12 @@ export const handler = async (event) => {
     if (path === '/cancel' || path === '/cancel/') {
       const body = JSON.parse(event.body || '{}');
       const data = await shpCancel(body);
+      return res(data);
+    }
+
+    // --- ShipRocket: Weight discrepancies ---
+    if (path === '/weight-discrepancies' || path === '/weight-discrepancies/') {
+      const data = await shpWeightDiscrepancies(q);
       return res(data);
     }
 
