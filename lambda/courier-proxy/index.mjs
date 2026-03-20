@@ -13,15 +13,23 @@ import https from 'https';
 
 const env = process.env;
 
+// Normalize Delhivery tokens — ensure all have "Token " prefix
+// (some env vars have it, some don't — pricing API requires it)
+const dlToken = (t) => t ? (t.startsWith('Token ') ? t : 'Token ' + t) : '';
+
+const DL_TOKEN_A = dlToken(env.DL_TOKEN_A);
+const DL_TOKEN_B = dlToken(env.DL_TOKEN_B);
+const DL_TOKEN_C = dlToken(env.DL_TOKEN_C);
+
 // Delhivery token mapping: dl0=Surface(A), dl1=Express(C), dl2=10KG(B)
-const DL_TOKENS = { dl0: env.DL_TOKEN_A, dl1: env.DL_TOKEN_C, dl2: env.DL_TOKEN_B };
+const DL_TOKENS = { dl0: DL_TOKEN_A, dl1: DL_TOKEN_C, dl2: DL_TOKEN_B };
 let rkbTokenOverride = ''; // Updated at runtime by Google Script's rkb() trigger
 
-// Log token info at cold start (safe: only first 10 chars)
-console.log('DL_TOKEN_A:', env.DL_TOKEN_A ? env.DL_TOKEN_A.substring(0, 10) + '...' : 'MISSING');
-console.log('DL_TOKEN_B:', env.DL_TOKEN_B ? env.DL_TOKEN_B.substring(0, 10) + '...' : 'MISSING');
-console.log('DL_TOKEN_C:', env.DL_TOKEN_C ? env.DL_TOKEN_C.substring(0, 10) + '...' : 'MISSING');
-console.log('RKB_TOKEN:', env.RKB_TOKEN ? env.RKB_TOKEN.substring(0, 10) + '...' : 'MISSING');
+// Log token info at cold start (safe: only first 15 chars)
+console.log('DL_TOKEN_A:', DL_TOKEN_A ? DL_TOKEN_A.substring(0, 15) + '...' : 'MISSING');
+console.log('DL_TOKEN_B:', DL_TOKEN_B ? DL_TOKEN_B.substring(0, 15) + '...' : 'MISSING');
+console.log('DL_TOKEN_C:', DL_TOKEN_C ? DL_TOKEN_C.substring(0, 15) + '...' : 'MISSING');
+console.log('RKB_TOKEN:', env.RKB_TOKEN ? env.RKB_TOKEN.substring(0, 15) + '...' : 'MISSING');
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -148,9 +156,9 @@ async function dlPricing(query) {
   // Fetch 3 Delhivery services + RocketBox in parallel (same order as Google Script: a, c, b)
   // Delhivery requires md param: S=Surface, E=Express
   const [rA, rC, rB, rRkb] = await Promise.all([
-    nfetch(baseUrl + '&md=S', { headers: { 'Authorization': env.DL_TOKEN_A, 'Content-Type': 'application/json' } }),
-    nfetch(baseUrl + '&md=E', { headers: { 'Authorization': env.DL_TOKEN_C, 'Content-Type': 'application/json' } }),
-    nfetch(baseUrl + '&md=S', { headers: { 'Authorization': env.DL_TOKEN_B, 'Content-Type': 'application/json' } }),
+    nfetch(baseUrl + '&md=S', { headers: { 'Authorization': DL_TOKEN_A, 'Content-Type': 'application/json' } }),
+    nfetch(baseUrl + '&md=E', { headers: { 'Authorization': DL_TOKEN_C, 'Content-Type': 'application/json' } }),
+    nfetch(baseUrl + '&md=S', { headers: { 'Authorization': DL_TOKEN_B, 'Content-Type': 'application/json' } }),
     rkbPricing(query)
   ]);
 
@@ -205,7 +213,7 @@ async function rkbPricing(query) {
 
 async function dlPincode(pin) {
   const r = await nfetch('https://track.delhivery.com/c/api/pin-codes/json/?filter_codes=' + pin, {
-    headers: { 'Authorization': env.DL_TOKEN_A, 'Content-Type': 'application/json' }
+    headers: { 'Authorization': DL_TOKEN_A, 'Content-Type': 'application/json' }
   });
   console.log('[dlPincode] pin:', pin, 'status:', r.status);
   const data = JSON.parse(r.body);
@@ -230,9 +238,9 @@ async function dlShipments() {
   };
 
   const [a, b, c] = await Promise.all([
-    fetchAccount(env.DL_TOKEN_A, 'DL_A'),
-    fetchAccount(env.DL_TOKEN_B, 'DL_B'),
-    fetchAccount(env.DL_TOKEN_C, 'DL_C')
+    fetchAccount(DL_TOKEN_A, 'DL_A'),
+    fetchAccount(DL_TOKEN_B, 'DL_B'),
+    fetchAccount(DL_TOKEN_C, 'DL_C')
   ]);
 
   // Normalize to flat array the frontend expects
@@ -268,7 +276,7 @@ async function dlCancel(body) {
   });
   const r = await nfetch('https://track.delhivery.com/api/p/edit', {
     method: 'POST',
-    headers: { 'Authorization': env.DL_TOKEN_A, 'Content-Type': 'application/json' },
+    headers: { 'Authorization': DL_TOKEN_A, 'Content-Type': 'application/json' },
     body: payload
   });
   return r.body;
@@ -313,10 +321,10 @@ async function debugTokens() {
 
   // Also test pricing endpoint with token A
   const testPricing = async () => {
-    if (!env.DL_TOKEN_A) return { status: 'MISSING TOKEN' };
+    if (!DL_TOKEN_A) return { status: 'MISSING TOKEN' };
     try {
       const r = await nfetch('https://track.delhivery.com/api/kinko/v1/invoice/charges/.json?o_pin=110062&d_pin=110062&cgm=500&md=S', {
-        headers: { 'Authorization': env.DL_TOKEN_A, 'Content-Type': 'application/json' }
+        headers: { 'Authorization': DL_TOKEN_A, 'Content-Type': 'application/json' }
       });
       const isJson = r.body.trim().startsWith('{') || r.body.trim().startsWith('[');
       return {
@@ -330,9 +338,9 @@ async function debugTokens() {
   };
 
   const [a, b, c, pricing] = await Promise.all([
-    testToken(env.DL_TOKEN_A, 'DL_TOKEN_A'),
-    testToken(env.DL_TOKEN_B, 'DL_TOKEN_B'),
-    testToken(env.DL_TOKEN_C, 'DL_TOKEN_C'),
+    testToken(DL_TOKEN_A, 'DL_TOKEN_A'),
+    testToken(DL_TOKEN_B, 'DL_TOKEN_B'),
+    testToken(DL_TOKEN_C, 'DL_TOKEN_C'),
     testPricing()
   ]);
 
