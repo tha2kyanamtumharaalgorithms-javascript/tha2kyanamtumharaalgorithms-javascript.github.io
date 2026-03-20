@@ -102,26 +102,25 @@ async function awbFetchAll() {
   awbData = [];
 
   try {
-    const [shpResults, dlResults, rkbResults] = await Promise.allSettled([
+    const [shpResults, dlResults, rkbResults, wdResults] = await Promise.allSettled([
       awbFetchShipRocket(),
       awbFetchDelhivery(),
-      awbFetchRocketBox()
+      awbFetchRocketBox(),
+      awbFetchWeightDiscrepancies()
     ]);
 
     if (shpResults.status === 'fulfilled' && shpResults.value) awbData.push(...shpResults.value);
     if (dlResults.status === 'fulfilled' && dlResults.value) awbData.push(...dlResults.value);
     if (rkbResults.status === 'fulfilled' && rkbResults.value) awbData.push(...rkbResults.value);
 
-    // Fetch weight discrepancies and merge into ShipRocket orders
-    try {
-      const discrepancies = await awbFetchWeightDiscrepancies();
+    // Merge weight discrepancies (already fetched in parallel)
+    if (wdResults.status === 'fulfilled' && wdResults.value) {
+      const discrepancies = wdResults.value;
       awbData.forEach(d => {
         if (d.dl === 'shp' && d.awb && discrepancies[d.awb]) {
           d.weightDiscrepancy = discrepancies[d.awb].charge;
         }
       });
-    } catch (e) {
-      console.log('Weight discrepancy merge error:', e);
     }
 
     awbData.sort((a, b) => new Date(b.orderDate || 0) - new Date(a.orderDate || 0));
@@ -152,6 +151,20 @@ async function awbFetchShipRocket() {
       const data = Array.isArray(raw) ? raw : (raw?.data || []);
 
       if (Array.isArray(data) && data.length) {
+        // Debug: log first order structure to find correct field names
+        if (page === 1 && data[0]) {
+          let o = data[0], s = o.shipments?.[0] || {};
+          console.log('DEBUG ShipRocket order keys:', Object.keys(o));
+          console.log('DEBUG ShipRocket order.others:', JSON.stringify(o.others));
+          console.log('DEBUG ShipRocket shipment keys:', Object.keys(s));
+          console.log('DEBUG ShipRocket shipment object:', JSON.stringify(s));
+          console.log('DEBUG ShipRocket order sample:', JSON.stringify({
+            id: o.id, channel_order_id: o.channel_order_id,
+            customer_phone: o.customer_phone, billing_phone: o.billing_phone,
+            freight_charge: o.freight_charge, total: o.total, total_charges: o.total_charges,
+            shipping_charges: o.shipping_charges, sub_total: o.sub_total
+          }));
+        }
         data.forEach(order => {
           let shipment = (order.shipments && order.shipments[0]) || {};
           let awb = shipment.awb || order.awb || '';
@@ -215,6 +228,11 @@ async function awbFetchWeightDiscrepancies() {
       const data = Array.isArray(raw) ? raw : (raw?.data || []);
 
       if (Array.isArray(data) && data.length) {
+        // Debug: log first discrepancy item to find correct field names
+        if (page === 1 && data[0]) {
+          console.log('DEBUG Discrepancy item keys:', Object.keys(data[0]));
+          console.log('DEBUG Discrepancy first item:', JSON.stringify(data[0]));
+        }
         data.forEach(item => {
           let awb = item.awb || item.awb_number || item.awb_code || '';
           if (awb) {
@@ -388,7 +406,7 @@ function awbRender(tab) {
   if (!filtered.length) {
     html = '<div class="loading">No shipments in this category</div>';
   } else {
-    html = '<div class="tbl-wrap"><table><thead><tr><th>Track</th><th>AWB</th><th>Mobile</th><th>Buyer</th><th>Cancel</th><th>Order ID</th><th>Ship Cost</th><th>Extra Wt.</th><th>Other</th><th>Collected</th></tr></thead><tbody>';
+    html = '<div class="tbl-wrap"><table><thead><tr><th>Track</th><th>Date</th><th>AWB</th><th>Mobile</th><th>Buyer</th><th>Cancel</th><th>Order ID</th><th>Ship Cost</th><th>Extra Wt.</th><th>Other</th><th>Collected</th></tr></thead><tbody>';
 
     filtered.forEach(d => {
       let trackLink = d.trackUrl
@@ -410,8 +428,15 @@ function awbRender(tab) {
 
       let statusBadge = '<span class="st ' + stClass + '">' + d.status + '</span>';
 
+      let dateStr = '';
+      if (d.orderDate) {
+        let dt = new Date(d.orderDate);
+        if (!isNaN(dt)) dateStr = dt.getDate() + '-' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][dt.getMonth()];
+      }
+
       html += '<tr>' +
         '<td style="white-space:nowrap">' + trackLink + '</td>' +
+        '<td style="font-size:11px;color:#555">' + dateStr + '</td>' +
         '<td title="' + (d.awb || '') + '">' + awbDisplay + '</td>' +
         '<td><a href="tel:' + d.mobile + '">' + (d.mobile || '\u2014') + '</a></td>' +
         '<td>' + (d.buyer || '\u2014') + '</td>' +
