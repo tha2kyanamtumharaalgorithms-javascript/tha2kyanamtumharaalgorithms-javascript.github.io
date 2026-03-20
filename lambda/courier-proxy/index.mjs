@@ -13,22 +13,15 @@ import https from 'https';
 
 const env = process.env;
 
-// Normalize Delhivery tokens — ensure all have "Token " prefix
-// (some env vars have it, some don't — pricing API requires it)
-const dlToken = (t) => t ? (t.startsWith('Token ') ? t : 'Token ' + t) : '';
-
-const DL_TOKEN_A = dlToken(env.DL_TOKEN_A);
-const DL_TOKEN_B = dlToken(env.DL_TOKEN_B);
-const DL_TOKEN_C = dlToken(env.DL_TOKEN_C);
-
 // Delhivery token mapping: dl0=Surface(A), dl1=Express(C), dl2=10KG(B)
-const DL_TOKENS = { dl0: DL_TOKEN_A, dl1: DL_TOKEN_C, dl2: DL_TOKEN_B };
+// NOTE: Env vars must include "Token " prefix (e.g. "Token abc123...")
+const DL_TOKENS = { dl0: env.DL_TOKEN_A, dl1: env.DL_TOKEN_C, dl2: env.DL_TOKEN_B };
 let rkbTokenOverride = ''; // Updated at runtime by Google Script's rkb() trigger
 
 // Log token info at cold start (safe: only first 15 chars)
-console.log('DL_TOKEN_A:', DL_TOKEN_A ? DL_TOKEN_A.substring(0, 15) + '...' : 'MISSING');
-console.log('DL_TOKEN_B:', DL_TOKEN_B ? DL_TOKEN_B.substring(0, 15) + '...' : 'MISSING');
-console.log('DL_TOKEN_C:', DL_TOKEN_C ? DL_TOKEN_C.substring(0, 15) + '...' : 'MISSING');
+console.log('DL_TOKEN_A:', env.DL_TOKEN_A ? env.DL_TOKEN_A.substring(0, 15) + '...' : 'MISSING');
+console.log('DL_TOKEN_B:', env.DL_TOKEN_B ? env.DL_TOKEN_B.substring(0, 15) + '...' : 'MISSING');
+console.log('DL_TOKEN_C:', env.DL_TOKEN_C ? env.DL_TOKEN_C.substring(0, 15) + '...' : 'MISSING');
 console.log('RKB_TOKEN:', env.RKB_TOKEN ? env.RKB_TOKEN.substring(0, 15) + '...' : 'MISSING');
 
 const CORS = {
@@ -156,9 +149,9 @@ async function dlPricing(query) {
   // Fetch 3 Delhivery services + RocketBox in parallel (same order as Google Script: a, c, b)
   // Delhivery requires md param: S=Surface, E=Express
   const [rA, rC, rB, rRkb] = await Promise.all([
-    nfetch(baseUrl + '&md=S', { headers: { 'Authorization': DL_TOKEN_A, 'Content-Type': 'application/json' } }),
-    nfetch(baseUrl + '&md=E', { headers: { 'Authorization': DL_TOKEN_C, 'Content-Type': 'application/json' } }),
-    nfetch(baseUrl + '&md=S', { headers: { 'Authorization': DL_TOKEN_B, 'Content-Type': 'application/json' } }),
+    nfetch(baseUrl + '&md=S', { headers: { 'Authorization': env.DL_TOKEN_A, 'Content-Type': 'application/json' } }),
+    nfetch(baseUrl + '&md=E', { headers: { 'Authorization': env.DL_TOKEN_C, 'Content-Type': 'application/json' } }),
+    nfetch(baseUrl + '&md=S', { headers: { 'Authorization': env.DL_TOKEN_B, 'Content-Type': 'application/json' } }),
     rkbPricing(query)
   ]);
 
@@ -173,7 +166,10 @@ async function dlPricing(query) {
   const wrapArray = (raw, status, label) => {
     try {
       const parsed = JSON.parse(raw);
-      return JSON.stringify(Array.isArray(parsed) ? parsed : [parsed]);
+      const arr = Array.isArray(parsed) ? parsed : [parsed];
+      // Log the actual field names so we can debug "undefined" pricing
+      if (arr[0]) console.log('[dlPricing]', label, 'keys:', Object.keys(arr[0]).join(','), 'total_amount:', arr[0].total_amount);
+      return JSON.stringify(arr);
     } catch (e) {
       console.error('[dlPricing] FAILED to parse ' + label + ' (HTTP ' + status + '):', raw.substring(0, 200));
       // Return a valid JSON array with error info so the whole response stays valid JSON
@@ -213,7 +209,7 @@ async function rkbPricing(query) {
 
 async function dlPincode(pin) {
   const r = await nfetch('https://track.delhivery.com/c/api/pin-codes/json/?filter_codes=' + pin, {
-    headers: { 'Authorization': DL_TOKEN_A, 'Content-Type': 'application/json' }
+    headers: { 'Authorization': env.DL_TOKEN_A, 'Content-Type': 'application/json' }
   });
   console.log('[dlPincode] pin:', pin, 'status:', r.status);
   const data = JSON.parse(r.body);
@@ -238,9 +234,9 @@ async function dlShipments() {
   };
 
   const [a, b, c] = await Promise.all([
-    fetchAccount(DL_TOKEN_A, 'DL_A'),
-    fetchAccount(DL_TOKEN_B, 'DL_B'),
-    fetchAccount(DL_TOKEN_C, 'DL_C')
+    fetchAccount(env.DL_TOKEN_A, 'DL_A'),
+    fetchAccount(env.DL_TOKEN_B, 'DL_B'),
+    fetchAccount(env.DL_TOKEN_C, 'DL_C')
   ]);
 
   // Normalize to flat array the frontend expects
@@ -276,7 +272,7 @@ async function dlCancel(body) {
   });
   const r = await nfetch('https://track.delhivery.com/api/p/edit', {
     method: 'POST',
-    headers: { 'Authorization': DL_TOKEN_A, 'Content-Type': 'application/json' },
+    headers: { 'Authorization': env.DL_TOKEN_A, 'Content-Type': 'application/json' },
     body: payload
   });
   return r.body;
@@ -319,35 +315,41 @@ async function debugTokens() {
     }
   };
 
-  // Also test pricing endpoint with token A
-  const testPricing = async () => {
-    if (!DL_TOKEN_A) return { status: 'MISSING TOKEN' };
+  // Test pricing endpoint — show full response so we can see field names
+  const testPricing = async (token, label) => {
+    if (!token) return { status: 'MISSING TOKEN' };
     try {
       const r = await nfetch('https://track.delhivery.com/api/kinko/v1/invoice/charges/.json?o_pin=110062&d_pin=110062&cgm=500&md=S', {
-        headers: { 'Authorization': DL_TOKEN_A, 'Content-Type': 'application/json' }
+        headers: { 'Authorization': token, 'Content-Type': 'application/json' }
       });
-      const isJson = r.body.trim().startsWith('{') || r.body.trim().startsWith('[');
-      return {
-        http_status: r.status,
-        response_is_json: isJson,
-        response_preview: r.body.substring(0, 300)
-      };
+      try {
+        const parsed = JSON.parse(r.body);
+        const obj = Array.isArray(parsed) ? parsed[0] : parsed;
+        return {
+          http_status: r.status,
+          response_keys: obj ? Object.keys(obj) : [],
+          has_total_amount: obj ? ('total_amount' in obj) : false,
+          full_response: obj
+        };
+      } catch {
+        return { http_status: r.status, parse_error: true, response_preview: r.body.substring(0, 300) };
+      }
     } catch (e) {
       return { status: 'ERROR', error: e.message };
     }
   };
 
-  const [a, b, c, pricing] = await Promise.all([
-    testToken(DL_TOKEN_A, 'DL_TOKEN_A'),
-    testToken(DL_TOKEN_B, 'DL_TOKEN_B'),
-    testToken(DL_TOKEN_C, 'DL_TOKEN_C'),
-    testPricing()
+  const [a, b, c, pricingA] = await Promise.all([
+    testToken(env.DL_TOKEN_A, 'DL_TOKEN_A'),
+    testToken(env.DL_TOKEN_B, 'DL_TOKEN_B'),
+    testToken(env.DL_TOKEN_C, 'DL_TOKEN_C'),
+    testPricing(env.DL_TOKEN_A, 'DL_TOKEN_A')
   ]);
 
   results.DL_TOKEN_A_pincode = a;
   results.DL_TOKEN_B_pincode = b;
   results.DL_TOKEN_C_pincode = c;
-  results.DL_TOKEN_A_pricing = pricing;
+  results.DL_TOKEN_A_pricing = pricingA;
   results.RKB_TOKEN = env.RKB_TOKEN ? { preview: env.RKB_TOKEN.substring(0, 15) + '...', length: env.RKB_TOKEN.length } : 'MISSING';
   results.rkbTokenOverride = rkbTokenOverride ? rkbTokenOverride.substring(0, 15) + '...' : 'not set';
 
