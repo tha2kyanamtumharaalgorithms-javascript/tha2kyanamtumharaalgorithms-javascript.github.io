@@ -17,6 +17,12 @@ const env = process.env;
 const DL_TOKENS = { dl0: env.DL_TOKEN_A, dl1: env.DL_TOKEN_C, dl2: env.DL_TOKEN_B };
 let rkbTokenOverride = ''; // Updated at runtime by Google Script's rkb() trigger
 
+// Log token info at cold start (safe: only first 10 chars)
+console.log('DL_TOKEN_A:', env.DL_TOKEN_A ? env.DL_TOKEN_A.substring(0, 10) + '...' : 'MISSING');
+console.log('DL_TOKEN_B:', env.DL_TOKEN_B ? env.DL_TOKEN_B.substring(0, 10) + '...' : 'MISSING');
+console.log('DL_TOKEN_C:', env.DL_TOKEN_C ? env.DL_TOKEN_C.substring(0, 10) + '...' : 'MISSING');
+console.log('RKB_TOKEN:', env.RKB_TOKEN ? env.RKB_TOKEN.substring(0, 10) + '...' : 'MISSING');
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
@@ -136,6 +142,9 @@ async function dlPricing(query) {
   const qs = new URLSearchParams(query).toString();
   const baseUrl = 'https://track.delhivery.com/api/kinko/v1/invoice/charges/.json?' + qs;
 
+  console.log('[dlPricing] Query params:', JSON.stringify(query));
+  console.log('[dlPricing] Base URL:', baseUrl);
+
   // Fetch 3 Delhivery services + RocketBox in parallel (same order as Google Script: a, c, b)
   // Delhivery requires md param: S=Surface, E=Express
   const [rA, rC, rB, rRkb] = await Promise.all([
@@ -145,16 +154,26 @@ async function dlPricing(query) {
     rkbPricing(query)
   ]);
 
-  // Ensure each Delhivery response is always an array (frontend expects v[0][0].total_amount)
-  // With the new md param, Delhivery may return a single object instead of an array
-  const wrapArray = (raw) => {
+  // Log each Delhivery response for debugging
+  console.log('[dlPricing] DL_A (DUSHIRTS01 Surface) status:', rA.status, 'body:', rA.body.substring(0, 300));
+  console.log('[dlPricing] DL_C (DUSHIRTSEXPRESS) status:', rC.status, 'body:', rC.body.substring(0, 300));
+  console.log('[dlPricing] DL_B (10KG DUSURFACE) status:', rB.status, 'body:', rB.body.substring(0, 300));
+  console.log('[dlPricing] RocketBox body:', (typeof rRkb === 'string' ? rRkb : JSON.stringify(rRkb)).substring(0, 300));
+
+  // Ensure each Delhivery response is always a valid JSON array
+  // Frontend expects v[0][0].total_amount — if Delhivery returns XML/error, return error object inside array
+  const wrapArray = (raw, status, label) => {
     try {
       const parsed = JSON.parse(raw);
       return JSON.stringify(Array.isArray(parsed) ? parsed : [parsed]);
-    } catch { return raw; }
+    } catch (e) {
+      console.error('[dlPricing] FAILED to parse ' + label + ' (HTTP ' + status + '):', raw.substring(0, 200));
+      // Return a valid JSON array with error info so the whole response stays valid JSON
+      return JSON.stringify([{ error: true, total_amount: 0, msg: label + ' HTTP ' + status, detail: raw.substring(0, 100) }]);
+    }
   };
 
-  return '[' + wrapArray(rA.body) + ',' + wrapArray(rC.body) + ',' + wrapArray(rB.body) + ',' + rRkb + ']';
+  return '[' + wrapArray(rA.body, rA.status, 'DL_A') + ',' + wrapArray(rC.body, rC.status, 'DL_C') + ',' + wrapArray(rB.body, rB.status, 'DL_B') + ',' + rRkb + ']';
 }
 
 async function rkbPricing(query) {
@@ -188,6 +207,7 @@ async function dlPincode(pin) {
   const r = await nfetch('https://track.delhivery.com/c/api/pin-codes/json/?filter_codes=' + pin, {
     headers: { 'Authorization': env.DL_TOKEN_A, 'Content-Type': 'application/json' }
   });
+  console.log('[dlPincode] pin:', pin, 'status:', r.status);
   const data = JSON.parse(r.body);
   const info = data?.delivery_codes?.[0]?.postal_code;
   if (info) {
@@ -198,10 +218,11 @@ async function dlPincode(pin) {
 
 async function dlShipments() {
   // Fetch shipments from all 3 Delhivery accounts in parallel
-  const fetchAccount = async (token) => {
+  const fetchAccount = async (token, label) => {
     const r = await nfetch('https://track.delhivery.com/api/v1/packages/json/?verbose=2&page_size=200', {
       headers: { 'Authorization': token, 'Content-Type': 'application/json' }
     });
+    console.log('[dlShipments]', label, 'status:', r.status, 'bodyLen:', r.body.length);
     try {
       const d = JSON.parse(r.body);
       return d.ShipmentData || [];
@@ -209,9 +230,9 @@ async function dlShipments() {
   };
 
   const [a, b, c] = await Promise.all([
-    fetchAccount(env.DL_TOKEN_A),
-    fetchAccount(env.DL_TOKEN_B),
-    fetchAccount(env.DL_TOKEN_C)
+    fetchAccount(env.DL_TOKEN_A, 'DL_A'),
+    fetchAccount(env.DL_TOKEN_B, 'DL_B'),
+    fetchAccount(env.DL_TOKEN_C, 'DL_C')
   ]);
 
   // Normalize to flat array the frontend expects
@@ -265,25 +286,92 @@ async function dlBook(dlType, bookingData) {
   return r.body;
 }
 
+// ============ DEBUG ENDPOINT ============
+
+async function debugTokens() {
+  const results = {};
+
+  // Test each Delhivery token against pincode endpoint (lightweight)
+  const testToken = async (token, label) => {
+    if (!token) return { status: 'MISSING', token_preview: 'N/A' };
+    try {
+      const r = await nfetch('https://track.delhivery.com/c/api/pin-codes/json/?filter_codes=110062', {
+        headers: { 'Authorization': token, 'Content-Type': 'application/json' }
+      });
+      const isJson = r.body.trim().startsWith('{') || r.body.trim().startsWith('[');
+      return {
+        http_status: r.status,
+        token_preview: token.substring(0, 15) + '...',
+        token_length: token.length,
+        response_is_json: isJson,
+        response_preview: r.body.substring(0, 150)
+      };
+    } catch (e) {
+      return { status: 'ERROR', error: e.message, token_preview: token.substring(0, 15) + '...' };
+    }
+  };
+
+  // Also test pricing endpoint with token A
+  const testPricing = async () => {
+    if (!env.DL_TOKEN_A) return { status: 'MISSING TOKEN' };
+    try {
+      const r = await nfetch('https://track.delhivery.com/api/kinko/v1/invoice/charges/.json?o_pin=110062&d_pin=110062&cgm=500&md=S', {
+        headers: { 'Authorization': env.DL_TOKEN_A, 'Content-Type': 'application/json' }
+      });
+      const isJson = r.body.trim().startsWith('{') || r.body.trim().startsWith('[');
+      return {
+        http_status: r.status,
+        response_is_json: isJson,
+        response_preview: r.body.substring(0, 300)
+      };
+    } catch (e) {
+      return { status: 'ERROR', error: e.message };
+    }
+  };
+
+  const [a, b, c, pricing] = await Promise.all([
+    testToken(env.DL_TOKEN_A, 'DL_TOKEN_A'),
+    testToken(env.DL_TOKEN_B, 'DL_TOKEN_B'),
+    testToken(env.DL_TOKEN_C, 'DL_TOKEN_C'),
+    testPricing()
+  ]);
+
+  results.DL_TOKEN_A_pincode = a;
+  results.DL_TOKEN_B_pincode = b;
+  results.DL_TOKEN_C_pincode = c;
+  results.DL_TOKEN_A_pricing = pricing;
+  results.RKB_TOKEN = env.RKB_TOKEN ? { preview: env.RKB_TOKEN.substring(0, 15) + '...', length: env.RKB_TOKEN.length } : 'MISSING';
+  results.rkbTokenOverride = rkbTokenOverride ? rkbTokenOverride.substring(0, 15) + '...' : 'not set';
+
+  return results;
+}
+
 // ============ MAIN HANDLER ============
 
 export const handler = async (event) => {
-  console.log('Request:', event.rawPath, event.requestContext?.http?.method);
-
-  // Handle CORS preflight
-  if (event.requestContext?.http?.method === 'OPTIONS') {
-    return res('');
-  }
-
   const path = event.rawPath || event.path || '/';
   const method = event.requestContext?.http?.method || 'GET';
   const q = event.queryStringParameters || {};
+
+  console.log('Request:', path, method, 'query:', JSON.stringify(q));
+
+  // Handle CORS preflight
+  if (method === 'OPTIONS') {
+    return res('');
+  }
 
   try {
     // --- RocketBox: Token update from Google Script ---
     if (q.rkb) {
       rkbTokenOverride = 'Bearer ' + q.rkb;
       return res({ ok: true, msg: 'RKB token updated' });
+    }
+
+    // --- Debug: Test all tokens ---
+    if (path === '/debug' || path === '/debug/') {
+      const data = await debugTokens();
+      console.log('[debug] results:', JSON.stringify(data));
+      return res(data);
     }
 
     // --- ShipRocket: Token refresh ---
