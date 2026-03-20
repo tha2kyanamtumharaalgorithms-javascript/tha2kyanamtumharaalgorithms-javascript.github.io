@@ -14,14 +14,15 @@ import https from 'https';
 const env = process.env;
 
 // Delhivery token mapping: dl0=Surface(A), dl1=Express(C), dl2=10KG(B)
+// NOTE: Env vars must include "Token " prefix (e.g. "Token abc123...")
 const DL_TOKENS = { dl0: env.DL_TOKEN_A, dl1: env.DL_TOKEN_C, dl2: env.DL_TOKEN_B };
 let rkbTokenOverride = ''; // Updated at runtime by Google Script's rkb() trigger
 
-// Log token info at cold start (safe: only first 10 chars)
-console.log('DL_TOKEN_A:', env.DL_TOKEN_A ? env.DL_TOKEN_A.substring(0, 10) + '...' : 'MISSING');
-console.log('DL_TOKEN_B:', env.DL_TOKEN_B ? env.DL_TOKEN_B.substring(0, 10) + '...' : 'MISSING');
-console.log('DL_TOKEN_C:', env.DL_TOKEN_C ? env.DL_TOKEN_C.substring(0, 10) + '...' : 'MISSING');
-console.log('RKB_TOKEN:', env.RKB_TOKEN ? env.RKB_TOKEN.substring(0, 10) + '...' : 'MISSING');
+// Log token info at cold start (safe: only first 15 chars)
+console.log('DL_TOKEN_A:', env.DL_TOKEN_A ? env.DL_TOKEN_A.substring(0, 15) + '...' : 'MISSING');
+console.log('DL_TOKEN_B:', env.DL_TOKEN_B ? env.DL_TOKEN_B.substring(0, 15) + '...' : 'MISSING');
+console.log('DL_TOKEN_C:', env.DL_TOKEN_C ? env.DL_TOKEN_C.substring(0, 15) + '...' : 'MISSING');
+console.log('RKB_TOKEN:', env.RKB_TOKEN ? env.RKB_TOKEN.substring(0, 15) + '...' : 'MISSING');
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -165,7 +166,10 @@ async function dlPricing(query) {
   const wrapArray = (raw, status, label) => {
     try {
       const parsed = JSON.parse(raw);
-      return JSON.stringify(Array.isArray(parsed) ? parsed : [parsed]);
+      const arr = Array.isArray(parsed) ? parsed : [parsed];
+      // Log the actual field names so we can debug "undefined" pricing
+      if (arr[0]) console.log('[dlPricing]', label, 'keys:', Object.keys(arr[0]).join(','), 'total_amount:', arr[0].total_amount);
+      return JSON.stringify(arr);
     } catch (e) {
       console.error('[dlPricing] FAILED to parse ' + label + ' (HTTP ' + status + '):', raw.substring(0, 200));
       // Return a valid JSON array with error info so the whole response stays valid JSON
@@ -311,35 +315,41 @@ async function debugTokens() {
     }
   };
 
-  // Also test pricing endpoint with token A
-  const testPricing = async () => {
-    if (!env.DL_TOKEN_A) return { status: 'MISSING TOKEN' };
+  // Test pricing endpoint — show full response so we can see field names
+  const testPricing = async (token, label) => {
+    if (!token) return { status: 'MISSING TOKEN' };
     try {
       const r = await nfetch('https://track.delhivery.com/api/kinko/v1/invoice/charges/.json?o_pin=110062&d_pin=110062&cgm=500&md=S', {
-        headers: { 'Authorization': env.DL_TOKEN_A, 'Content-Type': 'application/json' }
+        headers: { 'Authorization': token, 'Content-Type': 'application/json' }
       });
-      const isJson = r.body.trim().startsWith('{') || r.body.trim().startsWith('[');
-      return {
-        http_status: r.status,
-        response_is_json: isJson,
-        response_preview: r.body.substring(0, 300)
-      };
+      try {
+        const parsed = JSON.parse(r.body);
+        const obj = Array.isArray(parsed) ? parsed[0] : parsed;
+        return {
+          http_status: r.status,
+          response_keys: obj ? Object.keys(obj) : [],
+          has_total_amount: obj ? ('total_amount' in obj) : false,
+          full_response: obj
+        };
+      } catch {
+        return { http_status: r.status, parse_error: true, response_preview: r.body.substring(0, 300) };
+      }
     } catch (e) {
       return { status: 'ERROR', error: e.message };
     }
   };
 
-  const [a, b, c, pricing] = await Promise.all([
+  const [a, b, c, pricingA] = await Promise.all([
     testToken(env.DL_TOKEN_A, 'DL_TOKEN_A'),
     testToken(env.DL_TOKEN_B, 'DL_TOKEN_B'),
     testToken(env.DL_TOKEN_C, 'DL_TOKEN_C'),
-    testPricing()
+    testPricing(env.DL_TOKEN_A, 'DL_TOKEN_A')
   ]);
 
   results.DL_TOKEN_A_pincode = a;
   results.DL_TOKEN_B_pincode = b;
   results.DL_TOKEN_C_pincode = c;
-  results.DL_TOKEN_A_pricing = pricing;
+  results.DL_TOKEN_A_pricing = pricingA;
   results.RKB_TOKEN = env.RKB_TOKEN ? { preview: env.RKB_TOKEN.substring(0, 15) + '...', length: env.RKB_TOKEN.length } : 'MISSING';
   results.rkbTokenOverride = rkbTokenOverride ? rkbTokenOverride.substring(0, 15) + '...' : 'not set';
 
