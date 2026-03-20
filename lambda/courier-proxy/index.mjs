@@ -35,8 +35,8 @@ function res(body, status = 200) {
   return { statusCode: status, headers: CORS, body: typeof body === 'string' ? body : JSON.stringify(body) };
 }
 
-// HTTPS fetch helper (no dependencies)
-function nfetch(url, opts = {}) {
+// HTTPS fetch helper (no dependencies, follows redirects)
+function nfetch(url, opts = {}, _redirectCount = 0) {
   return new Promise((resolve, reject) => {
     const u = new URL(url);
     const options = {
@@ -46,9 +46,20 @@ function nfetch(url, opts = {}) {
       headers: opts.headers || {}
     };
     const req = https.request(options, (r) => {
+      // Follow redirects (301, 302, 303, 307, 308)
+      if ([301, 302, 303, 307, 308].includes(r.statusCode) && r.headers.location && _redirectCount < 5) {
+        const redirectUrl = r.headers.location.startsWith('http') ? r.headers.location : `https://${u.hostname}${r.headers.location}`;
+        console.log('[nfetch] redirect', r.statusCode, '->', redirectUrl.substring(0, 100));
+        // For 303, switch to GET; for others keep method
+        const newMethod = r.statusCode === 303 ? 'GET' : (opts.method || 'GET');
+        const newOpts = { ...opts, method: newMethod };
+        // Don't send body on redirect to different host or on 303
+        if (r.statusCode === 303 || new URL(redirectUrl).hostname !== u.hostname) delete newOpts.body;
+        return nfetch(redirectUrl, newOpts, _redirectCount + 1).then(resolve).catch(reject);
+      }
       let data = '';
       r.on('data', c => data += c);
-      r.on('end', () => resolve({ status: r.statusCode, body: data }));
+      r.on('end', () => resolve({ status: r.statusCode, body: data, headers: r.headers }));
     });
     req.on('error', reject);
     if (opts.body) req.write(opts.body);
@@ -225,14 +236,23 @@ async function dlPincode(pin) {
 async function dlShipments() {
   // Fetch shipments from all 3 Delhivery accounts in parallel
   const fetchAccount = async (token, label) => {
-    const r = await nfetch('https://track.delhivery.com/api/v1/packages/json/?verbose=2&page_size=200', {
+    // Try header auth first
+    let r = await nfetch('https://track.delhivery.com/api/v1/packages/json/?verbose=2&page_size=200', {
       headers: { 'Authorization': token, 'Content-Type': 'application/json' }
     });
-    console.log('[dlShipments]', label, 'status:', r.status, 'bodyLen:', r.body.length);
-    try {
-      const d = JSON.parse(r.body);
-      return d.ShipmentData || [];
-    } catch { return []; }
+    console.log('[dlShipments]', label, 'header_auth status:', r.status, 'bodyLen:', r.body.length, 'preview:', r.body.substring(0, 300));
+    let d;
+    try { d = JSON.parse(r.body); } catch { d = {}; }
+
+    // If header auth returned empty, try token as query param
+    if (!d.ShipmentData || d.ShipmentData.length === 0) {
+      r = await nfetch(`https://track.delhivery.com/api/v1/packages/json/?token=${encodeURIComponent(token)}&verbose=2&page_size=200`);
+      console.log('[dlShipments]', label, 'query_auth status:', r.status, 'bodyLen:', r.body.length, 'preview:', r.body.substring(0, 300));
+      try { d = JSON.parse(r.body); } catch { d = {}; }
+    }
+
+    console.log('[dlShipments]', label, 'keys:', Object.keys(d), 'ShipmentData count:', (d.ShipmentData || []).length);
+    return d.ShipmentData || [];
   };
 
   const [a, b, c] = await Promise.all([
@@ -341,17 +361,100 @@ async function debugTokens() {
     }
   };
 
-  const [a, b, c, pricingA] = await Promise.all([
+  // Test Delhivery shipments listing - try multiple approaches
+  const testShipments = async (token, label) => {
+    if (!token) return { status: 'MISSING TOKEN' };
+    const results = {};
+
+    // Approach 1: Header auth with verbose=2 (current approach)
+    try {
+      const r = await nfetch('https://track.delhivery.com/api/v1/packages/json/?verbose=2&page_size=5', {
+        headers: { 'Authorization': token, 'Content-Type': 'application/json' }
+      });
+      results.header_auth = { http_status: r.status, body_length: r.body.length, response_preview: r.body.substring(0, 500) };
+    } catch (e) { results.header_auth = { error: e.message }; }
+
+    // Approach 2: Token as query param (some Delhivery docs show this)
+    try {
+      const r = await nfetch(`https://track.delhivery.com/api/v1/packages/json/?token=${encodeURIComponent(token)}&verbose=2&page_size=5`, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      results.query_auth = { http_status: r.status, body_length: r.body.length, response_preview: r.body.substring(0, 500) };
+    } catch (e) { results.query_auth = { error: e.message }; }
+
+    // Approach 3: Without verbose and page_size params
+    try {
+      const r = await nfetch('https://track.delhivery.com/api/v1/packages/json/', {
+        headers: { 'Authorization': token, 'Content-Type': 'application/json' }
+      });
+      results.no_params = { http_status: r.status, body_length: r.body.length, response_preview: r.body.substring(0, 300) };
+    } catch (e) { results.no_params = { error: e.message }; }
+
+    return results;
+  };
+
+  // Test RocketBox shipment list - try multiple approaches
+  const testRkbShipments = async () => {
+    const token = rkbTokenOverride || env.RKB_TOKEN;
+    if (!token) return { status: 'MISSING TOKEN' };
+    const results = {};
+
+    // Approach 1: GET /api/shipment/list/ (current)
+    try {
+      const r = await nfetch('https://api.rocketbox.in/api/shipment/list/', {
+        headers: { 'Authorization': token, 'Content-Type': 'application/json' }
+      });
+      results.get_list = { http_status: r.status, body_length: r.body.length, response_preview: r.body.substring(0, 500) };
+    } catch (e) { results.get_list = { error: e.message }; }
+
+    // Approach 2: GET without trailing slash
+    try {
+      const r = await nfetch('https://api.rocketbox.in/api/shipment/list', {
+        headers: { 'Authorization': token, 'Content-Type': 'application/json' }
+      });
+      results.get_no_slash = { http_status: r.status, body_length: r.body.length, response_preview: r.body.substring(0, 500) };
+    } catch (e) { results.get_no_slash = { error: e.message }; }
+
+    // Approach 3: POST instead of GET
+    try {
+      const r = await nfetch('https://api.rocketbox.in/api/shipment/list/', {
+        method: 'POST',
+        headers: { 'Authorization': token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      results.post_list = { http_status: r.status, body_length: r.body.length, response_preview: r.body.substring(0, 500) };
+    } catch (e) { results.post_list = { error: e.message }; }
+
+    // Approach 4: With pagination params
+    try {
+      const r = await nfetch('https://api.rocketbox.in/api/shipment/list/?page=1&page_size=10', {
+        headers: { 'Authorization': token, 'Content-Type': 'application/json' }
+      });
+      results.get_paginated = { http_status: r.status, body_length: r.body.length, response_preview: r.body.substring(0, 500) };
+    } catch (e) { results.get_paginated = { error: e.message }; }
+
+    return results;
+  };
+
+  const [a, b, c, pricingA, shipA, shipB, shipC, rkbShip] = await Promise.all([
     testToken(env.DL_TOKEN_A, 'DL_TOKEN_A'),
     testToken(env.DL_TOKEN_B, 'DL_TOKEN_B'),
     testToken(env.DL_TOKEN_C, 'DL_TOKEN_C'),
-    testPricing(env.DL_TOKEN_A, 'DL_TOKEN_A')
+    testPricing(env.DL_TOKEN_A, 'DL_TOKEN_A'),
+    testShipments(env.DL_TOKEN_A, 'DL_A'),
+    testShipments(env.DL_TOKEN_B, 'DL_B'),
+    testShipments(env.DL_TOKEN_C, 'DL_C'),
+    testRkbShipments()
   ]);
 
   results.DL_TOKEN_A_pincode = a;
   results.DL_TOKEN_B_pincode = b;
   results.DL_TOKEN_C_pincode = c;
   results.DL_TOKEN_A_pricing = pricingA;
+  results.DL_TOKEN_A_shipments = shipA;
+  results.DL_TOKEN_B_shipments = shipB;
+  results.DL_TOKEN_C_shipments = shipC;
+  results.RKB_shipments = rkbShip;
   results.RKB_TOKEN = env.RKB_TOKEN ? { preview: env.RKB_TOKEN.substring(0, 15) + '...', length: env.RKB_TOKEN.length } : 'MISSING';
   results.rkbTokenOverride = rkbTokenOverride ? rkbTokenOverride.substring(0, 15) + '...' : 'not set';
 
@@ -450,6 +553,28 @@ export const handler = async (event) => {
       const dlType = path.split('/del/')[1]; // dl0, dl1, or dl2
       const data = await dlBook(dlType, event.body);
       return res(data);
+    }
+
+    // --- RocketBox: Fetch shipments ---
+    if (path === '/rkb/shipments' || path === '/rkb/shipments/') {
+      const token = rkbTokenOverride || env.RKB_TOKEN;
+      if (!token) return res({ error: 'RKB_TOKEN not set' }, 400);
+      console.log('[rkbShipments] token preview:', token.substring(0, 20) + '...');
+      // Try GET first, then POST if empty
+      let r = await nfetch('https://api.rocketbox.in/api/shipment/list/', {
+        headers: { 'Authorization': token, 'Content-Type': 'application/json' }
+      });
+      console.log('[rkbShipments] GET status:', r.status, 'bodyLen:', r.body.length, 'preview:', r.body.substring(0, 300));
+      if (!r.body || r.body.length < 3) {
+        // Try POST if GET returned empty
+        r = await nfetch('https://api.rocketbox.in/api/shipment/list/', {
+          method: 'POST',
+          headers: { 'Authorization': token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        console.log('[rkbShipments] POST status:', r.status, 'bodyLen:', r.body.length, 'preview:', r.body.substring(0, 300));
+      }
+      return res(r.body || '[]');
     }
 
     // --- Root: backward compatible (pricing if query params, else token) ---

@@ -62,7 +62,8 @@
   <div class="box">
     <div class="tabs" id="awbTabs">
       <button class="active" onclick="awbSwitchTab('all',this)">All</button>
-      <button onclick="awbSwitchTab('scheduled',this)">Scheduled</button>
+      <button onclick="awbSwitchTab('assigned',this)">Assigned</button>
+      <button onclick="awbSwitchTab('created',this)">Created</button>
       <button onclick="awbSwitchTab('transit',this)">In-Transit</button>
       <button onclick="awbSwitchTab('delivered',this)">Delivered</button>
       <button onclick="awbSwitchTab('apiref',this)">API Ref</button>
@@ -288,43 +289,64 @@ async function awbFetchDelhivery() {
 }
 
 // ============ ROCKETBOX ============
+function rkbParseOrders(data) {
+  let orders = [];
+  if (!Array.isArray(data)) return orders;
+  data.forEach(pkg => {
+    let status = pkg.status || '';
+    orders.push({
+      id: pkg.order_id || pkg.id || '',
+      awb: pkg.awb || pkg.tracking_id || pkg.label_url || '',
+      dl: 'rkb',
+      courierName: pkg.courier_name || 'RocketBox',
+      buyer: pkg.recipient_name || pkg.buyer_name || '',
+      mobile: pkg.recipient_phone || pkg.mobile || '',
+      status: awbNormalizeStatus(status),
+      statusRaw: status,
+      orderDate: pkg.order_date || pkg.created_at || '',
+      tch: Number(pkg.freight_charge || pkg.rate || 0),
+      och: Number(pkg.weight_charge || 0),
+      otherCharges: Number(pkg.other_charges || 0),
+      trackUrl: pkg.tracking_url || pkg.label_url || '',
+      cancelled: (status === 'Cancelled'),
+      invoiceAmount: Number(pkg.invoice_value || 0)
+    });
+  });
+  return orders;
+}
+
 async function awbFetchRocketBox() {
   let allOrders = [];
+
+  // Try Lambda direct API first (bypasses Google Apps Script)
+  try {
+    const lambdaRes = await fetch(SHP_LAMBDA + '/rkb/shipments');
+    const lambdaText = await lambdaRes.text();
+    console.log('RocketBox Lambda: status=' + lambdaRes.status, 'body (' + lambdaText.length + ' chars):', lambdaText.substring(0, 300));
+    if (lambdaRes.ok && lambdaText && lambdaText.length > 5) {
+      const data = JSON.parse(lambdaText);
+      allOrders = rkbParseOrders(Array.isArray(data) ? data : (data?.data || data?.results || []));
+      if (allOrders.length > 0) {
+        console.log('RocketBox (Lambda): ' + allOrders.length + ' orders');
+        return allOrders;
+      }
+    }
+  } catch (e) { console.log('RocketBox Lambda fallthrough:', e.message); }
+
+  // Fallback: Google Apps Script
   try {
     const rkbUrl = 'https://script.google.com/macros/s/AKfycbxV9vG5zPSAu2xFAZjXpEVfvyMlJOOZgbxvGafsz609QmUnHal2HWNCc9TToXO17xpzwg/exec';
     let formData = new FormData();
     formData.append('t', 'list');
 
     const res = await fetch(rkbUrl, { method: 'POST', body: formData, redirect: 'follow' });
-    console.log('RocketBox response: status=' + res.status, 'url=' + res.url, 'type=' + res.headers.get('content-type'));
+    console.log('RocketBox GAS: status=' + res.status, 'url=' + res.url, 'type=' + res.headers.get('content-type'));
     const text = await res.text();
-    console.log('RocketBox body (' + text.length + ' chars):', text.substring(0, 300));
-    if (!text) { console.log('RocketBox: empty response'); return allOrders; }
+    console.log('RocketBox GAS body (' + text.length + ' chars):', text.substring(0, 300));
+    if (!text) { console.log('RocketBox GAS: empty response'); return allOrders; }
     const data = JSON.parse(text);
-
-    if (Array.isArray(data)) {
-      data.forEach(pkg => {
-        let status = pkg.status || '';
-        allOrders.push({
-          id: pkg.order_id || pkg.id || '',
-          awb: pkg.awb || pkg.tracking_id || pkg.label_url || '',
-          dl: 'rkb',
-          courierName: pkg.courier_name || 'RocketBox',
-          buyer: pkg.recipient_name || pkg.buyer_name || '',
-          mobile: pkg.recipient_phone || pkg.mobile || '',
-          status: awbNormalizeStatus(status),
-          statusRaw: status,
-          orderDate: pkg.order_date || pkg.created_at || '',
-          tch: Number(pkg.freight_charge || pkg.rate || 0),
-          och: Number(pkg.weight_charge || 0),
-          otherCharges: Number(pkg.other_charges || 0),
-          trackUrl: pkg.tracking_url || pkg.label_url || '',
-          cancelled: (status === 'Cancelled'),
-          invoiceAmount: Number(pkg.invoice_value || 0)
-        });
-      });
-    }
-  } catch (e) { console.log('RocketBox fetch error:', e); }
+    allOrders = rkbParseOrders(data);
+  } catch (e) { console.log('RocketBox GAS fetch error:', e); }
 
   console.log('RocketBox: ' + allOrders.length + ' orders');
   return allOrders;
@@ -384,8 +406,10 @@ function awbSwitchTab(tab, btn) {
 function awbRender(tab) {
   if (tab === 'apiref') { awbRenderApiRef(); return; }
 
+  const SCHED_STATUSES = ['Pickup Scheduled', 'Not Picked', 'Pending', 'Ready to Ship', 'Booked'];
   let filtered = awbData;
-  if (tab === 'scheduled') filtered = awbData.filter(d => ['Pickup Scheduled', 'Not Picked', 'Pending', 'Ready to Ship', 'Booked'].includes(d.status));
+  if (tab === 'assigned') filtered = awbData.filter(d => SCHED_STATUSES.includes(d.status) && d.awb && d.awb !== '\u2014');
+  else if (tab === 'created') filtered = awbData.filter(d => SCHED_STATUSES.includes(d.status) && (!d.awb || d.awb === '\u2014'));
   else if (tab === 'transit') filtered = awbData.filter(d => ['In Transit', 'Out for Delivery'].includes(d.status));
   else if (tab === 'delivered') filtered = awbData.filter(d => d.status === 'Delivered');
 
@@ -438,8 +462,45 @@ function awbRender(tab) {
     html += '</tbody></table></div>';
   }
 
+  // Add "Cancel All" button for Created tab
+  if (tab === 'created' && filtered.length > 0) {
+    let shpCreated = filtered.filter(d => d.dl === 'shp' && !d.cancelled);
+    if (shpCreated.length > 0) {
+      html = '<div style="padding:8px 0;text-align:right">'
+        + '<button onclick="awbCancelAllCreated()" style="padding:6px 14px;border:none;border-radius:6px;background:#ef5350;color:#fff;font-size:13px;font-weight:600;cursor:pointer">'
+        + 'Cancel All Created (' + shpCreated.length + ')</button></div>' + html;
+    }
+  }
+
   document.getElementById('out').innerHTML = html;
   awbCalcSummary(filtered);
+}
+
+// ============ CANCEL ALL CREATED ============
+async function awbCancelAllCreated() {
+  const SCHED = ['Pickup Scheduled', 'Not Picked', 'Pending', 'Ready to Ship', 'Booked'];
+  const created = awbData.filter(d => SCHED.includes(d.status) && (!d.awb || d.awb === '\u2014') && d.dl === 'shp' && !d.cancelled);
+  if (!created.length) { snackbar('No created orders to cancel'); return; }
+  if (!confirm('Cancel ALL ' + created.length + ' created ShipRocket orders without AWB?')) return;
+
+  const ids = created.map(d => d.id);
+  try {
+    const res = await fetch(SHP_LAMBDA + '/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: ids })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      created.forEach(d => { d.status = 'Cancelled'; d.cancelled = true; });
+      snackbar(created.length + ' orders cancelled');
+      awbRender(awbCurrentTab);
+    } else {
+      alert('Bulk cancel failed: ' + (data.message || JSON.stringify(data)));
+    }
+  } catch (e) {
+    alert('Bulk cancel error: ' + e.message);
+  }
 }
 
 // ============ SUMMARY ============
