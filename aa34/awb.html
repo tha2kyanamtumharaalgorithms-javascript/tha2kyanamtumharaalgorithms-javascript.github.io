@@ -65,6 +65,7 @@
       <button onclick="awbSwitchTab('scheduled',this)">Scheduled</button>
       <button onclick="awbSwitchTab('transit',this)">In-Transit</button>
       <button onclick="awbSwitchTab('delivered',this)">Delivered</button>
+      <button onclick="awbSwitchTab('apiref',this)">API Ref</button>
     </div>
 
     <div class="summary">
@@ -102,26 +103,18 @@ async function awbFetchAll() {
   awbData = [];
 
   try {
-    const [shpResults, dlResults, rkbResults, wdResults] = await Promise.allSettled([
+    const [shpResults, dlResults, rkbResults] = await Promise.allSettled([
       awbFetchShipRocket(),
       awbFetchDelhivery(),
-      awbFetchRocketBox(),
-      awbFetchWeightDiscrepancies()
+      awbFetchRocketBox()
     ]);
 
     if (shpResults.status === 'fulfilled' && shpResults.value) awbData.push(...shpResults.value);
     if (dlResults.status === 'fulfilled' && dlResults.value) awbData.push(...dlResults.value);
     if (rkbResults.status === 'fulfilled' && rkbResults.value) awbData.push(...rkbResults.value);
 
-    // Merge weight discrepancies (already fetched in parallel)
-    if (wdResults.status === 'fulfilled' && wdResults.value) {
-      const discrepancies = wdResults.value;
-      awbData.forEach(d => {
-        if (d.dl === 'shp' && d.awb && discrepancies[d.awb]) {
-          d.weightDiscrepancy = discrepancies[d.awb].charge;
-        }
-      });
-    }
+    // Fetch shipping charges for ShipRocket orders via order detail API
+    await awbFetchShipRocketCharges();
 
     awbData.sort((a, b) => new Date(b.orderDate || 0) - new Date(a.orderDate || 0));
 
@@ -146,25 +139,18 @@ async function awbFetchShipRocket() {
 
   while (hasMore) {
     try {
-      const res = await fetch(SHP_LAMBDA + '/orders?page=' + page + '&per_page=200');
+      // Fetch only scheduled/not-picked orders (status 1 = AWB Assigned)
+      const res = await fetch(SHP_LAMBDA + '/orders?page=' + page + '&per_page=200&status=1');
       const raw = await res.json();
       const data = Array.isArray(raw) ? raw : (raw?.data || []);
 
+      // If status filter returned 0 results on first page, retry without filter
+      if (page === 1 && (!Array.isArray(data) || data.length === 0)) {
+        console.log('ShipRocket: status=1 filter returned 0 results, trying without filter...');
+        return awbFetchShipRocketAll();
+      }
+
       if (Array.isArray(data) && data.length) {
-        // Debug: log first order structure to find correct field names
-        if (page === 1 && data[0]) {
-          let o = data[0], s = o.shipments?.[0] || {};
-          console.log('DEBUG ShipRocket order keys:', Object.keys(o));
-          console.log('DEBUG ShipRocket order.others:', JSON.stringify(o.others));
-          console.log('DEBUG ShipRocket shipment keys:', Object.keys(s));
-          console.log('DEBUG ShipRocket shipment object:', JSON.stringify(s));
-          console.log('DEBUG ShipRocket order sample:', JSON.stringify({
-            id: o.id, channel_order_id: o.channel_order_id,
-            customer_phone: o.customer_phone, billing_phone: o.billing_phone,
-            freight_charge: o.freight_charge, total: o.total, total_charges: o.total_charges,
-            shipping_charges: o.shipping_charges, sub_total: o.sub_total
-          }));
-        }
         data.forEach(order => {
           let shipment = (order.shipments && order.shipments[0]) || {};
           let awb = shipment.awb || order.awb || '';
@@ -182,8 +168,8 @@ async function awbFetchShipRocket() {
             status: normStatus,
             statusRaw: status,
             orderDate: order.created_at || order.order_date || '',
-            tch: Number(shipment.freight_charge || shipment.charge || order.freight_charge || 0),
-            och: Number(shipment.weight_charges || order.weight_charges || 0),
+            tch: Number(shipment.shipping_charges || shipment.freight_charge || shipment.cost || 0),
+            och: 0,
             otherCharges: Number(shipment.cod_charges || 0) + Number(shipment.rto_charges || 0) + Number(shipment.other_charges || 0),
             weightDiscrepancy: 0,
             trackUrl: awb ? 'https://www.shiprocket.in/shipment-tracking/' + awb : '',
@@ -209,45 +195,58 @@ async function awbFetchShipRocket() {
     }
   }
 
-  console.log('ShipRocket: ' + allOrders.length + ' orders (pages: ' + page + ')');
+  console.log('ShipRocket (filtered): ' + allOrders.length + ' orders (pages: ' + page + ')');
   return allOrders;
 }
 
-// ============ SHIPROCKET WEIGHT DISCREPANCIES ============
-
-async function awbFetchWeightDiscrepancies() {
-  let discrepancies = {};
+// Fallback: fetch all orders and filter client-side to scheduled only
+async function awbFetchShipRocketAll() {
+  let allOrders = [];
   let page = 1;
   let hasMore = true;
+  const scheduledStatuses = ['Pickup Scheduled', 'Not Picked', 'Pending', 'Ready to Ship', 'Booked'];
 
   while (hasMore) {
     try {
-      const res = await fetch(SHP_LAMBDA + '/weight-discrepancies?page=' + page + '&per_page=50');
+      const res = await fetch(SHP_LAMBDA + '/orders?page=' + page + '&per_page=200');
       const raw = await res.json();
-      console.log('Weight discrepancy page ' + page + ' raw:', JSON.stringify(raw).substring(0, 500));
       const data = Array.isArray(raw) ? raw : (raw?.data || []);
 
       if (Array.isArray(data) && data.length) {
-        // Debug: log first discrepancy item to find correct field names
-        if (page === 1 && data[0]) {
-          console.log('DEBUG Discrepancy item keys:', Object.keys(data[0]));
-          console.log('DEBUG Discrepancy first item:', JSON.stringify(data[0]));
-        }
-        data.forEach(item => {
-          let awb = item.awb || item.awb_number || item.awb_code || '';
-          if (awb) {
-            discrepancies[awb] = {
-              charge: Number(item.charged_amount || item.excess_weight_charge || item.amount || item.discrepancy_charge || 0),
-              declaredWeight: Number(item.applied_weight || item.declared_weight || 0),
-              billedWeight: Number(item.billed_weight || item.actual_weight || item.charged_weight || 0)
-            };
-          }
+        data.forEach(order => {
+          let shipment = (order.shipments && order.shipments[0]) || {};
+          let awb = shipment.awb || order.awb || '';
+          let status = shipment.status || order.status || 'NEW';
+          let normStatus = awbNormalizeStatus(status);
+
+          // Only keep scheduled/pending orders
+          if (!scheduledStatuses.includes(normStatus)) return;
+
+          allOrders.push({
+            id: order.id,
+            channelOrderId: order.channel_order_id || order.id,
+            awb: awb,
+            dl: 'shp',
+            courierName: shipment.courier_name || 'ShipRocket',
+            buyer: order.customer_name || order.buyer_name || '',
+            mobile: order.customer_phone || order.billing_phone || order.shipping_phone || '',
+            status: normStatus,
+            statusRaw: status,
+            orderDate: order.created_at || order.order_date || '',
+            tch: Number(shipment.shipping_charges || shipment.freight_charge || shipment.cost || 0),
+            och: 0,
+            otherCharges: Number(shipment.cod_charges || 0) + Number(shipment.rto_charges || 0) + Number(shipment.other_charges || 0),
+            weightDiscrepancy: 0,
+            trackUrl: awb ? 'https://www.shiprocket.in/shipment-tracking/' + awb : '',
+            cancelled: (normStatus === 'Cancelled'),
+            invoiceAmount: Number(order.total || 0)
+          });
         });
 
         let meta = raw?.meta || {};
         if (meta.last_page && page < meta.last_page) {
           page++;
-        } else if (data.length === 50) {
+        } else if (data.length === 200) {
           page++;
         } else {
           hasMore = false;
@@ -256,13 +255,62 @@ async function awbFetchWeightDiscrepancies() {
         hasMore = false;
       }
     } catch (e) {
-      console.log('Weight discrepancies fetch error:', e);
+      console.log('ShipRocket fetch page ' + page + ' error:', e);
       hasMore = false;
     }
   }
 
-  console.log('Weight discrepancies: ' + Object.keys(discrepancies).length + ' AWBs');
-  return discrepancies;
+  console.log('ShipRocket (all→filtered): ' + allOrders.length + ' scheduled orders (pages: ' + page + ')');
+  return allOrders;
+}
+
+// ============ SHIPROCKET ORDER DETAIL (for shipping charges) ============
+// ShipRocket orders list doesn't include shipping charges.
+// Fetch individual order details in batches to get actual charges.
+
+async function awbFetchShipRocketCharges() {
+  let shpOrders = awbData.filter(d => d.dl === 'shp');
+  if (!shpOrders.length) return;
+
+  // Batch fetch: 5 concurrent requests at a time
+  const batchSize = 5;
+  let fetched = 0;
+  for (let i = 0; i < shpOrders.length; i += batchSize) {
+    const batch = shpOrders.slice(i, i + batchSize);
+    const results = await Promise.allSettled(
+      batch.map(d => fetch(SHP_LAMBDA + '/orders/show/' + d.id).then(r => r.json()))
+    );
+
+    results.forEach((r, idx) => {
+      if (r.status !== 'fulfilled' || !r.value) return;
+      let detail = r.value;
+      let order = batch[idx];
+
+      // Log first order detail to see available charge fields
+      if (fetched === 0) {
+        console.log('ShipRocket order detail keys:', Object.keys(detail));
+        console.log('ShipRocket order detail (charges):', JSON.stringify({
+          id: detail.id,
+          shipping_charges: detail.shipping_charges,
+          freight_charges: detail.freight_charges,
+          total: detail.total,
+          sub_total: detail.sub_total,
+          others: detail.others ? JSON.stringify(detail.others).substring(0, 300) : null,
+          shipments: detail.shipments ? detail.shipments.map(s => ({
+            shipping_charges: s.shipping_charges, cost: s.cost, freight: s.freight_charge, total: s.total
+          })) : null
+        }));
+      }
+      fetched++;
+
+      // Try to extract shipping charge from detail response
+      let shipment = detail.shipments?.[0] || {};
+      let charge = Number(shipment.shipping_charges) || Number(shipment.cost) || Number(shipment.freight_charge) ||
+                   Number(detail.shipping_charges) || Number(detail.freight_charges) || 0;
+      if (charge > 0) order.tch = charge;
+    });
+  }
+  console.log('ShipRocket charges: fetched detail for ' + fetched + '/' + shpOrders.length + ' orders');
 }
 
 // ============ DELHIVERY ============
@@ -397,6 +445,8 @@ function awbSwitchTab(tab, btn) {
 
 // ============ RENDER ============
 function awbRender(tab) {
+  if (tab === 'apiref') { awbRenderApiRef(); return; }
+
   let filtered = awbData;
   if (tab === 'scheduled') filtered = awbData.filter(d => ['Pickup Scheduled', 'Not Picked', 'Pending', 'Ready to Ship', 'Booked'].includes(d.status));
   else if (tab === 'transit') filtered = awbData.filter(d => ['In Transit', 'Out for Delivery'].includes(d.status));
@@ -406,7 +456,7 @@ function awbRender(tab) {
   if (!filtered.length) {
     html = '<div class="loading">No shipments in this category</div>';
   } else {
-    html = '<div class="tbl-wrap"><table><thead><tr><th>Track</th><th>Date</th><th>AWB</th><th>Mobile</th><th>Buyer</th><th>Cancel</th><th>Order ID</th><th>Ship Cost</th><th>Extra Wt.</th><th>Other</th><th>Collected</th></tr></thead><tbody>';
+    html = '<div class="tbl-wrap"><table><thead><tr><th>Track</th><th>Date</th><th>AWB</th><th>Mobile</th><th>Buyer</th><th>Cancel</th><th>Order ID</th><th>Ship Cost</th><th>Other</th><th>Collected</th></tr></thead><tbody>';
 
     filtered.forEach(d => {
       let trackLink = d.trackUrl
@@ -443,7 +493,6 @@ function awbRender(tab) {
         '<td>' + cancelBtn + '</td>' +
         '<td>' + (d.channelOrderId || d.id) + ' ' + statusBadge + '</td>' +
         '<td>' + d.tch + '\u20B9</td>' +
-        '<td>' + (d.weightDiscrepancy || d.och || 0) + '\u20B9</td>' +
         '<td>' + d.otherCharges + '\u20B9</td>' +
         '<td>\u2014</td>' +
         '</tr>';
@@ -469,7 +518,7 @@ function awbCalcSummary(data) {
     return (now - bookTime) > threeDaysMs;
   }).length;
 
-  let totalDeducted = data.reduce((sum, d) => sum + (d.tch || 0) + (d.weightDiscrepancy || d.och || 0) + (d.otherCharges || 0), 0);
+  let totalDeducted = data.reduce((sum, d) => sum + (d.tch || 0) + (d.otherCharges || 0), 0);
 
   document.getElementById('awbNotPicked').textContent = notPicked;
   document.getElementById('awbTotalDeducted').textContent = Math.ceil(totalDeducted).toLocaleString('en-IN') + '\u20B9';
@@ -516,6 +565,76 @@ async function awbCancel(orderId, courierType) {
     console.log('Cancel error:', e);
     alert('Cancel failed: ' + e.message);
   }
+}
+
+// ============ API REFERENCE ============
+function awbRenderApiRef() {
+  document.getElementById('out').innerHTML = `
+  <div style="background:#fff;border-radius:8px;padding:12px;margin-top:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);font-size:12px;line-height:1.6">
+
+  <h3 style="margin:0 0 8px;color:#1565C0">ShipRocket API</h3>
+  <p style="margin:0 0 4px;color:#666;font-size:11px">Base: <code>apiv2.shiprocket.in/v1/external/</code> &nbsp;|&nbsp; Auth: Bearer token (valid 10 days)</p>
+  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:16px">
+    <tr style="background:#e3f2fd"><th style="width:60px">Method</th><th>Endpoint</th><th>Description</th><th style="width:80px">Status</th></tr>
+    <tr><td>POST</td><td><code>/auth/login</code></td><td>Get Bearer token (email + password)</td><td style="color:green">Working</td></tr>
+    <tr><td>GET</td><td><code>/orders?page=X&per_page=Y</code></td><td>List orders (shipping charges NOT included)</td><td style="color:green">Working</td></tr>
+    <tr><td>GET</td><td><code>/orders/show/{id}</code></td><td>Single order detail (may include charges)</td><td style="color:orange">Testing</td></tr>
+    <tr><td>POST</td><td><code>/orders/create/adhoc</code></td><td>Create ad-hoc order</td><td style="color:green">Working</td></tr>
+    <tr><td>POST</td><td><code>/orders/cancel</code></td><td>Cancel orders <code>{ids: [...]}</code></td><td style="color:green">Working</td></tr>
+    <tr><td>POST</td><td><code>/courier/assign/awb</code></td><td>Assign courier + get AWB</td><td style="color:green">Working</td></tr>
+    <tr><td>POST</td><td><code>/courier/generate/pickup</code></td><td>Schedule pickup</td><td style="color:green">Working</td></tr>
+    <tr><td>GET</td><td><code>/courier/serviceability/?pickup_postcode=X&delivery_postcode=Y&weight=Z&cod=0</code></td><td>Check available couriers + estimated charges</td><td style="color:green">Available</td></tr>
+    <tr><td>GET</td><td><code>/courier/track/shipment/{id}</code></td><td>Track by shipment ID</td><td style="color:green">Available</td></tr>
+    <tr><td>GET</td><td><code>/courier/track/awb/{awb}</code></td><td>Track by AWB number</td><td style="color:green">Available</td></tr>
+    <tr><td>POST</td><td><code>/courier/generate/label</code></td><td>Generate shipping label</td><td style="color:green">Available</td></tr>
+    <tr><td>POST</td><td><code>/manifests/generate</code></td><td>Generate manifest</td><td style="color:green">Available</td></tr>
+    <tr><td>POST</td><td><code>/orders/print/invoice</code></td><td>Generate invoice</td><td style="color:green">Available</td></tr>
+    <tr><td>GET</td><td><code>/products</code></td><td>List products</td><td style="color:green">Available</td></tr>
+    <tr><td>GET</td><td><code>/channels</code></td><td>List integrated channels</td><td style="color:green">Available</td></tr>
+    <tr><td>&mdash;</td><td>Weight discrepancy data</td><td>NOT available via API (dashboard only)</td><td style="color:red">No API</td></tr>
+    <tr><td>&mdash;</td><td>Billing / wallet transactions</td><td>NOT available via API (dashboard only)</td><td style="color:red">No API</td></tr>
+  </table>
+  <p style="margin:0 0 4px;color:#888;font-size:10px">Status codes: 1=AWB Assigned, 3=In Transit, 4=Delivered, 6=Cancelled, 7=OFD, 8=Not Picked, 17=Out for Pickup, 19=OFD</p>
+
+  <h3 style="margin:16px 0 8px;color:#4CAF50">Delhivery API</h3>
+  <p style="margin:0 0 4px;color:#666;font-size:11px">Base: <code>track.delhivery.com/</code> &nbsp;|&nbsp; Auth: Token header &nbsp;|&nbsp; 3 accounts: Surface (dl0), Express (dl1), 10KG (dl2)</p>
+  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:16px">
+    <tr style="background:#e8f5e9"><th style="width:60px">Method</th><th>Endpoint</th><th>Description</th><th style="width:80px">Status</th></tr>
+    <tr><td>GET</td><td><code>/api/kinko/v1/invoice/charges/.json?o_pin=X&d_pin=Y&cgm=Z</code></td><td>Get pricing (weight in grams)</td><td style="color:green">Working</td></tr>
+    <tr><td>GET</td><td><code>/c/api/pin-codes/json/?filter_codes=X</code></td><td>Pincode lookup (city, state)</td><td style="color:green">Working</td></tr>
+    <tr><td>GET</td><td><code>/api/v1/packages/json/?verbose=2&page_size=200</code></td><td>List shipments (includes charges!)</td><td style="color:green">Working</td></tr>
+    <tr><td>POST</td><td><code>/api/cmu/create.json</code></td><td>Book shipment</td><td style="color:green">Working</td></tr>
+    <tr><td>POST</td><td><code>/api/p/edit</code></td><td>Cancel <code>{waybill, cancellation: true}</code></td><td style="color:green">Working</td></tr>
+    <tr><td>GET</td><td><code>/api/v1/packages/json/?waybill=X</code></td><td>Track by waybill</td><td style="color:green">Available</td></tr>
+  </table>
+  <p style="margin:0 0 4px;color:#888;font-size:10px">Delhivery returns actual freight charges in shipment list (unlike ShipRocket). Charges fields: TotalFreightCharges, ExcessWeightCharges, CODCharges</p>
+
+  <h3 style="margin:16px 0 8px;color:#FF9800">RocketBox API</h3>
+  <p style="margin:0 0 4px;color:#666;font-size:11px">Base: <code>api.rocketbox.in/</code> &nbsp;|&nbsp; Auth: Bearer token &nbsp;|&nbsp; Shipment ops via Google Apps Script</p>
+  <table style="width:100%;min-width:auto;font-size:11px;margin-bottom:16px">
+    <tr style="background:#fff3e0"><th style="width:60px">Method</th><th>Endpoint</th><th>Description</th><th style="width:80px">Status</th></tr>
+    <tr><td>POST</td><td><code>/api/shipment/charges/</code></td><td>Get pricing <code>{from_pincode, to_pincode, weight, ...}</code></td><td style="color:green">Working</td></tr>
+    <tr><td>POST</td><td>Google Apps Script <code>t=list</code></td><td>List shipments</td><td style="color:green">Working</td></tr>
+    <tr><td>POST</td><td>Google Apps Script <code>t=cancel</code></td><td>Cancel shipment</td><td style="color:green">Working</td></tr>
+  </table>
+
+  <h3 style="margin:16px 0 8px;color:#555">Lambda Proxy Routes</h3>
+  <p style="margin:0 0 4px;color:#666;font-size:11px">All routes via: <code>anlof6ho4kmtewslnyk34ip2f40pedjp.lambda-url.ap-south-1.on.aws</code></p>
+  <table style="width:100%;min-width:auto;font-size:11px">
+    <tr style="background:#eceff1"><th style="width:80px">Route</th><th>Maps To</th><th>Description</th></tr>
+    <tr><td><code>/token</code></td><td>ShipRocket</td><td>Get fresh auth token</td></tr>
+    <tr><td><code>/orders</code></td><td>ShipRocket</td><td>List orders (supports page, per_page, status, filter, sort params)</td></tr>
+    <tr><td><code>/orders/show/{id}</code></td><td>ShipRocket</td><td>Get single order detail</td></tr>
+    <tr><td><code>/cancel</code></td><td>ShipRocket</td><td>Cancel orders</td></tr>
+    <tr><td><code>/shp/{courierId}</code></td><td>ShipRocket</td><td>Book shipment (create + AWB + pickup)</td></tr>
+    <tr><td><code>/price</code> or <code>/?o_pin=&d_pin=&cgm=</code></td><td>Delhivery + RocketBox</td><td>Get pricing from all 4 services</td></tr>
+    <tr><td><code>/pin/{code}</code></td><td>Delhivery</td><td>Pincode lookup</td></tr>
+    <tr><td><code>/del/shipments</code></td><td>Delhivery</td><td>Fetch shipments from all 3 accounts</td></tr>
+    <tr><td><code>/del/cancel</code></td><td>Delhivery</td><td>Cancel shipment</td></tr>
+    <tr><td><code>/del/dl0|dl1|dl2</code></td><td>Delhivery</td><td>Book shipment (by account type)</td></tr>
+  </table>
+
+  </div>`;
 }
 
 // ============ REFRESH ============
