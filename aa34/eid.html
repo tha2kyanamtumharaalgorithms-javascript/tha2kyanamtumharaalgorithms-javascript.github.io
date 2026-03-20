@@ -204,12 +204,12 @@ async function load() {
             total = Number(ord.ttpc) || Number(ord.tv) || 0;
             taxable = Math.round(total / 1.05);
           }
-          // Parse shipping charge from tch field
+          // Parse shipping charge from tch field (format: "634.00z27,19" - number before 'z')
           let shipping = 0;
           if (ord.tch) {
             let tchStr = String(ord.tch);
-            if (tchStr.includes(',')) shipping = Number(tchStr.split(',')[0]) || 0;
-            else shipping = Number(tchStr) || 0;
+            let numPart = tchStr.split('z')[0];
+            shipping = parseFloat(numPart) || 0;
           }
           let entry = {
             eid, fullEid: key, source: 'web',
