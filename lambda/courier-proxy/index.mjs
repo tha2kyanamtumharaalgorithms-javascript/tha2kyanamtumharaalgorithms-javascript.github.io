@@ -228,9 +228,10 @@ async function dlShipments() {
     const r = await nfetch('https://track.delhivery.com/api/v1/packages/json/?verbose=2&page_size=200', {
       headers: { 'Authorization': token, 'Content-Type': 'application/json' }
     });
-    console.log('[dlShipments]', label, 'status:', r.status, 'bodyLen:', r.body.length);
+    console.log('[dlShipments]', label, 'status:', r.status, 'bodyLen:', r.body.length, 'preview:', r.body.substring(0, 300));
     try {
       const d = JSON.parse(r.body);
+      console.log('[dlShipments]', label, 'keys:', Object.keys(d), 'ShipmentData count:', (d.ShipmentData || []).length);
       return d.ShipmentData || [];
     } catch { return []; }
   };
@@ -341,17 +342,67 @@ async function debugTokens() {
     }
   };
 
-  const [a, b, c, pricingA] = await Promise.all([
+  // Test shipments endpoint (the actual listing API)
+  const testShipments = async (token, label) => {
+    if (!token) return { status: 'MISSING TOKEN' };
+    try {
+      const r = await nfetch('https://track.delhivery.com/api/v1/packages/json/?verbose=2&page_size=5', {
+        headers: { 'Authorization': token, 'Content-Type': 'application/json' }
+      });
+      try {
+        const parsed = JSON.parse(r.body);
+        return {
+          http_status: r.status,
+          has_ShipmentData: 'ShipmentData' in parsed,
+          shipment_count: parsed.ShipmentData ? parsed.ShipmentData.length : 0,
+          response_keys: Object.keys(parsed),
+          response_preview: r.body.substring(0, 500)
+        };
+      } catch {
+        return { http_status: r.status, parse_error: true, response_preview: r.body.substring(0, 500) };
+      }
+    } catch (e) {
+      return { status: 'ERROR', error: e.message };
+    }
+  };
+
+  // Test RocketBox shipment list
+  const testRkbShipments = async () => {
+    const token = rkbTokenOverride || env.RKB_TOKEN;
+    if (!token) return { status: 'MISSING TOKEN' };
+    try {
+      const r = await nfetch('https://api.rocketbox.in/api/shipment/list/', {
+        headers: { 'Authorization': token, 'Content-Type': 'application/json' }
+      });
+      return {
+        http_status: r.status,
+        body_length: r.body.length,
+        response_preview: r.body.substring(0, 500)
+      };
+    } catch (e) {
+      return { status: 'ERROR', error: e.message };
+    }
+  };
+
+  const [a, b, c, pricingA, shipA, shipB, shipC, rkbShip] = await Promise.all([
     testToken(env.DL_TOKEN_A, 'DL_TOKEN_A'),
     testToken(env.DL_TOKEN_B, 'DL_TOKEN_B'),
     testToken(env.DL_TOKEN_C, 'DL_TOKEN_C'),
-    testPricing(env.DL_TOKEN_A, 'DL_TOKEN_A')
+    testPricing(env.DL_TOKEN_A, 'DL_TOKEN_A'),
+    testShipments(env.DL_TOKEN_A, 'DL_A'),
+    testShipments(env.DL_TOKEN_B, 'DL_B'),
+    testShipments(env.DL_TOKEN_C, 'DL_C'),
+    testRkbShipments()
   ]);
 
   results.DL_TOKEN_A_pincode = a;
   results.DL_TOKEN_B_pincode = b;
   results.DL_TOKEN_C_pincode = c;
   results.DL_TOKEN_A_pricing = pricingA;
+  results.DL_TOKEN_A_shipments = shipA;
+  results.DL_TOKEN_B_shipments = shipB;
+  results.DL_TOKEN_C_shipments = shipC;
+  results.RKB_shipments = rkbShip;
   results.RKB_TOKEN = env.RKB_TOKEN ? { preview: env.RKB_TOKEN.substring(0, 15) + '...', length: env.RKB_TOKEN.length } : 'MISSING';
   results.rkbTokenOverride = rkbTokenOverride ? rkbTokenOverride.substring(0, 15) + '...' : 'not set';
 
@@ -450,6 +501,17 @@ export const handler = async (event) => {
       const dlType = path.split('/del/')[1]; // dl0, dl1, or dl2
       const data = await dlBook(dlType, event.body);
       return res(data);
+    }
+
+    // --- RocketBox: Fetch shipments ---
+    if (path === '/rkb/shipments' || path === '/rkb/shipments/') {
+      const token = rkbTokenOverride || env.RKB_TOKEN;
+      if (!token) return res({ error: 'RKB_TOKEN not set' }, 400);
+      const r = await nfetch('https://api.rocketbox.in/api/shipment/list/', {
+        headers: { 'Authorization': token, 'Content-Type': 'application/json' }
+      });
+      console.log('[rkbShipments] status:', r.status, 'bodyLen:', r.body.length, 'preview:', r.body.substring(0, 300));
+      return res(r.body);
     }
 
     // --- Root: backward compatible (pricing if query params, else token) ---
