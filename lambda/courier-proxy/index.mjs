@@ -140,8 +140,10 @@ async function shpBook(courierId, orderData) {
 // ============ DELHIVERY ============
 
 async function dlPricing(query) {
-  const qs = new URLSearchParams(query).toString();
-  const baseUrl = 'https://track.delhivery.com/api/kinko/v1/invoice/charges/.json?' + qs;
+  const params = new URLSearchParams(query);
+  // ss is mandatory for Delhivery pricing API (possible values: RTO, DTO, Delivered)
+  if (!params.has('ss')) params.set('ss', 'Delivered');
+  const baseUrl = 'https://track.delhivery.com/api/kinko/v1/invoice/charges/.json?' + params.toString();
 
   console.log('[dlPricing] Query params:', JSON.stringify(query));
   console.log('[dlPricing] Base URL:', baseUrl);
@@ -319,7 +321,7 @@ async function debugTokens() {
   const testPricing = async (token, label) => {
     if (!token) return { status: 'MISSING TOKEN' };
     try {
-      const r = await nfetch('https://track.delhivery.com/api/kinko/v1/invoice/charges/.json?o_pin=110062&d_pin=110062&cgm=500&md=S', {
+      const r = await nfetch('https://track.delhivery.com/api/kinko/v1/invoice/charges/.json?o_pin=110062&d_pin=110062&cgm=500&ss=Delivered&md=S', {
         headers: { 'Authorization': token, 'Content-Type': 'application/json' }
       });
       try {
