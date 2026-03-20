@@ -1,3 +1,5 @@
+var _undoData = null; var _undoTimer = null;
+
 async function delod() {
   const latsel = Object.keys(selod5);
   if (!latsel.length) {
@@ -20,6 +22,10 @@ async function delod() {
   try {
     await mthdb(selg.slice(-1) + odno.slice(0, 6));
     const an5 = await oddb.od.get(Number(odno));
+
+    // Save backup for undo
+    _undoData = { backup: JSON.parse(JSON.stringify(an5)), g: selg, monthKey: selg.slice(-1) + odno.slice(0, 6) };
+
     an5.tot = 0; an5.od = {}; an5.xch = [0, 0, 0, 5]; an5.pc = {}; an5.inv = [0, 0]; an5.bulk = 0; an5.wt = 0; zsr.gst = ''; delete an5.c;
     const shod11 = { p: "1", g: selg, od: { ...an5 } };
     sendd(urli, shod11, 'del order');
@@ -29,9 +35,38 @@ async function delod() {
     debounceSyncLiveSheet();
     selod5 = {};
     document.querySelector(`[name=${selg}]`).click();//await bulkdb.bk.delete(shod11.od.id);
+    showUndoSnackbar();
   } catch (error) {
     alert('Error in del update fn:', error);
     console.error('Error in del update fn:', error);
+  }
+}
+
+function showUndoSnackbar() {
+  if (_undoTimer) clearTimeout(_undoTimer);
+  let x = document.getElementById("snackbar");
+  x.style.display = '';
+  x.innerHTML = 'Order deleted &nbsp;<b onclick="undoDelete()" style="text-decoration:underline;cursor:pointer;color:#ffeb3b">UNDO</b>';
+  _undoTimer = setTimeout(() => { x.style.display = 'none'; _undoData = null; _undoTimer = null; }, 15000);
+}
+
+async function undoDelete() {
+  if (!_undoData) { snackbar('Nothing to undo', 1500); return; }
+  try {
+    const { backup, g, monthKey } = _undoData;
+    await mthdb(monthKey);
+    await oddb.od.put(backup, backup.id);
+    fbPutOrder(monthKey, backup);
+    sendd(urli, { p: "1", g: g, od: { ...backup } }, 'undo del');
+    debounceSyncLiveSheet();
+    _undoData = null;
+    if (_undoTimer) { clearTimeout(_undoTimer); _undoTimer = null; }
+    document.getElementById("snackbar").style.display = 'none';
+    document.querySelector(`[name=${g}]`).click();
+    snackbar('Order restored!', 2000);
+  } catch (error) {
+    alert('Undo failed: ' + error);
+    console.error('Undo failed:', error);
   }
 }
 
