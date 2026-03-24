@@ -33,7 +33,11 @@
   .loading { text-align: center; padding: 40px; color: #666; font-size: 14px; }
   .dup-list { background: #fff3e0; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; font-size: 12px; color: #e65100; }
   .dup-list b { display: block; margin-bottom: 6px; font-size: 13px; }
-  .dup-item { background: #fff; border-radius: 6px; padding: 8px; margin-bottom: 6px; border: 1px solid #ffe0b2; }
+  .dup-item { background: #fff; border-radius: 6px; padding: 10px 12px; margin-bottom: 6px; border: 1px solid #ffe0b2; display: flex; align-items: center; gap: 10px; }
+  .dup-item .dup-check-label { display: flex; align-items: center; gap: 6px; cursor: pointer; flex-shrink: 0; background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 4px; padding: 4px 8px; font-size: 11px; color: #2e7d32; font-weight: 600; }
+  .dup-item .dup-check-label:hover { background: #c8e6c9; }
+  .dup-item .dup-check-label input { width: 18px; height: 18px; cursor: pointer; accent-color: #2e7d32; }
+  .dup-item .dup-content { flex: 1; }
   .dup-item .dup-name { font-weight: 600; font-size: 13px; color: #333; }
   .dup-item .dup-detail { font-size: 11px; color: #666; margin-top: 2px; }
   .dup-item .dup-ids { font-size: 11px; color: #e65100; margin-top: 2px; }
@@ -283,6 +287,11 @@ async function load() {
   let webCount = all.filter(e => e.source === 'web').length;
   let totalShipping = all.reduce((s, e) => s + (e.shipping || 0), 0);
   let totalInvoice = all.reduce((s, e) => s + (e.total || 0), 0);
+  let resolvedDups = JSON.parse(localStorage.getItem('resolvedDups') || '{}');
+  let unresolvedCount = dupGroups.filter(g => {
+    let dupKey = g.map(e => e.eid).sort((a, b) => a - b).join('-');
+    return !resolvedDups[dupKey];
+  }).length;
 
   html += `<div class="summary">
     <div class="row"><span>Total E-IDs</span><b>${total}</b></div>
@@ -291,22 +300,31 @@ async function load() {
     <div class="row"><span>Website</span><b>${webCount}</b></div>
     <div class="row"><span>Total Collected Shipping</span><b>&#8377;${totalShipping.toLocaleString('en-IN')}</b></div>
     <div class="row"><span>Total Invoice Value</span><b>&#8377;${totalInvoice.toLocaleString('en-IN')}</b></div>
-    <div class="row"><span>Duplicates (last 500)</span><span class="${dupGroups.length ? 'miss' : 'ok'}">${dupGroups.length}</span></div>
+    <div class="row"><span>Duplicates (last 500)</span><span id="dupCount" class="${dupGroups.length ? 'miss' : 'ok'}">${dupGroups.length}${dupGroups.length > unresolvedCount ? ' (' + unresolvedCount + ' unresolved)' : ''}</span></div>
     <div class="row"><span>Missing</span><span class="${missing.length ? 'miss' : 'ok'}">${missing.length}</span></div>
   </div>`;
 
   if (dupGroups.length) {
-    html += `<div class="dup-list"><b>Duplicate Orders (same name, qty &amp; amount):</b>`;
+    let dupHtml = '';
+    let shown = 0;
     for (let g of dupGroups) {
+      let dupKey = g.map(e => e.eid).sort((a, b) => a - b).join('-');
+      if (resolvedDups[dupKey]) continue;
+      shown++;
       let displayName = g[0].name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
       let ids = g.map(e => e.eid + ' <span class="src ' + e.source + '">' + (e.source === 'app' ? 'App' : 'Web') + '</span>').join(', ');
-      html += `<div class="dup-item">
-        <div class="dup-name">${displayName}</div>
-        <div class="dup-detail">Qty: ${g[0].qty} | Amt: ${g[0].amt.toLocaleString('en-IN')}</div>
-        <div class="dup-ids">E-IDs: ${ids}</div>
+      dupHtml += `<div class="dup-item" id="dup-${dupKey}">
+        <div class="dup-content">
+          <div class="dup-name">${displayName}</div>
+          <div class="dup-detail">Qty: ${g[0].qty} | Amt: ${g[0].amt.toLocaleString('en-IN')}</div>
+          <div class="dup-ids">E-IDs: ${ids}</div>
+        </div>
+        <label class="dup-check-label"><input type="checkbox" onchange="resolveDup('${dupKey}')"> Resolved</label>
       </div>`;
     }
-    html += `</div>`;
+    if (shown) {
+      html += `<div class="dup-list"><b>Duplicate Orders (same name, qty &amp; amount):</b>` + dupHtml + `</div>`;
+    }
   }
 
   if (missing.length) {
@@ -329,6 +347,28 @@ async function load() {
   document.getElementById('out').innerHTML = html;
   window._eidData = all;
   document.getElementById('dlBtn').style.display = all.length ? '' : 'none';
+}
+
+function resolveDup(key) {
+  let resolved = JSON.parse(localStorage.getItem('resolvedDups') || '{}');
+  resolved[key] = true;
+  localStorage.setItem('resolvedDups', JSON.stringify(resolved));
+  let item = document.getElementById('dup-' + key);
+  if (item) item.style.display = 'none';
+  // Update the duplicate count in summary
+  let dupList = document.querySelector('.dup-list');
+  if (dupList) {
+    let visible = dupList.querySelectorAll('.dup-item:not([style*="display: none"])');
+    if (visible.length === 0) dupList.style.display = 'none';
+  }
+  let countEl = document.getElementById('dupCount');
+  if (countEl) {
+    let text = countEl.textContent;
+    let totalDups = parseInt(text);
+    let remaining = (dupList ? dupList.querySelectorAll('.dup-item:not([style*="display: none"])').length : 0);
+    countEl.textContent = totalDups + (remaining < totalDups ? ' (' + remaining + ' unresolved)' : '');
+    if (remaining === 0) { countEl.className = 'ok'; countEl.textContent = totalDups + ' (all resolved)'; }
+  }
 }
 
 function downloadCSV() {
