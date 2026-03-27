@@ -1102,8 +1102,7 @@ document.getElementById('alltab').onclick = function () {
   document.getElementById('cor1').style.display = '';
 };
 
-let shipr1 = '';
-try { shipr1 = JSON.parse(localStorage.shipr1).a; } catch(e) {}
+function getShipr1() { try { return JSON.parse(localStorage.shipr1).a; } catch(e) { return ''; } }
 let dlid; // {"id":3065,"coid":55,"ch":286.7,"st":0};
 async function getcor(k) {
   let pinl = ptd.pin.length; dlid = {};
@@ -1113,7 +1112,7 @@ async function getcor(k) {
     ptd.pin = pin.trim();
   }
   let urlx = 'https://apiv2.shiprocket.in/v1/external/open/postcode/details?postcode=' + ptd.pin;
-  let optx = { method: 'GET', redirect: 'follow', headers: { 'Content-Type': 'application/json', 'Authorization': shipr1 } };
+  let optx = { method: 'GET', redirect: 'follow', headers: { 'Content-Type': 'application/json', 'Authorization': getShipr1() } };
   let urlx1 = 'https://anlof6ho4kmtewslnyk34ip2f40pedjp.lambda-url.ap-south-1.on.aws/pin/' + ptd.pin;
   Promise.all[fetch(urlx, optx).then((v) => v.json()).then((v) => { dlid.c = v.postcode_details.city; dlid.s = v.postcode_details.state; }),
     fetch(urlx1).then((v) => v.json()).then((v) => {
@@ -1169,7 +1168,7 @@ async function gosh(obj1, obj2, obj3) {
     new Promise((rez) => {
       if (odwt < 5) {
         let list = ""; let url = "https://apiv2.shiprocket.in/v1/external/courier/serviceability/?";
-        fetch(url + new URLSearchParams(obj3), { method: 'GET', headers: { 'Content-Type': 'application/json', 'Authorization': shipr1 } })
+        fetch(url + new URLSearchParams(obj3), { method: 'GET', headers: { 'Content-Type': 'application/json', 'Authorization': getShipr1() } })
           .then(res => res.json())
           .then((v) => {
             if (v.status == 200) {
@@ -1191,7 +1190,7 @@ async function gosh(obj1, obj2, obj3) {
     }),
     new Promise(rez => {
       let list = ""; let url = "https://apiv2.shiprocket.in/v1/external/courier/serviceability/?";
-      fetch(url + new URLSearchParams(obj2), { method: 'GET', headers: { 'Content-Type': 'application/json', 'Authorization': shipr1 } })
+      fetch(url + new URLSearchParams(obj2), { method: 'GET', headers: { 'Content-Type': 'application/json', 'Authorization': getShipr1() } })
         .then(res => res.json())
         .then((v) => {
           if (v.status == 200) {
@@ -1220,11 +1219,13 @@ async function gosh(obj1, obj2, obj3) {
           list += `<div id="dl0" tabindex="0" class="w3-padding w3-light-blue"><div><b>DUSHIRTS01 SURFACE</b><b class="w3-right">${v[0][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this,'dl0')" class="w3-hover-red">Save</a><i> ... </i><a href="#" onclick="dlfn(this,'dl0')" class="w3-hover-red">Book</a><i class="w3-right">Surface</i></div>`;
           list += `<div id="dl1" tabindex="1" class="w3-padding w3-light-blue"><div><b>DUSHIRTSEXPRESS</b><b class="w3-right">${v[1][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this,'dl1')" class="w3-hover-red">Save</a><i> ... </i><a href="#" onclick="dlfn(this,'dl1')" class="w3-hover-red">Book</a><i class="w3-right">Air</i></div>`;
           list += `<div id="dl2" tabindex="2" class="w3-padding w3-light-blue"><div><b>10KG DUSURFACE</b><b class="w3-right">${v[2][0].total_amount}₹</b></div><a href="#" onclick="dlfn(this,'dl2')" class="w3-hover-red">Save</a><i> ... </i><a href="#" onclick="dlfn(this,'dl2')" class="w3-hover-red">Book</a><i class="w3-right">Surface</i></div>`;
-          localStorage.rkbAllCouriers = JSON.stringify(Object.keys(v[3]));
+          let rkbData = v[3] && !v[3].detail && !v[3].code ? v[3] : {};
+          localStorage.rkbAllCouriers = JSON.stringify(Object.keys(rkbData));
           let selectedRkb = localStorage.rkbSelectedCouriers ? JSON.parse(localStorage.rkbSelectedCouriers) : null;
-          for (let i in v[3]) {
+          for (let i in rkbData) {
+            if (!rkbData[i] || !rkbData[i].rates) continue;
             if (selectedRkb && selectedRkb.length && !selectedRkb.includes(i)) continue;
-            list += `<div id="rkb" title="${v[3][i].mode_id},${v[3][i].id}" class="w3-padding w3-lime"><div><b>${i}</b><b class="w3-right">${v[3][i]["rates"]}₹</b></div><a href="#" onclick="dlfn(this,'rkb')" class="w3-hover-red">Save</a><i> ETD: ${v[3][i]["tat"] + ' / ' + v[3][i]["avg_delivery_days"]}</i><a href="#" onclick="dlfn(this,'rkb')" class="w3-hover-red">Book</a><i class="w3-right">${v[3][i]["mode_name"]}</i></div>`;
+            list += `<div id="rkb" title="${rkbData[i].mode_id},${rkbData[i].id}" class="w3-padding w3-lime"><div><b>${i}</b><b class="w3-right">${rkbData[i]["rates"]}₹</b></div><a href="#" onclick="dlfn(this,'rkb')" class="w3-hover-red">Save</a><i> ETD: ${rkbData[i]["tat"] + ' / ' + rkbData[i]["avg_delivery_days"]}</i><a href="#" onclick="dlfn(this,'rkb')" class="w3-hover-red">Book</a><i class="w3-right">${rkbData[i]["mode_name"]}</i></div>`;
           }
           document.getElementById('allcor').innerHTML += list; rez();
         }).catch((v) => { console.log(v); });

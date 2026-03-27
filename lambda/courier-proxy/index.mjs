@@ -190,7 +190,20 @@ async function dlPricing(query) {
     }
   };
 
-  return '[' + wrapArray(rA.body, rA.status, 'DL_A') + ',' + wrapArray(rC.body, rC.status, 'DL_C') + ',' + wrapArray(rB.body, rB.status, 'DL_B') + ',' + rRkb + ']';
+  // Validate RocketBox response — if it's an error (has "detail"/"code" keys instead of courier data), return empty object
+  let rkbSafe = rRkb;
+  try {
+    const rkbParsed = JSON.parse(rRkb);
+    if (rkbParsed && (rkbParsed.detail || rkbParsed.code === 'token_not_valid')) {
+      console.error('[dlPricing] RocketBox error:', rRkb.substring(0, 200));
+      rkbSafe = '{}';
+    }
+  } catch (e) {
+    console.error('[dlPricing] RocketBox parse failed:', rRkb.substring(0, 200));
+    rkbSafe = '{}';
+  }
+
+  return '[' + wrapArray(rA.body, rA.status, 'DL_A') + ',' + wrapArray(rC.body, rC.status, 'DL_C') + ',' + wrapArray(rB.body, rB.status, 'DL_B') + ',' + rkbSafe + ']';
 }
 
 async function rkbPricing(query) {
