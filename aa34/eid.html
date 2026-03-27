@@ -175,7 +175,7 @@ async function load() {
               // Extract invoice number from Firebase key (e.g. 2526030000373 → 373)
               let invNum = '';
               let keyNum = fbKey.replace(/\D/g, '');
-              if (keyNum.length >= 3) invNum = String(Number(keyNum.slice(-5)) || '');
+              if (keyNum.length >= 13) invNum = keyNum.slice(4);
               let entry = {
                 eid, fullEid: String(ord.eid), source: 'app',
                 name: (ord.cn || '').trim().toLowerCase(),
