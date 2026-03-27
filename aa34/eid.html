@@ -199,6 +199,43 @@ async function load() {
     } catch(e) { console.log('Offline err', e); }
   }
 
+  // 1b. Fetch delivery/AWB data from Offline App Firebase and match to orders
+  try {
+    let dlSnap = await offlineDb.ref('data/delivery').once('value');
+    let dlVal = dlSnap.val();
+    if (dlVal) {
+      // Build lookup: invoiceKey -> AWB
+      let awbMap = {};
+      Object.entries(dlVal).forEach(([dlKey, dl]) => {
+        if (dl && dl.order) {
+          let awb = null;
+          if (dl.order.a && Array.isArray(dl.order.a) && dl.order.a.length > 1) awb = String(dl.order.a[1]);
+          else if (Array.isArray(dl.order) && dl.order.length > 1) awb = String(dl.order[1]);
+          if (awb) awbMap[dlKey] = awb;
+        }
+      });
+      // Match AWB to entries by invoice key (fbKey)
+      for (let e of entries) {
+        if (e.source === 'app' && e.invNum) {
+          let fbKey = fy + e.invNum;
+          if (awbMap[fbKey]) {
+            e.awb = awbMap[fbKey];
+            e.trackingLink = 'https://shiprocket.co/tracking/' + awbMap[fbKey];
+          }
+        }
+      }
+      for (let e of dupPool) {
+        if (e.source === 'app' && e.invNum && !e.awb) {
+          let fbKey = fy + e.invNum;
+          if (awbMap[fbKey]) {
+            e.awb = awbMap[fbKey];
+            e.trackingLink = 'https://shiprocket.co/tracking/' + awbMap[fbKey];
+          }
+        }
+      }
+    }
+  } catch(e) { console.log('Delivery err', e); }
+
   // 2. Fetch from Website Firebase (order KEY is the e-ID)
   try {
     let snap = await websiteDb.ref('orders').once('value');
