@@ -127,6 +127,19 @@ function formatIndianDate(dt) {
   return day + ' ' + mon;
 }
 
+// Create a sorted fingerprint of order details (product + color + size + qty)
+function odFingerprint(od) {
+  let parts = [];
+  for (let prod of Object.keys(od).sort()) {
+    for (let color of Object.keys(od[prod]).sort()) {
+      for (let size of Object.keys(od[prod][color]).sort()) {
+        parts.push(prod + '|' + color + '|' + size + '=' + od[prod][color][size]);
+      }
+    }
+  }
+  return parts.join(',');
+}
+
 async function load() {
   let fy = getFY();
   let month = document.getElementById('monthSel').value;
@@ -221,6 +234,7 @@ async function load() {
             name: (ord.nm || '').trim().toLowerCase(),
             qty,
             amt: taxable,
+            odKey: ord.od ? odFingerprint(ord.od) : '',
             dt: ord.dt || '',
             taxable, total,
             gstAmt: Math.round(total - taxable),
@@ -268,7 +282,7 @@ async function load() {
       let b = dupEntries[j];
       if (b._dupDone) continue;
       if (a.eid === b.eid) continue;
-      if (a.name === b.name && a.qty === b.qty && a.amt === b.amt) {
+      if (a.name === b.name && a.qty === b.qty && a.amt === b.amt && a.odKey && a.odKey === b.odKey) {
         group.push(b);
         b._dupDone = true;
       }
@@ -317,7 +331,7 @@ async function load() {
       dupHtml += `<div class="dup-item" id="dup-${dupKey}">
         <div class="dup-content">
           <div class="dup-name">${displayName}</div>
-          <div class="dup-detail">Qty: ${g[0].qty} | Amt: ${g[0].amt.toLocaleString('en-IN')}</div>
+          <div class="dup-detail">Qty: ${g[0].qty} | Amt: ${g[0].amt.toLocaleString('en-IN')} | Items: ${g[0].odKey ? g[0].odKey.split(',').map(p => { let [item, q] = p.split('='); return item.replace(/\|/g, ' ') + ' x' + q; }).join(', ') : '-'}</div>
           <div class="dup-ids">E-IDs: ${ids}</div>
         </div>
         <label class="dup-check-label"><input type="checkbox" onchange="resolveDup('${dupKey}')"> Resolved</label>
