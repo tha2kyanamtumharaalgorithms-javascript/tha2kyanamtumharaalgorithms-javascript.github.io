@@ -263,7 +263,18 @@ async function load() {
   let map = {};
   for (let e of entries) {
     if (!map[e.eid]) map[e.eid] = e;
-    else if (e.source === 'web' && (!map[e.eid].trackingLink || e.trackingLink)) map[e.eid] = e; // website with tracking takes priority
+    else if (e.source === 'web') {
+      let existing = map[e.eid];
+      // Merge: keep the entry with more data, but copy tracking from either
+      if (e.trackingLink && !existing.trackingLink) {
+        existing.trackingLink = e.trackingLink;
+        existing.awb = e.awb;
+      } else if (e.name && !existing.name) {
+        // New entry has order data, existing doesn't — replace but keep tracking
+        if (existing.trackingLink) { e.trackingLink = existing.trackingLink; e.awb = existing.awb; }
+        map[e.eid] = e;
+      }
+    }
   }
   let all = Object.values(map).sort((a, b) => a.eid - b.eid);
 
