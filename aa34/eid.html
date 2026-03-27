@@ -246,7 +246,8 @@ async function load() {
             shipping,
             courierType: ord.odt || '',
             trackingLink: (ord.tracking && ord.tracking.trackingLink) ? ord.tracking.trackingLink : '',
-            awb: (ord.tracking && ord.tracking.awb) ? ord.tracking.awb : ''
+            awb: (ord.tracking && ord.tracking.awb && typeof ord.tracking.awb === 'string') ? ord.tracking.awb : (ord.tracking && ord.tracking.awb && typeof ord.tracking.awb === 'object' ? JSON.stringify(ord.tracking.awb) : ''),
+            booked: !!(ord.tracking && ord.tracking.booked)
           };
           if (isCurrentMonth) entries.push(entry);
           dupPool.push(entry);
@@ -368,7 +369,7 @@ async function load() {
       let e = all[i];
       let displayName = e.name ? e.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '';
       let fmtDate = formatIndianDate(e.dt);
-      let trackBtn = e.trackingLink ? `<button class="trk-btn" onclick="copyTrack('${e.trackingLink}', this)">Track</button>` : '';
+      let trackBtn = e.trackingLink ? `<button class="trk-btn" onclick="copyTrack('${e.trackingLink}', this)">Track</button>` : (e.awb ? `<span class="awb-txt" title="Click to copy" onclick="copyTrack('${e.awb}', this)" style="cursor:pointer;font-size:11px;color:#1a73e8">${e.awb}</span>` : '');
       html += `<tr><td><b>${e.eid}</b></td><td>${trackBtn}</td><td>${e.fullEid || ''}</td><td>${fmtDate}</td><td class="name-col">${displayName}</td><td style="font-size:11px">${e.state || ''}</td><td>${e.qty}</td><td>${e.taxable ? e.taxable.toLocaleString('en-IN') : '-'}</td><td>${e.gstAmt ? e.gstAmt.toLocaleString('en-IN') : '-'}</td><td>${e.total ? e.total.toLocaleString('en-IN') : '-'}</td><td>${e.shipping ? e.shipping.toLocaleString('en-IN') : '0'}</td><td>${e.courierType || '-'}</td><td style="font-size:10px">${e.gstin || ''}</td><td><span class="src ${e.source}">${e.source === 'app' ? 'App' : 'Web'}</span></td></tr>`;
     }
     html += `</tbody></table></div>`;
