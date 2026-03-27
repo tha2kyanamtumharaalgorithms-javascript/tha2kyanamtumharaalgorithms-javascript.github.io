@@ -184,12 +184,13 @@ async function load() {
     let val = snap.val();
     if (val) {
       Object.keys(val).forEach(key => {
-        if (key.startsWith('BillNo')) return;
+        // Strip BillNo prefix if present (new format)
+        let rawKey = key.startsWith('BillNo') ? key.slice(6) : key;
         // Check if key belongs to any of the months we're looking at
-        let isCurrentMonth = key.startsWith(fy + mStr);
-        let isAnyMonth = monthsToFetch.some(mo => key.startsWith(fy + mo));
+        let isCurrentMonth = rawKey.startsWith(fy + mStr);
+        let isAnyMonth = monthsToFetch.some(mo => rawKey.startsWith(fy + mo));
         if (!isAnyMonth) return;
-        let eid = shortEid(key);
+        let eid = shortEid(rawKey);
         if (eid) {
           let ord = val[key];
           let qty = 0;
@@ -216,7 +217,7 @@ async function load() {
             shipping = parseFloat(numPart) || 0;
           }
           let entry = {
-            eid, fullEid: key, source: 'web',
+            eid, fullEid: rawKey, source: 'web',
             name: (ord.nm || '').trim().toLowerCase(),
             qty,
             amt: taxable,
