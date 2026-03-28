@@ -865,7 +865,7 @@ function download(link, name) {
   setTimeout(() => iframe.remove(), 1000);
 }
 
-// close button add detail 
+// close button add detail
 function gr() {
   document.getElementById('bnm7').classList.toggle("w3-show");  //display block
   document.getElementById('ptd').classList.toggle("w3-modal");
@@ -875,6 +875,8 @@ function gr() {
   document.getElementById('cnm3').classList.toggle("hide");
   document.getElementById('cnm1').classList.toggle("hide");
   document.querySelector("#gstall > div.w3-blue-gray").style.display = 'flex';
+  let coiEl = document.getElementById('custOrderInfo');
+  if (coiEl) { coiEl.style.display = 'none'; coiEl.innerHTML = ''; }
 }
 //
 async function goadd(b, z, m) { //b(ptid),z(odid),m(ptd)object
@@ -898,6 +900,8 @@ async function goadd(b, z, m) { //b(ptid),z(odid),m(ptd)object
     (k2.value) ? k2.dispatchEvent(new Event('input')) : document.getElementById('ptplace').innerText = 'State, District';
     document.getElementById('pta').value = v.add ?? '';
     ptods = v.ods; ptid = v.id; cid = z;
+    // Fetch last order tracking for this customer's phone
+    if (v.mn1) fetchCustOrderInfo(v.mn1);
   }
   if (!m) {
     await db.pt.get(b).then((v) => {
@@ -1663,4 +1667,159 @@ function odAllStockToggle() {
     odAllStockItems.forEach(v => v.setAttribute('type', 'button'));
     odAllStockItems = [];
   }
+}
+
+// ============ LAST ORDER TRACKING ON HEADER ============
+// Website Firebase (dashboard-stock) for customer order history
+const webDashDb = firebase.initializeApp({
+  databaseURL: "https://dashboard-stock-default-rtdb.asia-southeast1.firebasedatabase.app"
+}, 'webDash').database();
+
+async function fetchCustOrderInfo(phone) {
+  let el = document.getElementById('custOrderInfo');
+  el.style.display = 'none';
+  el.innerHTML = '';
+  if (!phone) return;
+
+  // Sanitize phone: remove +, spaces, dashes; strip 91 country code
+  let ph = String(phone).replace(/[\s\-\(\)\+]/g, '');
+  if (ph.startsWith('91') && ph.length > 10) ph = ph.slice(2);
+
+  try {
+    let snap = await webDashDb.ref('customers/' + ph).once('value');
+    let orders = snap.val();
+    if (!orders || typeof orders !== 'object') return;
+
+    let now = new Date();
+    let curMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    let threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1).getTime();
+    let currentMonth = 0, past3Months = 0, totalOrders = 0;
+    let lastOrderId = null, lastOrderTime = 0, customerName = null;
+
+    for (let oid of Object.keys(orders)) {
+      let o = orders[oid];
+      totalOrders++;
+      if (!customerName && o.nm) customerName = o.nm;
+      let oTime = 0;
+      if (o.dt) { let p = new Date(o.dt).getTime(); if (!isNaN(p)) oTime = p; }
+      if (!oTime && (o.savedAt || o.updatedAt)) oTime = o.savedAt || o.updatedAt;
+      if (oTime >= curMonthStart) currentMonth++;
+      if (oTime >= threeMonthsAgo && oTime < curMonthStart) past3Months++;
+      if (oTime > lastOrderTime || (!lastOrderId && o.savedAt)) {
+        lastOrderTime = oTime || o.savedAt || 0;
+        lastOrderId = oid;
+      }
+    }
+
+    if (totalOrders === 0) return;
+
+    // Fetch full last order for tracking + quantity + type
+    let lastOrderQty = 0, lastOrderTypeLabel = '', lastOrderTrackingLink = '', lastOrderAwb = '';
+    if (lastOrderId) {
+      try {
+        let oSnap = await webDashDb.ref('orders/' + lastOrderId).once('value');
+        let fo = oSnap.val();
+        if (fo && typeof fo === 'object') {
+          // Quantity from od structure
+          if (fo.od && typeof fo.od === 'object') {
+            for (let type of Object.values(fo.od)) {
+              if (type && typeof type === 'object') {
+                for (let color of Object.values(type)) {
+                  if (color && typeof color === 'object') {
+                    for (let qty of Object.values(color)) {
+                      if (typeof qty === 'number') lastOrderQty += qty;
+                    }
+                  }
+                }
+              }
+            }
+          }
+          // Order type
+          if (fo.odt) {
+            lastOrderTypeLabel = String(fo.odt);
+          } else if (fo.shp) {
+            let odtype = ['', 'A', 'L', 'T', 'D', 'S', 'Tr'];
+            let shp = String(fo.shp).slice(-1);
+            let dt2 = '';
+            if (shp === '1') {
+              if (fo.tch && String(fo.tch).includes(',')) dt2 = '1';
+              else if (fo.tchmth && String(fo.tchmth).includes('zz0')) dt2 = '5';
+              else if (fo.tchmth && String(fo.tchmth).includes('zz1')) dt2 = 'E';
+              else if (fo.tchmth && String(fo.tchmth).includes('zz2')) dt2 = '10';
+            } else if (shp === '4' && fo.b) {
+              if (fo.tch && String(fo.tch).includes(',')) dt2 = 'A1';
+              else if (fo.tchmth && String(fo.tchmth).includes('zz0')) dt2 = 'A5';
+              else if (fo.tchmth && String(fo.tchmth).includes('zz1')) dt2 = 'AE';
+              else if (fo.tchmth && String(fo.tchmth).includes('zz2')) dt2 = 'A10';
+              else dt2 = 'A';
+            }
+            lastOrderTypeLabel = (odtype[Number(shp)] || '') + dt2;
+          }
+          // Tracking
+          if (fo.tracking && fo.tracking.awb) lastOrderAwb = String(fo.tracking.awb);
+          if (fo.tracking && fo.tracking.trackingLink) lastOrderTrackingLink = String(fo.tracking.trackingLink);
+        }
+        // Fallback: check BillNo_ path for tracking
+        if (!lastOrderAwb || !lastOrderTrackingLink) {
+          let numPart = lastOrderId.replace(/^BillNo_?/, '');
+          let fbSnap = await webDashDb.ref('orders/BillNo_' + numPart + '/tracking').once('value');
+          let fbT = fbSnap.val();
+          if (fbT) {
+            if (fbT.awb && !lastOrderAwb) lastOrderAwb = String(fbT.awb);
+            if (fbT.trackingLink) lastOrderTrackingLink = String(fbT.trackingLink);
+          }
+        }
+      } catch (e) { console.warn('Order fetch error:', e); }
+    }
+
+    // Build header HTML
+    let html = '';
+    // Order counts badge
+    let shortId = lastOrderId ? '#' + String(lastOrderId).slice(-9) : '';
+    html += `<span class="coi-badge" style="background:#fff8e1;color:#f57f17;">1M-${currentMonth}, 3M-${past3Months}, T-${totalOrders} ${shortId}${lastOrderQty > 0 ? ', ' + lastOrderQty + 'pc' : ''}</span>`;
+
+    // Last order time
+    if (lastOrderTime > 0) {
+      let d = new Date(lastOrderTime);
+      let nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      let dIST = new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      let todayStart = new Date(nowIST.getFullYear(), nowIST.getMonth(), nowIST.getDate());
+      let dStart = new Date(dIST.getFullYear(), dIST.getMonth(), dIST.getDate());
+      let dayDiff = Math.round((todayStart - dStart) / 86400000);
+      let parts = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true }).formatToParts(d);
+      let get = (t) => (parts.find(p => p.type === t) || {}).value || '';
+      let dateLabel = dayDiff === 0 ? 'today' : dayDiff === 1 ? 'yesterday' : get('day') + ' ' + get('month');
+      html += `<span class="coi-badge" style="background:#e3f2fd;color:#1565c0;">${dateLabel} ${get('hour')}:${get('minute')}${(get('dayPeriod') || '').toLowerCase()}</span>`;
+    }
+
+    // Order type
+    if (lastOrderTypeLabel) {
+      html += `<span class="coi-badge" style="background:#f3e5f5;color:#7b1fa2;">${lastOrderTypeLabel}</span>`;
+    }
+
+    // Track button (like eid.html)
+    if (lastOrderTrackingLink) {
+      html += `<button class="coi-trk" data-link="${lastOrderTrackingLink}" onclick="coiCopyTrack(this)">Track</button>`;
+    }
+
+    // AWB badge
+    if (lastOrderAwb) {
+      html += `<button class="coi-trk" style="background:#00695c;font-family:monospace;" data-link="${lastOrderAwb}" onclick="coiCopyTrack(this)">AWB: ${lastOrderAwb}</button>`;
+    }
+
+    el.innerHTML = html;
+    el.style.display = 'flex';
+  } catch (err) {
+    console.warn('fetchCustOrderInfo error:', err);
+  }
+}
+
+function coiCopyTrack(btn) {
+  let link = btn.getAttribute('data-link');
+  navigator.clipboard.writeText(link).then(() => {
+    let orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1500);
+  });
 }
