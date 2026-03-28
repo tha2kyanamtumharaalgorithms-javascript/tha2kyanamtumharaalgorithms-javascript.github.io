@@ -207,6 +207,7 @@ async function load() {
       // Build lookup: invoiceKey -> { awb, shipping, courierType }
       let dlMap = {};
       let courierNames = { shp: 'ShipRocket', rkb: 'RocketBox', dl0: 'Delhivery', dl1: 'Delhivery Exp', dl2: 'Delhivery Heavy' };
+      let trackingUrls = { shp: 'https://shiprocket.co/tracking/', rkb: '', dl0: 'https://trq.pages.dev/?a', dl1: 'https://trq.pages.dev/?c', dl2: 'https://trq.pages.dev/?b' };
       Object.entries(dlVal).forEach(([dlKey, dl]) => {
         let info = {};
         if (dl && dl.order) {
@@ -214,7 +215,10 @@ async function load() {
           else if (Array.isArray(dl.order) && dl.order.length > 1) info.awb = String(dl.order[1]);
         }
         if (dl && dl.tch) info.shipping = Math.ceil(Number(dl.tch)) || 0;
-        if (dl && dl.dl) info.courierType = courierNames[dl.dl] || dl.dl;
+        if (dl && dl.dl) {
+          info.courierType = courierNames[dl.dl] || dl.dl;
+          if (info.awb && trackingUrls[dl.dl]) info.trackingLink = trackingUrls[dl.dl] + info.awb;
+        }
         if (info.awb || info.shipping) dlMap[dlKey] = info;
       });
       // Match delivery data to entries by invoice key (fbKey)
@@ -224,6 +228,7 @@ async function load() {
           let info = dlMap[fbKey];
           if (info) {
             if (info.awb) e.awb = info.awb;
+            if (info.trackingLink) e.trackingLink = info.trackingLink;
             if (info.shipping) e.shipping = info.shipping;
             if (info.courierType) e.courierType = info.courierType;
           }
@@ -235,6 +240,7 @@ async function load() {
           let info = dlMap[fbKey];
           if (info) {
             if (info.awb) e.awb = info.awb;
+            if (info.trackingLink) e.trackingLink = info.trackingLink;
             if (info.shipping) e.shipping = info.shipping;
             if (info.courierType) e.courierType = info.courierType;
           }
