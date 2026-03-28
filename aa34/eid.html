@@ -10,7 +10,14 @@
   .header { background: #455a64; color: #fff; padding: 10px 12px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 5; }
   .header button { padding: 6px 10px; border: none; border-radius: 4px; font-size: 14px; background: #2196F3; color: #fff; cursor: pointer; }
   .header select { padding: 6px 10px; border: none; border-radius: 4px; font-size: 14px; background: #fff; }
-  .header .search-input { width: 140px; padding: 6px 10px; border: none; border-radius: 4px; font-size: 14px; outline: none; }
+  .header .spacer { flex: 1; }
+  .search-wrap { display: flex; align-items: center; gap: 4px; background: #fff; border-radius: 4px; padding: 2px 4px; }
+  .search-wrap input { width: 120px; padding: 4px 6px; border: none; font-size: 13px; outline: none; }
+  .search-wrap .s-info { font-size: 11px; color: #888; white-space: nowrap; min-width: 30px; text-align: center; }
+  .search-wrap .s-btn { background: none; border: none; cursor: pointer; font-size: 14px; color: #666; padding: 2px 4px; line-height: 1; }
+  .search-wrap .s-btn:hover { color: #000; }
+  tr.s-highlight td { background: #fff9c4 !important; }
+  tr.s-current td { background: #ffeb3b !important; }
   .box { max-width: 1280px; margin: 10px auto; padding: 0 8px; }
 
   .summary { background: #fff; border-radius: 8px; padding: 12px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -49,7 +56,13 @@
 <body>
   <div class="header">
     <button onclick="history.back()">&#10094; Back</button>
-    <input type="text" class="search-input" id="searchBox" placeholder="Search..." oninput="filterTable(this.value)">
+    <span class="spacer"></span>
+    <div class="search-wrap">
+      <input type="text" id="searchBox" placeholder="Search..." oninput="doSearch(this.value)" onkeydown="if(event.key==='Enter'){event.shiftKey?searchPrev():searchNext()}">
+      <span class="s-info" id="sInfo"></span>
+      <button class="s-btn" onclick="searchPrev()" title="Previous">&#9650;</button>
+      <button class="s-btn" onclick="searchNext()" title="Next">&#9660;</button>
+    </div>
     <button id="dlBtn" onclick="downloadCSV()" style="background:#4CAF50;display:none">&#8595; CSV</button>
     <select id="monthSel" onchange="load()"></select>
   </div>
@@ -485,12 +498,39 @@ function downloadCSV() {
   a.click();
 }
 
-function filterTable(q) {
+let sMatches = [], sIdx = -1;
+function doSearch(q) {
+  // Clear previous highlights
+  sMatches.forEach(tr => { tr.classList.remove('s-highlight', 's-current'); });
+  sMatches = []; sIdx = -1;
+  let info = document.getElementById('sInfo');
   q = q.toLowerCase().trim();
+  if (!q) { info.textContent = ''; return; }
   let rows = document.querySelectorAll('.tbl-wrap tbody tr');
   rows.forEach(tr => {
-    tr.style.display = !q || tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+    if (tr.textContent.toLowerCase().includes(q)) {
+      sMatches.push(tr);
+      tr.classList.add('s-highlight');
+    }
   });
+  if (sMatches.length) { sIdx = 0; sMatches[0].classList.add('s-current'); sMatches[0].scrollIntoView({block:'center'}); }
+  info.textContent = sMatches.length ? (sIdx + 1) + '/' + sMatches.length : '0/0';
+}
+function searchNext() {
+  if (!sMatches.length) return;
+  sMatches[sIdx].classList.remove('s-current');
+  sIdx = (sIdx + 1) % sMatches.length;
+  sMatches[sIdx].classList.add('s-current');
+  sMatches[sIdx].scrollIntoView({block:'center'});
+  document.getElementById('sInfo').textContent = (sIdx + 1) + '/' + sMatches.length;
+}
+function searchPrev() {
+  if (!sMatches.length) return;
+  sMatches[sIdx].classList.remove('s-current');
+  sIdx = (sIdx - 1 + sMatches.length) % sMatches.length;
+  sMatches[sIdx].classList.add('s-current');
+  sMatches[sIdx].scrollIntoView({block:'center'});
+  document.getElementById('sInfo').textContent = (sIdx + 1) + '/' + sMatches.length;
 }
 </script>
 </body>
