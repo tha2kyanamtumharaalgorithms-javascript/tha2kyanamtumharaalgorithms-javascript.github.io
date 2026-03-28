@@ -840,7 +840,7 @@ function unpingen() {
           if (localStorage.gre === '555') { } else {
             let m = await getnmm();
             ord.eid = String(m); await oddb.od.put(ord, ord.id);
-            fbPutOrder(selg.slice(-1) + String(ord.id).slice(0, 6), ord);
+            await fbPutOrder(selg.slice(-1) + String(ord.id).slice(0, 6), ord);
           }
         }
         let vkz6 = { p: "31", "g": selg, "od": ord, "pt": pt, pin: { ...mk5 } };
@@ -848,7 +848,7 @@ function unpingen() {
         if (res && res?.pdf) {
           ord.pdf = res.pdf;
           await oddb.od.put(ord, ord.id); //(Number(d));
-          fbPutOrder(selg.slice(-1) + String(ord.id).slice(0, 6), ord);
+          await fbPutOrder(selg.slice(-1) + String(ord.id).slice(0, 6), ord);
         }
         snackbar('Unpined and E-invoice Generated', 1300);
       } else {

@@ -31,7 +31,7 @@ async function delod() {
     sendd(urli, shod11, 'del order');
 
     await oddb.od.put(shod11.od, Number(odno));
-    fbPutOrder(selg.slice(-1) + odno.slice(0, 6), shod11.od);
+    await fbPutOrder(selg.slice(-1) + odno.slice(0, 6), shod11.od);
     debounceSyncLiveSheet();
     selod5 = {};
     showUndoSnackbar();
@@ -57,7 +57,7 @@ async function undoDelete() {
     const { backup, g, monthKey } = _undoData;
     await mthdb(monthKey);
     await oddb.od.put(backup, backup.id);
-    fbPutOrder(monthKey, backup);
+    await fbPutOrder(monthKey, backup);
     sendd(urli, { p: "1", g: g, od: { ...backup } }, 'undo del');
     debounceSyncLiveSheet();
     _undoData = null;
@@ -253,9 +253,9 @@ function creatod(eid) {
         zsr.id = odid;
       }
     }
-    await oddb.od.put(shod0.od, odid).then((res) => {
+    await oddb.od.put(shod0.od, odid).then(async (res) => {
       console.log(res, 'added');
-      fbPutOrder(gd.slice(-1) + odid.toString().slice(0, 6), shod0.od);
+      await fbPutOrder(gd.slice(-1) + odid.toString().slice(0, 6), shod0.od);
       selgo(gd);//  pinloc
       let paz = JSON.parse(pinloc);
       paz['ods' + shod0.od.id] = 'Pending';
@@ -356,7 +356,7 @@ async function updateod(myz, eid) {
     await mthdb(selg.slice(-1) + String(pk8).slice(0, 6));
     await oddb.od.put(shod1.od, pk8)
       .then(async () => {
-        fbPutOrder(selg.slice(-1) + String(pk8).slice(0, 6), shod1.od);
+        await fbPutOrder(selg.slice(-1) + String(pk8).slice(0, 6), shod1.od);
         debounceSyncLiveSheet();
         shod1.pcwt = odwt;
         // console.log(pctt);
@@ -414,7 +414,7 @@ async function moveod(gf, gt, idf) {
   // await st.collection(gt).doc(idf).set(docft);
   await mthdb(gt.slice(-1) + idfs);
   await oddb.od.put(docft, idf);
-  fbPutOrder(gt.slice(-1) + idfs, docft);
+  await fbPutOrder(gt.slice(-1) + idfs, docft);
 }
 
 let insxx = [];

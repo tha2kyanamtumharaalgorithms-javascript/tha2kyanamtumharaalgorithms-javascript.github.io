@@ -12,13 +12,90 @@ const fbRef = fbDb.ref('data');
 // localStorage keys to sync across devices
 const FB_SYNC_LS_KEYS = ['pin', 'pint', 'pink', 'pinpd', 'trp', 'imglastod', 'liveSheetStartOd', 'lastExportedOdNum', 'liveSheetLocked', 'liveWebSheetStartOd', 'liveWebSheetLocked', 'fromod', 'gr5', 'gre', 'clickcount', 'm', 'liveSheetScriptUrl', 'liveWebSheetScriptUrl', 'shipr1', 'shpdt', 'shpSelectedCouriers', 'rkbSelectedCouriers', 'shpAllCouriers', 'rkbAllCouriers'];
 
+// ===== Pending Sync Queue (IndexedDB via Dexie) =====
+
+const _fbPendingSyncDb = new Dexie('_fbPendingSync');
+_fbPendingSyncDb.version(1).stores({ queue: 'key, ts' });
+
+let _fbPendingCount = 0;
+
+function _fbUpdatePendingBadge() {
+  const el = document.getElementById('fbPendingBadge');
+  if (el) {
+    if (_fbPendingCount > 0) {
+      el.textContent = _fbPendingCount + ' order' + (_fbPendingCount > 1 ? 's' : '') + ' not synced';
+      el.style.display = '';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+}
+
+async function _fbAddToPendingQueue(monthKey, orderData) {
+  const key = monthKey + '/' + orderData.id;
+  await _fbPendingSyncDb.queue.put({ key, monthKey, orderData, ts: Date.now() });
+  _fbPendingCount = await _fbPendingSyncDb.queue.count();
+  _fbUpdatePendingBadge();
+}
+
+async function _fbRemoveFromPendingQueue(monthKey, orderId) {
+  const key = monthKey + '/' + orderId;
+  await _fbPendingSyncDb.queue.delete(key);
+  _fbPendingCount = await _fbPendingSyncDb.queue.count();
+  _fbUpdatePendingBadge();
+}
+
+// Retry all pending orders in the queue
+async function fbRetryPendingSync() {
+  const pending = await _fbPendingSyncDb.queue.toArray();
+  if (!pending.length) { snackbar('All orders synced', 1500); return; }
+  snackbar('Retrying ' + pending.length + ' pending order(s)...', 2000);
+  let success = 0, fail = 0;
+  for (const item of pending) {
+    const ok = await fbPutOrder(item.monthKey, item.orderData);
+    if (ok) success++; else fail++;
+  }
+  if (fail === 0) {
+    snackbar('All ' + success + ' order(s) synced!', 2000);
+  } else {
+    snackbar(success + ' synced, ' + fail + ' still pending', 3000);
+  }
+}
+
+// Auto-retry when connection comes back
+let _fbWasOffline = false;
+
 // ===== Core Write Functions =====
 
-function fbPutOrder(monthKey, orderData) {
+async function fbPutOrder(monthKey, orderData) {
+  const path = 'orders/' + monthKey + '/' + orderData.id;
+  const d = { ...orderData, _ts: firebase.database.ServerValue.TIMESTAMP, _dev: FB_DEVICE_ID };
   try {
-    const d = { ...orderData, _ts: firebase.database.ServerValue.TIMESTAMP, _dev: FB_DEVICE_ID };
-    fbRef.child('orders/' + monthKey + '/' + orderData.id).set(d);
-  } catch (e) { console.log('fb order sync err:', e); }
+    // Attempt Firebase write with a 10-second timeout
+    await Promise.race([
+      fbRef.child(path).set(d),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase write timeout')), 10000))
+    ]);
+    // Verify the write by reading back
+    const snap = await Promise.race([
+      fbRef.child(path + '/id').once('value'),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase verify timeout')), 5000))
+    ]);
+    if (snap.val() == orderData.id) {
+      // Successfully saved and verified — remove from pending queue if it was there
+      await _fbRemoveFromPendingQueue(monthKey, orderData.id);
+      console.log('fb order saved & verified:', path);
+      return true;
+    } else {
+      throw new Error('Verify mismatch: expected ' + orderData.id + ' got ' + snap.val());
+    }
+  } catch (e) {
+    console.log('fb order sync err:', e.message, path);
+    // Save to pending queue for retry
+    await _fbAddToPendingQueue(monthKey, orderData);
+    snackbar('Order save to cloud failed - will retry', 3000);
+    return false;
+  }
 }
 
 function fbPutParty(partyData) {
@@ -298,15 +375,25 @@ function _listenMonth(mc) {
 
 function fbSetupConnectionStatus() {
   const connRef = firebase.database().ref('.info/connected');
-  connRef.on('value', (snap) => {
+  connRef.on('value', async (snap) => {
     const el = document.getElementById('fbSyncStatus');
     if (el) {
       if (snap.val() === true) {
         el.textContent = 'Cloud: Connected';
         el.style.color = '#2ecc71';
+        // Auto-retry pending syncs when reconnecting
+        if (_fbWasOffline) {
+          _fbWasOffline = false;
+          const count = await _fbPendingSyncDb.queue.count();
+          if (count > 0) {
+            snackbar('Back online - retrying ' + count + ' pending order(s)...', 2000);
+            setTimeout(() => fbRetryPendingSync(), 1500);
+          }
+        }
       } else {
         el.textContent = 'Cloud: Offline';
         el.style.color = '#e74c3c';
+        _fbWasOffline = true;
       }
     }
   });
@@ -380,9 +467,20 @@ function getAppUser() {
 
 // ===== Init =====
 
-(function fbInit() {
+(async function fbInit() {
   appCheckAuth();
   fbSetupListeners();
   fbSetupConnectionStatus();
+  // Load pending sync count on startup
+  _fbPendingCount = await _fbPendingSyncDb.queue.count();
+  _fbUpdatePendingBadge();
+  if (_fbPendingCount > 0) {
+    console.log('fb: ' + _fbPendingCount + ' order(s) pending sync');
+    // Auto-retry after 5 seconds if online
+    setTimeout(async () => {
+      const snap = await firebase.database().ref('.info/connected').once('value');
+      if (snap.val() === true) fbRetryPendingSync();
+    }, 5000);
+  }
   console.log('fb: sync initialized, device:', FB_DEVICE_ID);
 })();
