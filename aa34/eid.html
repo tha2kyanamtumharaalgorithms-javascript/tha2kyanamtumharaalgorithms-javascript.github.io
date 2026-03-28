@@ -10,7 +10,7 @@
   .header { background: #455a64; color: #fff; padding: 10px 12px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 5; }
   .header button { padding: 6px 10px; border: none; border-radius: 4px; font-size: 14px; background: #2196F3; color: #fff; cursor: pointer; }
   .header select { padding: 6px 10px; border: none; border-radius: 4px; font-size: 14px; background: #fff; }
-  .header .title { font-size: 14px; font-weight: 600; flex: 1; }
+  .header .search-input { flex: 1; padding: 6px 10px; border: none; border-radius: 4px; font-size: 14px; outline: none; }
   .box { max-width: 1280px; margin: 10px auto; padding: 0 8px; }
 
   .summary { background: #fff; border-radius: 8px; padding: 12px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -49,7 +49,7 @@
 <body>
   <div class="header">
     <button onclick="history.back()">&#10094; Back</button>
-    <span class="title">E-ID Tracker</span>
+    <input type="text" class="search-input" id="searchBox" placeholder="Search..." oninput="filterTable(this.value)">
     <button id="dlBtn" onclick="downloadCSV()" style="background:#4CAF50;display:none">&#8595; CSV</button>
     <select id="monthSel" onchange="load()"></select>
   </div>
@@ -483,6 +483,14 @@ function downloadCSV() {
   a.href = URL.createObjectURL(blob);
   a.download = 'EID_' + mName + '.csv';
   a.click();
+}
+
+function filterTable(q) {
+  q = q.toLowerCase().trim();
+  let rows = document.querySelectorAll('.tbl-wrap tbody tr');
+  rows.forEach(tr => {
+    tr.style.display = !q || tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
 }
 </script>
 </body>
