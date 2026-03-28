@@ -7,7 +7,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <style>
   body { background: #f5f5f5; margin: 0; font-family: -apple-system, sans-serif; }
-  .header { background: #455a64; color: #fff; padding: 6px 8px; display: flex; align-items: center; gap: 6px; position: sticky; top: 0; z-index: 5; flex-wrap: nowrap; }
+  .header { background: #455a64; color: #fff; padding: 6px 8px; display: flex; align-items: center; justify-content: center; gap: 6px; position: sticky; top: 0; z-index: 5; flex-wrap: nowrap; }
   .header button { padding: 4px 8px; border: none; border-radius: 4px; font-size: 12px; background: #2196F3; color: #fff; cursor: pointer; white-space: nowrap; }
   .header select { padding: 4px 6px; border: none; border-radius: 4px; font-size: 12px; background: #fff; }
   .header .spacer { flex: 0.3; }
@@ -55,8 +55,6 @@
 
 <body>
   <div class="header">
-    <button onclick="history.back()">&#10094; Back</button>
-    <span class="spacer"></span>
     <div class="search-wrap">
       <input type="text" id="searchBox" placeholder="Search..." oninput="doSearch(this.value)" onkeydown="if(event.key==='Enter'){event.shiftKey?searchPrev():searchNext()}">
       <span class="s-info" id="sInfo"></span>
