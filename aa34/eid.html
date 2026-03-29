@@ -48,9 +48,7 @@
   .dup-item .dup-name { font-weight: 600; font-size: 13px; color: #333; }
   .dup-item .dup-detail { font-size: 11px; color: #666; margin-top: 2px; }
   .dup-item .dup-ids { font-size: 11px; color: #e65100; margin-top: 2px; }
-  .trk-btn { background: #1565c0; color: #fff; border: none; border-radius: 4px; padding: 3px 8px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-  .trk-btn:active { background: #0d47a1; }
-  .trk-btn.copied { background: #2e7d32; }
+  .awb-txt.copied { color: #2e7d32 !important; font-weight: 700; }
   tr.incomplete td { background: #ffebee !important; }
   tr.incomplete td:first-child { border-left: 3px solid #c62828; }
   .incomplete-list { background: #ffcdd2; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; font-size: 12px; color: #b71c1c; }
@@ -448,7 +446,7 @@ async function load() {
       let isIncomplete = e.qty === 0 || !e.name || (!e.taxable && !e.total);
       let displayName = e.name ? e.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '';
       let fmtDate = formatIndianDate(e.dt);
-      let trackBtn = e.trackingLink ? `<button class="trk-btn" onclick="copyTrack('${e.trackingLink}', this)">Track</button>` : (e.awb ? `<span class="awb-txt" title="Click to copy" onclick="copyTrack('${e.awb}', this)" style="cursor:pointer;font-size:11px;color:#1a73e8">${e.awb}</span>` : '');
+      let trackBtn = e.awb ? `<span class="awb-txt" title="Click to copy AWB" onclick="copyTrack('${e.awb}', this)" style="cursor:pointer;font-size:11px;color:#1a73e8">${e.awb}</span>` : '';
       html += `<tr${isIncomplete ? ' class="incomplete" title="This order may not have saved properly"' : ''}><td><b>${e.eid}</b></td><td>${e.invNum || ''}</td><td>${trackBtn}</td><td>${e.fullEid || ''}</td><td>${fmtDate}</td><td class="name-col">${displayName}</td><td style="font-size:11px">${e.state || ''}</td><td>${e.qty}</td><td>${e.taxable ? e.taxable.toLocaleString('en-IN') : '-'}</td><td>${e.gstAmt ? e.gstAmt.toLocaleString('en-IN') : '-'}</td><td>${e.total ? e.total.toLocaleString('en-IN') : '-'}</td><td>${e.shipping ? e.shipping.toLocaleString('en-IN') : '0'}</td><td>${e.courierType || '-'}</td><td style="font-size:10px">${e.gstin || ''}</td><td><span class="src ${e.source}">${e.source === 'app' ? 'App' : 'Web'}</span></td></tr>`;
     }
     html += `</tbody></table></div>`;
@@ -462,10 +460,11 @@ async function load() {
 }
 
 function copyTrack(link, btn) {
+  let orig = btn.textContent;
   navigator.clipboard.writeText(link).then(() => {
     btn.textContent = 'Copied!';
     btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Track'; btn.classList.remove('copied'); }, 1500);
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1500);
   });
 }
 
